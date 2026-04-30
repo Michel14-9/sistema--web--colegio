@@ -14,7 +14,9 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "matricula", schema = "academico")
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Matricula {
 
     @Id
