@@ -1,0 +1,746 @@
+/* admin.css - Estilos completos para el módulo Administrador */
+
+:root {
+    --admin-primary: #0d6efd;
+    --admin-primary-dark: #0a58ca;
+    --admin-primary-light: #cfe2ff;
+    --admin-secondary: #6c757d;
+    --admin-success: #28a745;
+    --admin-danger: #dc3545;
+    --admin-warning: #ffc107;
+    --admin-info: #0dcaf0;
+    --admin-dark: #1a1a2e;
+    --admin-white: #ffffff;
+    --admin-gray: #6c757d;
+    --admin-gray-dark: #343a40;
+    --admin-gray-light: #f8f9fa;
+    --admin-border: #dee2e6;
+    --admin-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    --admin-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --admin-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    --admin-transition: all 0.3s ease;
+}
+
+/* ========== ESTILOS GENERALES ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+/* ========== NAVBAR ========== */
+.navbar {
+    background: linear-gradient(135deg, var(--admin-dark) 0%, #16213e 100%);
+    padding: 0.8rem 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.navbar-brand i {
+    font-size: 1.3rem;
+}
+
+.dropdown-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    transition: var(--admin-transition);
+}
+
+.dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.02);
+}
+
+.dropdown-menu {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: var(--admin-shadow);
+    margin-top: 0.5rem;
+}
+
+.dropdown-item {
+    padding: 0.6rem 1.2rem;
+    transition: var(--admin-transition);
+}
+
+.dropdown-item:hover {
+    background-color: var(--admin-primary-light);
+    color: var(--admin-primary);
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+    background: var(--admin-white);
+    min-height: calc(100vh - 60px);
+    box-shadow: var(--admin-shadow-sm);
+    border-right: 1px solid var(--admin-border);
+}
+
+.sidebar .nav {
+    padding: 1rem 0;
+}
+
+.sidebar .nav-link {
+    color: #495057;
+    padding: 0.75rem 1.5rem;
+    transition: var(--admin-transition);
+    border-radius: 0.5rem;
+    margin: 0.25rem 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: var(--admin-primary);
+    transform: translateX(5px);
+}
+
+.sidebar .nav-link.active {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+}
+
+.sidebar .nav-link i {
+    width: 1.75rem;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+/* ========== TARJETAS DE ESTADÍSTICAS ========== */
+.stat-card {
+    border: none;
+    border-radius: 1rem;
+    transition: var(--admin-transition);
+    overflow: hidden;
+    position: relative;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--admin-shadow);
+}
+
+.stat-card .card-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+}
+
+.stat-card h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.stat-card h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.stat-card i {
+    opacity: 0.8;
+}
+
+/* Colores específicos para tarjetas de admin */
+.stat-card.bg-primary {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+}
+
+.stat-card.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+}
+
+.stat-card.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%);
+}
+
+.stat-card.bg-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+}
+
+.stat-card.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+}
+
+/* ========== CARDS GENERALES ========== */
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: var(--admin-shadow-sm);
+    transition: var(--admin-transition);
+    background: var(--admin-white);
+}
+
+.card:hover {
+    box-shadow: var(--admin-shadow);
+}
+
+.card-header {
+    background-color: var(--admin-white);
+    border-bottom: 1px solid var(--admin-border);
+    padding: 1rem 1.25rem;
+    border-radius: 1rem 1rem 0 0 !important;
+}
+
+.card-header h5 {
+    font-weight: 600;
+    color: var(--admin-gray-dark);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* ========== TABLAS ========== */
+.table-responsive {
+    border-radius: 0.75rem;
+    overflow-x: auto;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: var(--admin-gray-light);
+    color: var(--admin-gray-dark);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--admin-border);
+    padding: 1rem;
+}
+
+.table tbody td {
+    padding: 1rem;
+    vertical-align: middle;
+    color: #495057;
+}
+
+.table-hover tbody tr {
+    transition: var(--admin-transition);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+    transform: scale(1.01);
+}
+
+/* ========== BOTONES ========== */
+.btn {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    transition: var(--admin-transition);
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+    border: none;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%);
+    border: none;
+    color: #000;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+    border: none;
+    color: #000;
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 202, 240, 0.3);
+}
+
+.btn-outline-primary {
+    border-color: var(--admin-primary);
+    color: var(--admin-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--admin-primary);
+    border-color: var(--admin-primary);
+    transform: translateY(-2px);
+}
+
+.btn-sm {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+}
+
+/* ========== BADGES ========== */
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 2rem;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.badge-success {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+}
+
+.badge-warning {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #d39e00;
+}
+
+.badge-danger {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+}
+
+.badge-info {
+    background-color: rgba(13, 202, 240, 0.15);
+    color: #0aa2c0;
+}
+
+.badge-secondary {
+    background-color: rgba(108, 117, 125, 0.15);
+    color: #6c757d;
+}
+
+.badge-primary {
+    background-color: rgba(13, 110, 253, 0.15);
+    color: var(--admin-primary);
+}
+
+/* ========== FORMULARIOS ========== */
+.form-control, .form-select {
+    border-radius: 0.5rem;
+    border: 1px solid var(--admin-border);
+    padding: 0.6rem 1rem;
+    transition: var(--admin-transition);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--admin-gray-dark);
+    margin-bottom: 0.5rem;
+}
+
+/* ========== MODAL ========== */
+.modal-content {
+    border: none;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--admin-dark) 0%, #16213e 100%);
+    color: white;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+
+.modal-header .btn-close {
+    background-color: white;
+    border-radius: 50%;
+    opacity: 1;
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--admin-border);
+    padding: 1rem 1.5rem;
+}
+
+/* ========== ALERTAS ========== */
+.alert {
+    border: none;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #cff4fc;
+    color: #055160;
+}
+
+/* ========== PAGINACIÓN ========== */
+.pagination {
+    margin: 1rem 0;
+}
+
+.page-link {
+    color: var(--admin-primary);
+    border-radius: 0.5rem;
+    margin: 0 0.2rem;
+    transition: var(--admin-transition);
+}
+
+.page-link:hover {
+    background-color: var(--admin-primary);
+    border-color: var(--admin-primary);
+    color: white;
+}
+
+.page-item.active .page-link {
+    background-color: var(--admin-primary);
+    border-color: var(--admin-primary);
+}
+
+/* ========== SPINNER ========== */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+    border-width: 0.2rem;
+}
+
+/* ========== ANIMACIONES ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card, .stat-card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.stat-card:hover {
+    animation: pulse 0.5s ease;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 992px) {
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        transition: left 0.3s ease;
+        z-index: 1050;
+        width: 280px;
+    }
+
+    .sidebar.show {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .stat-card h2 {
+        font-size: 1.5rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .stat-card h2 {
+        font-size: 1.2rem;
+    }
+
+    .card-header h5 {
+        font-size: 1rem;
+    }
+
+    .btn {
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-card {
+        margin-bottom: 0.5rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.75rem;
+    }
+}
+
+/* ========== SCROLLBAR PERSONALIZADO ========== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--admin-primary-dark);
+}
+
+/* ========== UTILIDADES ADICIONALES ========== */
+.text-primary-custom {
+    color: var(--admin-primary);
+}
+
+.bg-primary-light {
+    background-color: var(--admin-primary-light);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.transition-all {
+    transition: var(--admin-transition);
+}
+
+.rounded-xl {
+    border-radius: 1rem;
+}
+
+.shadow-hover:hover {
+    box-shadow: var(--admin-shadow);
+}
+
+/* ========== GRÁFICOS ========== */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+canvas {
+    max-height: 300px;
+}
+
+/* ========== TARJETAS DE CURSOS / ITEMS ========== */
+.curso-card, .item-card {
+    border: none;
+    border-radius: 1rem;
+    transition: var(--admin-transition);
+    box-shadow: var(--admin-shadow-sm);
+    height: 100%;
+}
+
+.curso-card:hover, .item-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--admin-shadow);
+}
+
+.curso-card .card-title, .item-card .card-title {
+    color: var(--admin-primary);
+    font-weight: 700;
+}
+
+.curso-card .card-text, .item-card .card-text {
+    color: var(--admin-gray);
+    font-size: 0.9rem;
+}
+
+/* ========== EMPTY STATES ========== */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--admin-gray);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h4 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+}
+
+/* ========== DASHBOARD ADMIN ESPECÍFICO ========== */
+.dashboard-stats {
+    margin-bottom: 2rem;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.9;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ========== TABLA DE ACTIVIDADES ========== */
+.activity-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.activity-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+    border-left: 2px solid var(--admin-border);
+    padding-left: 1.5rem;
+}
+
+.activity-item::before {
+    content: '';
+    position: absolute;
+    left: -0.5rem;
+    top: 0;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    background: var(--admin-primary);
+}
+
+.activity-date {
+    font-size: 0.75rem;
+    color: var(--admin-gray);
+}
+
+.activity-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.activity-description {
+    font-size: 0.85rem;
+    color: var(--admin-gray);
+}
