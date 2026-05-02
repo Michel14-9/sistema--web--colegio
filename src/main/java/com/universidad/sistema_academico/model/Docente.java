@@ -5,9 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Entidad que representa la tabla "docente" en el esquema "academico".
- */
 @Entity
 @Table(name = "docente", schema = "academico")
 @Data
@@ -19,6 +16,11 @@ public class Docente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_docente")
     private Long idDocente;
+
+
+    @OneToOne
+    @JoinColumn(name = "usuario_id", referencedColumnName = "id")
+    private Usuario usuario;
 
     @Column(name = "codigo_docente", unique = true, nullable = false, length = 20)
     private String codigoDocente;

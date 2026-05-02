@@ -11,7 +11,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand" href="/docente/dashboard">
             <i class="fas fa-chalkboard-teacher me-2"></i>
@@ -20,13 +20,20 @@
         <div class="dropdown">
             <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                 <i class="fas fa-user-circle me-1"></i>
+
                 <span th:text="${docente.nombres}"></span>
-                <span th:text="${docente.apellidos}"></span>
+                <span th:text="${docente.apellidoPaterno}"></span>
+                <span th:text="${docente.apellidoMaterno}"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/logout">
-                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                </a></li>
+
+                <li>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </button>
+                    </form>
+                </li>
             </ul>
         </div>
     </div>
@@ -68,7 +75,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="card-title">Total de Cursos</h6>
-                                    <h3 class="mb-0" th:text="${totalCursos}"></h3>
+                                    <h3 class="mb-0" th:text="${totalCursos}">0</h3>
                                 </div>
                                 <i class="fas fa-chalkboard fa-3x"></i>
                             </div>
@@ -81,7 +88,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="card-title">Cursos Activos</h6>
-                                    <h3 class="mb-0" th:text="${cursosActivos}"></h3>
+                                    <h3 class="mb-0" th:text="${cursosActivos}">0</h3>
                                 </div>
                                 <i class="fas fa-play-circle fa-3x"></i>
                             </div>
@@ -94,7 +101,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="card-title">Cursos Inactivos</h6>
-                                    <h3 class="mb-0" th:text="${cursosInactivos}"></h3>
+                                    <h3 class="mb-0" th:text="${cursosInactivos}">0</h3>
                                 </div>
                                 <i class="fas fa-pause-circle fa-3x"></i>
                             </div>
@@ -108,32 +115,40 @@
                     <div class="card curso-card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <span class="badge" th:class="${curso.estado == 'ACTIVO'} ? 'badge-success' : 'badge-secondary'"
-                                          th:text="${curso.estado}"></span>
+                                <span class="badge" th:class="${curso.estado == 'ACTIVO'} ? 'bg-success' : 'bg-secondary'"
+                                      th:text="${curso.estado}">-</span>
                                 <i class="fas fa-graduation-cap fa-2x text-success"></i>
                             </div>
-                            <h5 class="card-title" th:text="${curso.nombreCurso}"></h5>
-                            <p class="card-text" th:text="${curso.descripcion}"></p>
+                            <h5 class="card-title" th:text="${curso.nombreCurso}">-</h5>
+                            <p class="card-text" th:text="${curso.descripcion}">Sin descripción</p>
                             <hr>
                             <div class="mb-2">
                                 <small class="text-muted">
                                     <i class="fas fa-hashtag me-1"></i> Código:
-                                    <strong th:text="${curso.codigoInterno}"></strong>
+
+                                    <strong th:text="${curso.codigoCurso}">-</strong>
                                 </small>
                             </div>
                             <div class="mb-2">
                                 <small class="text-muted">
-                                    <i class="fas fa-star me-1"></i> Créditos:
-                                    <strong th:text="${curso.creditos}"></strong>
+                                    <i class="fas fa-clock me-1"></i> Horas Semanales:
+                                    <strong th:text="${curso.horasSemanales}">0</strong>
+                                </small>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-layer-group me-1"></i> Área:
+                                    <strong th:text="${curso.area}">-</strong>
                                 </small>
                             </div>
                             <div class="mb-3">
                                 <small class="text-muted">
-                                    <i class="fas fa-users me-1"></i> Estudiantes:
-                                    <strong th:text="${curso.totalEstudiantes}"></strong>
+                                    <i class="fas fa-users me-1"></i> Grado:
+                                    <strong th:text="${curso.idGrado}">-</strong>
                                 </small>
                             </div>
-                            <a th:href="@{/docente/curso/{id}/estudiantes(id=${curso.cursoId})}"
+
+                            <a th:href="@{/docente/curso/{id}/estudiantes(id=${curso.idCurso})}"
                                class="btn btn-success w-100">
                                 <i class="fas fa-users me-2"></i>Ver Estudiantes
                             </a>
