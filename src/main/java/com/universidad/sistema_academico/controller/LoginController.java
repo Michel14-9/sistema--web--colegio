@@ -18,31 +18,6 @@ public class LoginController {
         return "redirect:/login";
     }
 
-    // Vistas del Administrador
-    @GetMapping("/admin/dashboard")
-    public String adminDashboard() {
-        return "admin/dashboard";
-    }
-
-    @GetMapping("/admin/estudiantes")
-    public String adminEstudiantes() {
-        return "admin/estudiantes";
-    }
-
-    @GetMapping("/admin/docentes")
-    public String adminDocentes() {
-        return "admin/docentes";
-    }
-
-    @GetMapping("/admin/cursos")
-    public String adminCursos() {
-        return "admin/cursos";
-    }
-
-    @GetMapping("/admin/matriculas")
-    public String adminMatriculas() {
-        return "admin/matriculas";
-    }
 
 
 

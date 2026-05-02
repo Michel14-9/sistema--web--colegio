@@ -5,10 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Entidad que representa la tabla "curso" en el esquema "academico".
- * Mapea todos los campos de la tabla de la base de datos PostgreSQL.
- */
+
 @Entity
 @Table(name = "curso", schema = "academico")
 @Data
@@ -44,4 +41,41 @@ public class Curso {
 
     @Column(name = "estado", length = 20)
     private String estado;
+
+
+    @PrePersist
+    public void generarCodigoAutomatico() {
+        if (codigoCurso == null || codigoCurso.isEmpty()) {
+            // Generar código basado en el nombre + timestamp
+            String siglas = obtenerSiglas(nombreCurso);
+            String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
+            this.codigoCurso = siglas + "-" + timestamp;
+        }
+    }
+
+    /**
+     * Método auxiliar para obtener las siglas del nombre del curso.
+     * Ejemplo: "Matemáticas Avanzadas" -> "MA"
+     */
+    private String obtenerSiglas(String nombre) {
+        if (nombre == null || nombre.isEmpty()) {
+            return "CUR";
+        }
+
+        String[] palabras = nombre.trim().split("\\s+");
+        StringBuilder siglas = new StringBuilder();
+
+        for (String palabra : palabras) {
+            if (palabra.length() > 0) {
+                siglas.append(Character.toUpperCase(palabra.charAt(0)));
+            }
+        }
+
+        // Si las siglas son muy cortas, usar primeras 3 letras del nombre
+        if (siglas.length() < 2 && nombre.length() >= 3) {
+            return nombre.substring(0, 3).toUpperCase();
+        }
+
+        return siglas.length() >= 2 ? siglas.toString() : "CUR";
+    }
 }
