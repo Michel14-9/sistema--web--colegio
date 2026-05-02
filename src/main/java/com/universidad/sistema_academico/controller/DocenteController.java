@@ -1,45 +1,105 @@
 package com.universidad.sistema_academico.controller;
 
 import com.universidad.sistema_academico.dto.DocenteDTO;
+import com.universidad.sistema_academico.model.Curso;
+import com.universidad.sistema_academico.model.Docente;
+import com.universidad.sistema_academico.model.Usuario;
+import com.universidad.sistema_academico.repository.CursoRepository;
+import com.universidad.sistema_academico.repository.DocenteRepository;
+import com.universidad.sistema_academico.repository.UsuarioRepository;
 import com.universidad.sistema_academico.service.DocenteService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controlador REST para gestionar operaciones CRUD de Docentes.
- * Base URL: /api/docentes
- */
-@RestController
-@RequestMapping("/api/docentes")
+
+@Controller  // Cambiado de @RestController a @Controller
+@RequestMapping("/docente")
 public class DocenteController {
 
     private final DocenteService docenteService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private DocenteRepository docenteRepository;
+
+    @Autowired
+    private CursoRepository cursoRepository;
 
     public DocenteController(DocenteService docenteService) {
         this.docenteService = docenteService;
     }
 
-    /**
-     * GET /api/docentes
-     * Lista todos los docentes.
-     */
-    @GetMapping
+
+
+    @GetMapping("/dashboard")
+    public String dashboard(Authentication authentication, Model model) {
+        try {
+            String email = authentication.getName();
+
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            Docente docente = docenteRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Docente no encontrado"));
+
+            List<Curso> cursos = cursoRepository.findByIdDocente(docente.getIdDocente());
+
+            model.addAttribute("docente", docente);
+            model.addAttribute("cursos", cursos != null ? cursos : List.of());
+            model.addAttribute("totalCursos", cursos != null ? cursos.size() : 0);
+            model.addAttribute("totalEstudiantes", 0);
+
+            return "docente/dashboard";
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
+    }
+
+    @GetMapping("/mis-cursos")
+    public String misCursos(Authentication authentication, Model model) {
+        try {
+            String email = authentication.getName();
+            Docente docente = docenteRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Docente no encontrado"));
+
+            List<Curso> cursos = cursoRepository.findByIdDocente(docente.getIdDocente());
+
+            model.addAttribute("cursos", cursos != null ? cursos : List.of());
+            model.addAttribute("docente", docente);
+
+            return "docente/mis-cursos";
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
+    }
+
+
+
+    @GetMapping("/api")
+    @ResponseBody
     public ResponseEntity<List<DocenteDTO>> listarTodos() {
         List<DocenteDTO> docentes = docenteService.listarTodos();
         return ResponseEntity.ok(docentes);
     }
 
-    /**
-     * GET /api/docentes/{id}
-     * Busca un docente por su ID.
-     */
-    @GetMapping("/{id}")
+    @GetMapping("/api/{id}")
+    @ResponseBody
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
             DocenteDTO docente = docenteService.buscarPorId(id);
@@ -50,11 +110,8 @@ public class DocenteController {
         }
     }
 
-    /**
-     * POST /api/docentes
-     * Crea un nuevo docente.
-     */
-    @PostMapping
+    @PostMapping("/api")
+    @ResponseBody
     public ResponseEntity<?> guardar(@Valid @RequestBody DocenteDTO docenteDTO) {
         try {
             DocenteDTO docenteGuardado = docenteService.guardar(docenteDTO);
@@ -65,11 +122,8 @@ public class DocenteController {
         }
     }
 
-    /**
-     * PUT /api/docentes/{id}
-     * Actualiza un docente existente.
-     */
-    @PutMapping("/{id}")
+    @PutMapping("/api/{id}")
+    @ResponseBody
     public ResponseEntity<?> actualizar(@PathVariable Long id,
                                         @Valid @RequestBody DocenteDTO docenteDTO) {
         try {
@@ -82,11 +136,8 @@ public class DocenteController {
         }
     }
 
-    /**
-     * DELETE /api/docentes/{id}
-     * Elimina un docente por su ID.
-     */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/api/{id}")
+    @ResponseBody
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
             docenteService.eliminar(id);
