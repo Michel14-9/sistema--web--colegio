@@ -4,13 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDate;
 
-/**
- * Entidad que representa la tabla "estudiante" en el esquema "academico".
- * Mapea todos los campos de la tabla de la base de datos PostgreSQL.
- */
 @Entity
 @Table(name = "estudiante", schema = "academico")
 @Data
@@ -22,6 +17,11 @@ public class Estudiante {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_estudiante")
     private Long idEstudiante;
+
+
+    @OneToOne
+    @JoinColumn(name = "usuario_id", referencedColumnName = "id")
+    private Usuario usuario;
 
     @Column(name = "codigo_estudiante", unique = true, nullable = false, length = 20)
     private String codigoEstudiante;
