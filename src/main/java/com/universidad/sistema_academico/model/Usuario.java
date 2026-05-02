@@ -39,10 +39,10 @@ public class Usuario {
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
 
-    // Constructor por defecto
+
     public Usuario() {}
 
-    // Constructor con campos principales
+
     public Usuario(String username, String password, String email, String nombre,
                    String apellido, String rol) {
         this.username = username;
