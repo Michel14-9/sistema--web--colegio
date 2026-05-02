@@ -15,7 +15,7 @@
 <body>
 
 <!-- Header / Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="/admin/dashboard">
             <i class="fas fa-user-shield me-2"></i>
@@ -24,12 +24,16 @@
         <div class="dropdown">
             <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
                 <i class="fas fa-user-circle me-1"></i>
-                <span>Administrador</span>
+                <span th:text="${#authentication.name}">Administrador</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/logout">
-                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                </a></li>
+                <li>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </button>
+                    </form>
+                </li>
             </ul>
         </div>
     </div>
@@ -66,9 +70,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/matricular">
+                        <a class="nav-link" href="/admin/matriculas">
                             <i class="fas fa-clipboard-check me-2"></i>
-                            Matriculas
+                            Matrículas
                         </a>
                     </li>
                 </ul>
@@ -83,41 +87,9 @@
                     <i class="fas fa-book me-2 text-warning"></i>
                     Gestión de Cursos
                 </h1>
-                <button class="btn btn-warning">
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#cursoModal" onclick="limpiarFormularioCurso()">
                     <i class="fas fa-plus me-2"></i>Nuevo Curso
                 </button>
-            </div>
-
-            <!-- Buscador y filtros -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <input type="text" class="form-control" placeholder="Buscar curso...">
-                        </div>
-                        <div class="col-md-2">
-                            <select class="form-select">
-                                <option value="">Créditos</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select class="form-select">
-                                <option value="">Todos los estados</option>
-                                <option value="ACTIVO">Activo</option>
-                                <option value="INACTIVO">Inactivo</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-outline-warning w-100">
-                                <i class="fas fa-search me-2"></i>Buscar
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Tabla de cursos -->
@@ -133,33 +105,46 @@
                                 <th>ID</th>
                                 <th>Código</th>
                                 <th>Nombre del Curso</th>
-                                <th>Créditos</th>
                                 <th>Horas</th>
-                                <th>Docente Asignado</th>
+                                <th>Área</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>MAT-101</td>
-                                <td>Matemáticas I</td>
-                                <td>4</td>
-                                <td>64</td>
-                                <td>María González</td>
-                                <td><span class="badge bg-success">ACTIVO</span></td>
+                            <tr th:each="curso : ${cursos}">
+                                <td th:text="${curso.idCurso}">-</td>
+                                <td th:text="${curso.codigoCurso}">-</td>
+                                <td th:text="${curso.nombreCurso}">-</td>
+                                <td th:text="${curso.horasSemanales}">-</td>
+                                <td th:text="${curso.area}">-</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary">
+                                        <span class="badge" th:class="${curso.estado == 'ACTIVO'} ? 'bg-success' : 'bg-danger'"
+                                              th:text="${curso.estado}">-</span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-primary"
+                                            onclick="editarCurso(
+                                                    '${curso.idCurso}',
+                                                    '${curso.codigoCurso}',
+                                                    '${curso.nombreCurso}',
+                                                    '${curso.descripcion}',
+                                                    '${curso.horasSemanales}',
+                                                    '${curso.area}',
+                                                    '${curso.idGrado}',
+                                                    '${curso.idDocente}',
+                                                    '${curso.estado}'
+                                                )" data-bs-toggle="modal" data-bs-target="#cursoModal">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger">
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                            onclick="confirmarEliminarCurso(${curso.idCurso}, '${curso.nombreCurso}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
                             </tr>
-                            <tr>
-                                <td colspan="8" class="text-center py-4">
+                            <tr th:if="${cursos == null or cursos.empty}">
+                                <td colspan="7" class="text-center py-4">
                                     <i class="fas fa-book fa-3x text-muted mb-2 d-block"></i>
                                     No hay cursos registrados
                                 </td>
@@ -169,26 +154,87 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Paginación -->
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#">Anterior</a>
-                    </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Siguiente</a>
-                    </li>
-                </ul>
-            </nav>
+<!-- MODAL para Nuevo/Editar Curso -->
+<div class="modal fade" id="cursoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="fas fa-book me-2"></i>
+                    <span id="modalTitulo">Nuevo Curso</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="cursoForm" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="cursoId" name="idCurso">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Código del Curso</label>
+                            <input type="text" class="form-control" id="codigoCurso" name="codigoCurso"
+                                   readonly style="background-color: #e9ecef;" placeholder="Se generará automáticamente">
+                            <small class="text-muted">El código se genera automáticamente al guardar</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre del Curso *</label>
+                            <input type="text" class="form-control" id="nombreCurso" name="nombreCurso" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="2"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Horas Semanales</label>
+                            <input type="number" class="form-control" id="horasSemanales" name="horasSemanales">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Área</label>
+                            <input type="text" class="form-control" id="area" name="area">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Grado</label>
+                            <input type="number" class="form-control" id="idGrado" name="idGrado">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Docente Asignado</label>
+                            <select class="form-select" id="idDocente" name="idDocente">
+                                <option value="">Seleccionar docente...</option>
+                                <option th:each="docente : ${docentes}" th:value="${docente.idDocente}"
+                                        th:text="${docente.nombres + ' ' + docente.apellidoPaterno + ' ' + docente.apellidoMaterno}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="ACTIVO">ACTIVO</option>
+                                <option value="INACTIVO">INACTIVO</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Guardar</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/curso.js}"></script>
 </body>
 </html>
