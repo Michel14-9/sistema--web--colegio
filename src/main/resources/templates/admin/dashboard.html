@@ -27,7 +27,6 @@
                 <span th:text="${#authentication.name}"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <!-- ✅ CORREGIDO: formulario POST para logout -->
                 <li>
                     <form th:action="@{/logout}" method="post" style="display: inline;">
                         <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
@@ -71,9 +70,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/matricular">
+                        <a class="nav-link" href="/admin/matriculas">
                             <i class="fas fa-clipboard-check me-2"></i>
-                            Matriculas
+                            Matrículas
                         </a>
                     </li>
                 </ul>
@@ -82,7 +81,6 @@
 
         <!-- Main Content -->
         <div class="col-md-10 col-lg-10 ms-sm-auto px-4 py-3">
-            <!-- Bienvenida -->
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">
                     <i class="fas fa-tachometer-alt me-2 text-primary"></i>
@@ -166,7 +164,21 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr>
+                            <tr th:each="actividad : ${ultimasActividades}">
+                                <td th:text="${#temporals.format(actividad.fecha, 'dd/MM/yyyy HH:mm:ss')}">-</td>
+                                <td th:text="${actividad.usuario}">-</td>
+                                <td>
+                            <span th:switch="${actividad.accion}" class="badge">
+                                <span th:case="'LOGIN'" class="bg-success" th:text="${actividad.accion}"></span>
+                                <span th:case="'CREAR'" class="bg-primary" th:text="${actividad.accion}"></span>
+                                <span th:case="'EDITAR'" class="bg-warning" th:text="${actividad.accion}"></span>
+                                <span th:case="'ELIMINAR'" class="bg-danger" th:text="${actividad.accion}"></span>
+                                <span th:case="*" class="bg-secondary" th:text="${actividad.accion}"></span>
+                            </span>
+                                </td>
+                                <td th:text="${actividad.detalle}">-</td>
+                            </tr>
+                            <tr th:if="${ultimasActividades == null or ultimasActividades.empty}">
                                 <td colspan="4" class="text-center py-4">
                                     <i class="fas fa-history fa-3x text-muted mb-2 d-block"></i>
                                     No hay actividades recientes
@@ -181,7 +193,6 @@
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
