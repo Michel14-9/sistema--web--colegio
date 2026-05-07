@@ -2,151 +2,120 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Cursos Disponibles</title>
+    <title>Cursos Disponibles - Estudiante</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link th:href="@{/static/css/estudiante.css}" rel="stylesheet">
+    <link th:href="@{/css/estudiante.css}" rel="stylesheet">
 </head>
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container-fluid"> <a class="navbar-brand" href="/estudiante/dashboard.html"> <i
-                    class="fas fa-chalkboard-teacher me-2"></i> Sistema Académico - Estudiante </a>
-            <div class="dropdown"> 
-                <button class="btn btn-light dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown"> <i class="fas fa-user-circle me-1"></i> 
-                    <span th:text="${docente.nombres}"></span> 
-                    <span th:text="${docente.apellidos}"></span> 
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/logout"> <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                        </a></li>
-                </ul>
-            </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/estudiante/dashboard">
+            <i class="fas fa-user-graduate me-2"></i>
+            Sistema Académico - Estudiante
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle me-1"></i>
+                <span th:text="${#authentication.name}"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </button>
+                    </form>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
 <div class="container-fluid">
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-2 sidebar p-0">
-            <li>
-    <a class="nav-link" href="/estudiante/dashboard.html">
-        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-    </a>
-</li>
-
-<li>
-    <a class="nav-link" href="/estudiante/mis-cursos.html">
-        <i class="fas fa-book me-2"></i> Mis Cursos
-    </a>
-</li>
-
-<li>
-    <a class="nav-link active" href="/estudiante/cursos-disponibles.html">
-        <i class="fas fa-list me-2"></i> Cursos Disponibles
-    </a>
-</li>
-
-<li>
-    <a class="nav-link" href="/estudiante/docentes-disponibles.html">
-        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
-    </a>
-</li>
-
-<li>
-    <a class="nav-link" href="/estudiante/mi-matricula.html">
-        <i class="fas fa-file-signature me-2"></i> Mi Matrícula
-    </a>
-</li>
+        <div class="col-md-2 sidebar p-0 bg-light">
+            <ul class="nav flex-column pt-3">
+                <li class="nav-item">
+                    <a class="nav-link" href="/estudiante/dashboard">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/estudiante/cursos">
+                        <i class="fas fa-book me-2"></i> Mis Cursos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/estudiante/cursos-disponibles">
+                        <i class="fas fa-list me-2"></i> Cursos Disponibles
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/estudiante/matricula">
+                        <i class="fas fa-file-signature me-2"></i> Mi Matrícula
+                    </a>
+                </li>
+            </ul>
         </div>
 
         <!-- CONTENIDO -->
         <div class="col-md-10 p-4">
-
-            <h2 class="mb-4">
-                <i class="fas fa-list text-success me-2"></i>
-                Cursos Disponibles
-            </h2>
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-list me-2 text-primary"></i>
+                    Cursos Disponibles
+                </h1>
+            </div>
 
             <div class="card">
                 <div class="card-body">
-
-                    <table class="table table-hover">
-                        <thead>
-                        <tr>
-                            <th>Curso</th>
-                            <th>Créditos</th>
-                            <th>Acción</th>
-                        </tr>
-                        </thead>
-
-                        <tbody>
-                        <tr th:each="curso : ${cursosDisponibles}">
-                            <td th:text="${curso.nombre}">Ingles I</td>
-                            <td th:text="${curso.creditos}">3</td>
-                            <td>
-                                <form th:action="@{/estudiante/matricular}" method="post">
-                                    <input type="hidden" name="cursoId" th:value="${curso.id}">
-                                    <a href="/estudiante/mi-matricula.html" class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus me-1"></i> Matricular
-                                    </a>
-                                </form>
-                            </td>
-                        </tr>
-                        <tr th:each="curso : ${cursosDisponibles}">
-                            <td th:text="${curso.nombre}">Arte </td>
-                            <td th:text="${curso.creditos}">3</td>
-                            <td>
-                                <form th:action="@{/estudiante/matricular}" method="post">
-                                    <input type="hidden" name="cursoId" th:value="${curso.id}">
-                                    <a href="/estudiante/mi-matricula.html" class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus me-1"></i> Matricular
-                                    </a>
-                                </form>
-                            </td>
-                        </tr>
-                        <tr th:each="curso : ${cursosDisponibles}">
-                            <td th:text="${curso.nombre}">Religión</td>
-                            <td th:text="${curso.creditos}">2</td>
-                            <td>
-                                <form th:action="@{/estudiante/matricular}" method="post">
-                                    <input type="hidden" name="cursoId" th:value="${curso.id}">
-                                    <a href="/estudiante/mi-matricula.html" class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus me-1"></i> Matricular
-                                    </a>
-                                </form>
-                            </td>
-                        </tr> 
-                        <tr th:each="curso : ${cursosDisponibles}">
-                            <td th:text="${curso.nombre}">Educación para el Trabajo</td>
-                            <td th:text="${curso.creditos}">2</td>
-                            <td>
-                                <form th:action="@{/estudiante/matricular}" method="post">
-                                    <input type="hidden" name="cursoId" th:value="${curso.id}">
-                                    <a href="/estudiante/mi-matricula.html" class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus me-1"></i> Matricular
-                                    </a>
-                                </form>
-                            </td>
-                        </tr>
-
-                        
-                        </tbody>
-
-                    </table>
-
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Curso</th>
+                                <th>Área</th>
+                                <th>Horas</th>
+                                <th>Acción</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="curso : ${cursosDisponibles}">
+                                <td th:text="${curso.codigoCurso}">-</td>
+                                <td th:text="${curso.nombreCurso}">-</td>
+                                <td th:text="${curso.area}">-</td>
+                                <td th:text="${curso.horasSemanales}">-</td>
+                                <td>
+                                    <form th:action="@{/estudiante/matricular}" method="post" class="d-inline">
+                                        <input type="hidden" name="cursoId" th:value="${curso.idCurso}">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="fas fa-plus me-1"></i> Matricular
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr th:if="${cursosDisponibles == null or cursosDisponibles.empty}">
+                                <td colspan="5" class="text-center py-4">
+                                    <i class="fas fa-book-open fa-3x text-muted d-block mb-2"></i>
+                                    No hay cursos disponibles
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-
-
 </body>
 </html>

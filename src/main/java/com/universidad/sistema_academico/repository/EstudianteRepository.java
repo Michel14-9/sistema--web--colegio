@@ -40,4 +40,11 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
      * @return true si existe, false si no
      */
     boolean existsByDni(String dni);
+
+    /**
+     * Busca un estudiante por el ID de usuario asociado.
+     * @param usuarioId ID del usuario en la tabla public.usuarios
+     * @return Optional con el estudiante encontrado
+     */
+    Optional<Estudiante> findByUsuarioId(Long usuarioId);
 }

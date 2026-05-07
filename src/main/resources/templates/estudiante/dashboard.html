@@ -4,117 +4,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Estudiante</title> <!-- Bootstrap -->
+    <title>Dashboard - Estudiante</title>
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- CSS -->
-    <link th:href="@{/static/css/estudiante.css}" rel="stylesheet">
+    <link th:href="@{/css/estudiante.css}" rel="stylesheet">
 </head>
 
-<body> <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container-fluid"> <a class="navbar-brand" href="/estudiante/dashboard.html"> <i
-                    class="fas fa-chalkboard-teacher me-2"></i> Sistema Académico - Estudiante </a>
-            <div class="dropdown"> 
-                <button class="btn btn-light dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown"> <i class="fas fa-user-circle me-1"></i> 
-                    <span th:text="${docente.nombres}"></span> 
-                    <span th:text="${docente.apellidos}"></span> 
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="/logout"> <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                        </a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+<body>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-        <div class="row"> <!-- SIDEBAR -->
-            <div class="col-md-2 sidebar p-0">
-                <ul class="nav flex-column pt-3">
-                    <li class="nav-item"> <a class="nav-link active" href="/estudiante/dashboard.html"> <i
-                                class="fas fa-tachometer-alt me-2"></i> Dashboard </a> </li>
-                    <li class="nav-item"> <a class="nav-link" href="/estudiante/mis-cursos.html"> <i
-                                class="fas fa-book me-2"></i> Mis Cursos </a> </li>
-                    <li class="nav-item"> <a class="nav-link" href="/estudiante/cursos-disponibles.html"> <i
-                                class="fas fa-list me-2"></i> Cursos Disponibles </a> </li>
-                    <li class="nav-item"> <a class="nav-link" href="/estudiante/docentes-disponibles.html"> <i
-                                class="fas fa-chalkboard-teacher me-2"></i> Docentes </a> </li>
-                    <li class="nav-item"> <a class="nav-link" href="/estudiante/mi-matricula.html"> <i
-                                class="fas fa-file-signature me-2"></i> Mi Matrícula </a> </li>
-                </ul>
-            </div> <!-- CONTENIDO -->
-            <div class="col-md-10 px-4 py-3"> <!-- TÍTULO -->
-                <h2 class="mb-4"> <i class="fas fa-tachometer-alt text-success me-2"></i> Dashboard </h2> 
-                <!-- CARDS -->
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="card bg-success text-white stat-card">
-                            <div class="card-body d-flex justify-content-between">
-                                <div>
-                                    <h6>Cursos Matriculados</h6>
-                                    <h2 th:text="${totalCursos}">0</h2>
-                                </div> <i class="fas fa-book fa-3x"></i>
+        <a class="navbar-brand" href="/estudiante/dashboard">
+            <i class="fas fa-user-graduate me-2"></i>
+            Sistema Académico - Estudiante
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle me-1"></i>
+                <!--  CORREGIDO: usar estudiante.nombres y #authentication.name -->
+                <span th:text="${#authentication.name}"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- SIDEBAR -->
+        <div class="col-md-2 col-lg-2 d-md-block sidebar p-0 bg-light">
+            <ul class="nav flex-column pt-3">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/estudiante/dashboard">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/estudiante/cursos">
+                        <i class="fas fa-book me-2"></i> Mis Cursos
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="col-md-10 col-lg-10 ms-sm-auto px-4 py-3">
+            <!-- TÍTULO -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+                    Panel del Estudiante
+                </h1>
+            </div>
+
+            <!-- MENSAJE DE BIENVENIDA -->
+            <div class="alert alert-success">
+                <h4><i class="fas fa-check-circle me-2"></i> ¡Bienvenido Estudiante!</h4>
+                <p>Has iniciado sesión correctamente en el sistema académico.</p>
+                <p>Email: <strong th:text="${#authentication.name}"></strong></p>
+            </div>
+
+            <!-- CARDS DE ESTADÍSTICAS -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-success text-white stat-card">
+                        <div class="card-body d-flex justify-content-between">
+                            <div>
+                                <h6>Cursos Matriculados</h6>
+                                <h2 th:text="${totalCursos}">0</h2>
                             </div>
+                            <i class="fas fa-book fa-3x"></i>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card bg-primary text-white stat-card">
-                            <div class="card-body d-flex justify-content-between">
-                                <div>
-                                    <h6>Créditos Totales</h6>
-                                    <h2 th:text="${totalCreditos}">0</h2>
-                                </div> <i class="fas fa-layer-group fa-3x"></i>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white stat-card">
+                        <div class="card-body d-flex justify-content-between">
+                            <div>
+                                <h6>Estado</h6>
+                                <h2 class="h4" th:text="${estado}">ACTIVO</h2>
                             </div>
+                            <i class="fas fa-graduation-cap fa-3x"></i>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card bg-info text-white stat-card">
-                            <div class="card-body d-flex justify-content-between">
-                                <div>
-                                    <h6>Ciclo</h6>
-                                    <h2 th:text="${estudiante.ciclo}">-</h2>
-                                </div> <i class="fas fa-graduation-cap fa-3x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div> <!-- TABLA -->
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between">
-                        <h5> <i class="fas fa-book me-2 text-success"></i> Mis Cursos </h5> <a
-                            href="/estudiante/mis-cursos.html" class="btn btn-outline-success btn-sm"> Ver todos </a>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Curso</th>
-                                    <th>Créditos</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="curso : ${cursos}">
-                                    <td th:text="${curso.codigo}"></td>
-                                    <td th:text="${curso.nombre}"></td>
-                                    <td th:text="${curso.creditos}"></td>
-                                    <td> <span class="badge bg-success" th:text="${curso.estado}"></span> </td>
-                                </tr>
-                                <tr th:if="${cursos == null or cursos.empty}">
-                                    <td colspan="4" class="text-center py-4"> <i
-                                            class="fas fa-book-open fa-3x text-muted d-block mb-2"></i> No tienes cursos
-                                        matriculados </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA DE CURSOS -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5><i class="fas fa-book me-2 text-success"></i> Mis Cursos</h5>
+                    <a href="/estudiante/cursos" class="btn btn-outline-success btn-sm">Ver todos</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Curso</th>
+                            <th>Estado</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="curso : ${cursos}">
+                            <td th:text="${curso.codigoCurso}">-</td>
+                            <td th:text="${curso.nombreCurso}">-</td>
+                            <td>
+                                        <span class="badge" th:class="${curso.estado == 'ACTIVO'} ? 'bg-success' : 'bg-secondary'"
+                                              th:text="${curso.estado}">-</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${cursos == null or cursos.empty}">
+                            <td colspan="3" class="text-center py-4">
+                                <i class="fas fa-book-open fa-3x text-muted d-block mb-2"></i>
+                                No tienes cursos matriculados
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>

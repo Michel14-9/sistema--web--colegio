@@ -2,169 +2,107 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Mis Cursos</title>
+    <title>Mis Cursos - Estudiante</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link th:href="@{/static/css/estudiante.css}" rel="stylesheet">
+    <link th:href="@{/css/estudiante.css}" rel="stylesheet">
 </head>
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-success">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/estudiante/dashboard.html">
-            <i class="fas fa-chalkboard-teacher me-2"></i>
+        <a class="navbar-brand" href="/estudiante/dashboard">
+            <i class="fas fa-user-graduate me-2"></i>
             Sistema Académico - Estudiante
         </a>
 
         <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown"> <i class="fas fa-user-circle me-1"></i> 
-                    <span th:text="${docente.nombres}"></span> 
-                    <span th:text="${docente.apellidos}"></span> 
+            <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle me-1"></i>
+                <span th:text="${#authentication.name}"></span>
             </button>
-
             <ul class="dropdown-menu dropdown-menu-end">
                 <li>
-                    <a class="dropdown-item" href="/logout">
-                        <i class="fas fa-sign-out-alt me-2"></i>
-                        Cerrar Sesión
-                    </a>
+                    <form th:action="@{/logout}" method="post" style="display: inline;">
+                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </button>
+                    </form>
                 </li>
             </ul>
         </div>
     </div>
-    
 </nav>
 
 <div class="container-fluid">
-<div class="row">
-
-<!-- SIDEBAR -->
-<div class="col-md-2 sidebar p-0">
-    <ul class="nav flex-column pt-3">
-
-        <li><a class="nav-link" href="/estudiante/dashboard.html">
-            <i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
-
-        <li><a class="nav-link active" href="/estudiante/mis-cursos.html">
-            <i class="fas fa-book me-2"></i> Mis Cursos</a></li>
-
-        <li><a class="nav-link" href="/estudiante/cursos-disponibles.html">
-            <i class="fas fa-list me-2"></i> Cursos Disponibles</a></li>
-
-        <li><a class="nav-link" href="/estudiante/docentes-disponibles.html">
-            <i class="fas fa-chalkboard-teacher me-2"></i> Docentes</a></li>
-
-        <li><a class="nav-link" href="/estudiante/mi-matricula.html">
-            <i class="fas fa-file-signature me-2"></i> Mi Matrícula</a></li>
-
-    </ul>
-</div>
-
-<!-- CONTENIDO -->
-<div class="col-md-10 p-4">
-
-    <h2 class="mb-4">
-        <i class="fas fa-book text-success me-2"></i>
-        Mis Cursos
-    </h2>
-
-    <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold">Cursos Disponibles</h5>
-        <a href="mis-cursos.html" class="btn btn-outline-success btn-sm">Ver todos</a>
-    </div>
-
     <div class="row">
 
-        <!-- Card 1 -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <img src="https://img.freepik.com/vector-gratis/pequenos-estudiantes-gran-signo-pi-ilustracion-vectorial-plana-nino-nina-estudiando-matematicas-algebra-escuela-o-universidad-sosteniendo-regla-usando-computadora-portatil-figuras-geometricas-segundo-plano-concepto-educacion_74855-23227.jpg?semt=ais_hybrid&w=740&q=80" class="card-img-top" alt="Curso">
-                <div class="card-body">
-                    <h6 class="fw-bold">Matemáticas</h6>
-                    <p class="text-muted small">
-                        Aprende a resolver problemas y desarrollar el pensamiento logico.
-                    </p>
-                </div>
-            </div>
+        <!-- SIDEBAR -->
+        <div class="col-md-2 sidebar p-0 bg-light">
+            <ul class="nav flex-column pt-3">
+                <li class="nav-item">
+                    <a class="nav-link" href="/estudiante/dashboard">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/estudiante/cursos">
+                        <i class="fas fa-book me-2"></i> Mis Cursos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/estudiante/matricula">
+                        <i class="fas fa-file-signature me-2"></i> Mi Matrícula
+                    </a>
+                </li>
+            </ul>
         </div>
 
-        <!-- Card 2 -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <img src="https://cdn.aicad.es/asset/img/4/que-es-la-comunicacion.png" class="card-img-top" alt="Curso">
-                <div class="card-body">
-                    <h6 class="fw-bold">Comunicación</h6>
-                    <p class="text-muted small">
-                        Comprenderas lo esencial para la interacción social, la convivencia y el desarrollo.
-                    </p>
-                </div>
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    Mis Cursos
+                </h1>
             </div>
-        </div>
 
-        <!-- Card 3 -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <img src="https://cdn.aicad.es/asset/img/4/formacion-civica-y-etica-un-pilar-fundamental-para-el-desarrollo-social.png" alt="Curso">
-                <div class="card-body">
-                    <h6 class="fw-bold">Educación Cívica</h6>
-                    <p class="text-muted small">
-                         Aprenderas y pondrás en práctica los derechos, deberes y comportamiento ciudadano en sociedad.
-                    </p>
+            <div class="row">
+                <!-- Card dinámico desde la base de datos -->
+                <div class="col-md-4 mb-4" th:each="curso : ${cursos}">
+                    <div class="card h-100 shadow-sm border-0">
+                        <img src="https://img.freepik.com/vector-gratis/pequenos-estudiantes-gran-signo-pi-ilustracion-vectorial-plana-nino-nina-estudiando-matematicas-algebra-escuela-o-universidad-sosteniendo-regla-usando-computadora-portatil-figuras-geometricas-segundo-plano-concepto-educacion_74855-23227.jpg"
+                             class="card-img-top" alt="Curso">
+                        <div class="card-body">
+                            <h5 class="fw-bold" th:text="${curso.nombreCurso}">-</h5>
+                            <p class="text-muted small" th:text="${curso.descripcion ?: 'Sin descripción'}">-</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge" th:class="${curso.estado == 'ACTIVO'} ? 'bg-success' : 'bg-secondary'"
+                                      th:text="${curso.estado}">-</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-code me-1"></i>
+                                    <span th:text="${curso.codigoCurso}">-</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <!-- Card 1 -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <img src="https://img.freepik.com/vector-gratis/pequenos-estudiantes-gran-signo-pi-ilustracion-vectorial-plana-nino-nina-estudiando-matematicas-algebra-escuela-o-universidad-sosteniendo-regla-usando-computadora-portatil-figuras-geometricas-segundo-plano-concepto-educacion_74855-23227.jpg?semt=ais_hybrid&w=740&q=80" class="card-img-top" alt="Curso">
-                <div class="card-body">
-                    <h6 class="fw-bold">Matemáticas</h6>
-                    <p class="text-muted small">
-                        Aprende a resolver problemas y desarrollar el pensamiento logico.
-                    </p>
-                </div>
-            </div>
-        </div>
 
-        <!-- Card 2 -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <img src="https://cdn.aicad.es/asset/img/4/que-es-la-comunicacion.png" class="card-img-top" alt="Curso">
-                <div class="card-body">
-                    <h6 class="fw-bold">Comunicación</h6>
-                    <p class="text-muted small">
-                        Comprenderas lo esencial para la interacción social, la convivencia y el desarrollo.
-                    </p>
+                <!-- Mensaje cuando no hay cursos -->
+                <div th:if="${cursos == null or cursos.empty}" class="col-12">
+                    <div class="alert alert-info text-center py-5">
+                        <i class="fas fa-book-open fa-4x mb-3 d-block text-muted"></i>
+                        <h5>No tienes cursos matriculados</h5>
+                        <p>Actualmente no estás matriculado en ningún curso.</p>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Card 3 -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm border-0">
-                <img src="https://cdn.aicad.es/asset/img/4/formacion-civica-y-etica-un-pilar-fundamental-para-el-desarrollo-social.png" alt="Curso">
-                <div class="card-body">
-                    <h6 class="fw-bold">Educación Cívica</h6>
-                    <p class="text-muted small">
-                         Aprenderas y pondrás en práctica los derechos, deberes y comportamiento ciudadano en sociedad.
-                    </p>
-                </div>
-            </div>
-        </div>
-
     </div>
 </div>
 
-    
-
-</div>
-</div>
-</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>
