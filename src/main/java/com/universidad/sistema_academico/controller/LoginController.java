@@ -23,19 +23,5 @@ public class LoginController {
 
 
 
-    // Vistas del Estudiante
-    @GetMapping("/estudiante/dashboard")
-    public String estudianteDashboard() {
-        return "estudiante/dashboard";
-    }
 
-    @GetMapping("/estudiante/cursos")
-    public String estudianteCursos() {
-        return "estudiante/cursos-disponibles";
-    }
-
-    @GetMapping("/estudiante/matricula")
-    public String estudianteMatricula() {
-        return "estudiante/mi-matricula";
-    }
 }

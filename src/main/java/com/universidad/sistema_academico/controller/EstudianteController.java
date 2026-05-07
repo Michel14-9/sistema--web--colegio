@@ -1,51 +1,156 @@
 package com.universidad.sistema_academico.controller;
 
 import com.universidad.sistema_academico.dto.EstudianteDTO;
+import com.universidad.sistema_academico.model.Curso;
+import com.universidad.sistema_academico.model.Docente;
+import com.universidad.sistema_academico.model.Estudiante;
+import com.universidad.sistema_academico.model.Matricula;
+import com.universidad.sistema_academico.model.Usuario;
+import com.universidad.sistema_academico.repository.CursoRepository;
+import com.universidad.sistema_academico.repository.DocenteRepository;
+import com.universidad.sistema_academico.repository.EstudianteRepository;
+import com.universidad.sistema_academico.repository.MatriculaRepository;
+import com.universidad.sistema_academico.repository.UsuarioRepository;
 import com.universidad.sistema_academico.service.EstudianteService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Controlador REST para gestionar operaciones CRUD de Estudiantes.
- * Base URL: /api/estudiantes
+ * Controlador unificado para Estudiantes.
+ * Maneja tanto vistas MVC como API REST.
  */
-@RestController
-@RequestMapping("/api/estudiantes")
-@CrossOrigin(origins = "*") // Permitir peticiones desde cualquier origen (ajustar en producción)
+@Controller
+@RequestMapping("/estudiante")
 public class EstudianteController {
+
+    // ==================== SERVICIOS Y REPOSITORIOS ====================
 
     private final EstudianteService estudianteService;
 
-    // Inyección de dependencias por constructor
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EstudianteRepository estudianteRepository;
+
+    @Autowired
+    private CursoRepository cursoRepository;
+
+    @Autowired
+    private DocenteRepository docenteRepository;
+
+    @Autowired
+    private MatriculaRepository matriculaRepository;
+
     public EstudianteController(EstudianteService estudianteService) {
         this.estudianteService = estudianteService;
     }
 
-    // ========================
-    // ENDPOINTS CRUD
-    // ========================
+    // ==================== VISTAS MVC ====================
 
-    /**
-     * GET /api/estudiantes
-     * Lista todos los estudiantes.
-     */
-    @GetMapping
+    @GetMapping("/dashboard")
+    public String dashboard(Authentication authentication, Model model) {
+        try {
+            String email = authentication.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            Estudiante estudiante = estudianteRepository.findByUsuarioId(usuario.getId())
+                    .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+
+            List<Curso> cursos = cursoRepository.findAll();
+
+            model.addAttribute("estudiante", estudiante);
+            model.addAttribute("cursos", cursos != null ? cursos : List.of());
+            model.addAttribute("totalCursos", cursos != null ? cursos.size() : 0);
+
+            return "estudiante/dashboard";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
+    }
+
+    @GetMapping("/cursos")
+    public String misCursos(Authentication authentication, Model model) {
+        try {
+            String email = authentication.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            Estudiante estudiante = estudianteRepository.findByUsuarioId(usuario.getId())
+                    .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+
+            List<Curso> cursos = cursoRepository.findAll();
+
+            model.addAttribute("cursos", cursos != null ? cursos : List.of());
+            model.addAttribute("estudiante", estudiante);
+
+            return "estudiante/mis-cursos";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
+    }
+
+    @GetMapping("/cursos-disponibles")
+    public String cursosDisponibles(Model model) {
+        List<Curso> cursos = cursoRepository.findAll();
+        model.addAttribute("cursosDisponibles", cursos != null ? cursos : List.of());
+        return "estudiante/cursos-disponibles";
+    }
+
+    @GetMapping("/docentes-disponibles")
+    public String docentes(Model model) {
+        List<Docente> docentes = docenteRepository.findAll();
+        model.addAttribute("docentes", docentes != null ? docentes : List.of());
+        return "estudiante/docentes-disponibles";
+    }
+
+    @GetMapping("/matricula")
+    public String miMatricula(Authentication authentication, Model model) {
+        try {
+            String email = authentication.getName();
+            Usuario usuario = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            Estudiante estudiante = estudianteRepository.findByUsuarioId(usuario.getId())
+                    .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+
+            List<Matricula> matriculas = matriculaRepository.findByEstudianteIdEstudiante(estudiante.getIdEstudiante());
+
+            model.addAttribute("matriculas", matriculas != null ? matriculas : List.of());
+            model.addAttribute("estudiante", estudiante);
+
+            return "estudiante/mi-matricula";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
+    }
+
+    // ==================== API REST ====================
+
+    @GetMapping("/api")
+    @ResponseBody
     public ResponseEntity<List<EstudianteDTO>> listarTodos() {
         List<EstudianteDTO> estudiantes = estudianteService.listarTodos();
         return ResponseEntity.ok(estudiantes);
     }
 
-    /**
-     * GET /api/estudiantes/{id}
-     * Busca un estudiante por su ID.
-     */
-    @GetMapping("/{id}")
+    @GetMapping("/api/{id}")
+    @ResponseBody
     public ResponseEntity<?> buscarPorId(@PathVariable Long id) {
         try {
             EstudianteDTO estudiante = estudianteService.buscarPorId(id);
@@ -56,11 +161,8 @@ public class EstudianteController {
         }
     }
 
-    /**
-     * POST /api/estudiantes
-     * Crea un nuevo estudiante.
-     */
-    @PostMapping
+    @PostMapping("/api")
+    @ResponseBody
     public ResponseEntity<?> guardar(@Valid @RequestBody EstudianteDTO estudianteDTO) {
         try {
             EstudianteDTO estudianteGuardado = estudianteService.guardar(estudianteDTO);
@@ -71,11 +173,8 @@ public class EstudianteController {
         }
     }
 
-    /**
-     * PUT /api/estudiantes/{id}
-     * Actualiza un estudiante existente.
-     */
-    @PutMapping("/{id}")
+    @PutMapping("/api/{id}")
+    @ResponseBody
     public ResponseEntity<?> actualizar(@PathVariable Long id,
                                         @Valid @RequestBody EstudianteDTO estudianteDTO) {
         try {
@@ -88,11 +187,8 @@ public class EstudianteController {
         }
     }
 
-    /**
-     * DELETE /api/estudiantes/{id}
-     * Elimina un estudiante por su ID.
-     */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/api/{id}")
+    @ResponseBody
     public ResponseEntity<?> eliminar(@PathVariable Long id) {
         try {
             estudianteService.eliminar(id);
@@ -106,13 +202,8 @@ public class EstudianteController {
         }
     }
 
-    // ========================
-    // MÉTODOS AUXILIARES
-    // ========================
+    // ==================== MÉTODO AUXILIAR ====================
 
-    /**
-     * Crea un mapa con el mensaje de error para respuestas JSON consistentes.
-     */
     private Map<String, String> crearMensajeError(String mensaje) {
         Map<String, String> error = new HashMap<>();
         error.put("error", mensaje);
