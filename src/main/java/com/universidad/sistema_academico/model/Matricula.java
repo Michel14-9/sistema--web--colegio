@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.universidad.sistema_academico.model.Curso;
-import com.universidad.sistema_academico.model.Estudiante;
 
 import java.time.LocalDate;
 
