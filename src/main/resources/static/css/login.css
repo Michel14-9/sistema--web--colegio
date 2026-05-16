@@ -1,218 +1,291 @@
+/* ========== VARIABLES ========== */
 :root {
-    --primary-color: #0d6efd;
-    --primary-dark: #0a58ca;
-    --secondary-color: #6c757d;
-    --background-light: #f8f9fa;
-    --text-dark: #212529;
-    --text-muted: #6c757d;
-    --border-color: #dee2e6;
-    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --primary-blue: #1A3A5F;
+    --primary-dark: #0F2B48;
+    --secondary-gold: #C8A951;
+    --secondary-gold-light: #E2C77A;
+    --gray-bg: #F8F9FA;
+    --white: #ffffff;
+    --text-dark: #2D3748;
+    --text-muted: #718096;
+    --border-color: #E2E8F0;
+    --shadow-sm: 0 10px 25px rgba(0,0,0,0.05);
+    --shadow-md: 0 20px 40px rgba(0,0,0,0.1);
+    --shadow-lg: 0 30px 60px rgba(0,0,0,0.12);
     --transition: all 0.3s ease;
 }
 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-    background-color: var(--background-light);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+    min-height: 100vh;
+    position: relative;
 }
 
-/* Header */
-.colegio-header {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    color: white;
-    padding: 1.5rem 0;
-    box-shadow: var(--shadow-md);
+/* Patrón de fondo decorativo */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path fill="white" d="M10,50 L50,10 L90,50 L50,90 Z"/><circle cx="50" cy="50" r="8"/></svg>');
+    background-repeat: repeat;
+    pointer-events: none;
 }
 
-.logo-container {
+.login-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* ========== LOGO Y MARCA ========== */
+.login-logo {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--secondary-gold), var(--secondary-gold-light));
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    box-shadow: 0 10px 30px rgba(200,169,81,0.3);
+    padding: 8px;
+    overflow: hidden;
 }
 
-.logo-icon {
-    font-size: 2.5rem;
+.login-logo img {
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
+    object-fit: cover;
+    border-radius: 50%;
+    background: white;
 }
-
-.logo-text h1 {
-    font-size: 1.25rem;
-    margin: 0;
-    font-weight: 600;
-}
-
-.logo-text p {
-    font-size: 0.8rem;
-    margin: 0;
-    opacity: 0.85;
-}
-
-/* Hero Section */
-.hero-section {
-    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
-    padding: 3rem 0;
-}
-
-.hero-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-}
-
-.hero-description {
-    font-size: 1.1rem;
-    color: var(--text-muted);
-}
-
-/* Login Card */
+/* ========== TARJETA DE LOGIN ========== */
 .login-card {
     border: none;
-    border-radius: 1rem;
-    box-shadow: var(--shadow-md);
-    margin-top: -2rem;
-    margin-bottom: 2rem;
+    border-radius: 28px;
+    box-shadow: var(--shadow-lg);
+    background: var(--white);
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.login-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 35px 70px rgba(0,0,0,0.15);
 }
 
 .login-card .card-body {
-    padding: 2rem;
+    padding: 2.5rem;
 }
 
 .login-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--primary-color);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-blue);
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-family: 'Playfair Display', serif;
 }
 
-.form-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.login-subtitle {
+    text-align: center;
     color: var(--text-muted);
-    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+}
+
+/* ========== INPUTS MODERNOS ========== */
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    z-index: 10;
+    color: var(--text-muted);
+    font-size: 1rem;
+    transition: var(--transition);
 }
 
 .form-control {
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    font-size: 0.95rem;
     transition: var(--transition);
+    background: var(--white);
 }
 
 .form-control:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    border-color: var(--secondary-gold);
+    box-shadow: 0 0 0 4px rgba(200,169,81,0.15);
+    outline: none;
 }
 
+.form-control:focus + .input-icon {
+    color: var(--secondary-gold);
+}
+
+/* Checkbox moderno */
+.form-check-input {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 4px;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: var(--secondary-gold);
+    border-color: var(--secondary-gold);
+}
+
+.form-check-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-left: 0.5rem;
+}
+
+.forgot-link {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.forgot-link:hover {
+    color: var(--secondary-gold);
+}
+
+/* ========== BOTÓN PRINCIPAL ========== */
 .btn-ingresar {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
     border: none;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border-radius: 16px;
+    padding: 0.9rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
     color: white;
     transition: var(--transition);
+    margin-top: 0.5rem;
 }
 
 .btn-ingresar:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(26,58,95,0.4);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
 }
 
-.forgot-password {
+.btn-ingresar i {
+    margin-right: 8px;
+}
+
+/* ========== FOOTER DEL LOGIN ========== */
+.login-footer {
     text-align: center;
-    margin-top: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
 }
 
-.forgot-password a {
+.back-home {
     color: var(--text-muted);
     text-decoration: none;
     font-size: 0.85rem;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.forgot-password a:hover {
-    color: var(--primary-color);
+.back-home:hover {
+    color: var(--primary-blue);
+}
+
+.help-text {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+}
+
+.help-text a {
+    color: var(--secondary-gold);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.help-text a:hover {
     text-decoration: underline;
 }
 
-/* Service Cards */
-.service-card {
-    border: none;
-    border-radius: 1rem;
-    box-shadow: var(--shadow-sm);
-    transition: var(--transition);
-    height: 100%;
+.help-text i {
+    margin-right: 5px;
 }
 
-.service-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-md);
-}
-
-.service-icon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-}
-
-.service-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: var(--text-dark);
-}
-
-.service-description {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-/* Footer */
-.footer {
-    background: white;
-    border-top: 1px solid var(--border-color);
-    padding: 1.5rem 0;
-    margin-top: 2rem;
-}
-
-.footer-text {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin: 0;
-}
-
-/* Responsive */
+/* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
-    .hero-title {
-        font-size: 1.8rem;
-    }
-
-    .hero-description {
-        font-size: 1rem;
-    }
-
     .login-card .card-body {
-        padding: 1.5rem;
+        padding: 1.75rem;
     }
 
-    .logo-text h1 {
-        font-size: 1rem;
+    .login-title {
+        font-size: 1.5rem;
     }
 
-    .logo-icon {
+    .login-logo {
+        width: 65px;
+        height: 65px;
+    }
+
+    .login-logo i {
         font-size: 2rem;
+    }
+
+    .login-brand {
+        font-size: 1.5rem;
     }
 }
 
 @media (max-width: 576px) {
-    .hero-section {
-        padding: 2rem 0;
+    .login-card .card-body {
+        padding: 1.5rem;
     }
 
-    .hero-title {
-        font-size: 1.5rem;
+    .form-control {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
     }
+}
+
+/* ========== ANIMACIONES ========== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.login-logo {
+    animation: fadeInUp 0.4s ease-out;
 }

@@ -3,117 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Institución Educativa - Sistema Académico</title>
+    <title>I.E. San Carlos - Iniciar Sesión</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- CSS propio -->
     <link th:href="@{/css/login.css}" rel="stylesheet">
 </head>
 <body>
 
-<!-- Header Colegio -->
-<div class="colegio-header">
+<div class="login-container">
     <div class="container">
-        <div class="logo-container">
-            <i class="fas fa-backpack logo-icon"></i>
-            <div class="logo-text">
-                <h1>INSTITUCIÓN EDUCATIVA "SAN CARLOS"</h1>
-                <p>Sistema de Gestión Académica</p>
-            </div>
-        </div>
-    </div>
-</div>
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-lg-5 col-md-7 col-11">
 
-<!-- Hero Banner -->
-<div class="hero-section">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8">
-                <h2 class="hero-title">Bienvenido</h2>
-                <p class="hero-description">Accede a tu cuenta para gestionar tu información académica</p>
-            </div>
-        </div>
-    </div>
-</div>
+                <!-- Logo / Marca -->
+                <div class="text-center mb-4">
+                    <div class="login-logo">
+                        <img th:src="@{/img/logo.png}" alt="Logo I.E. San Carlos">
+                    </div>
+                    <h1 class="login-brand">I.E. San Carlos</h1>
+                    <p class="login-brand-sub">Sistema de Gestión Académica</p>
+                </div>
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-5">
-            <!-- Tarjeta de Login -->
-            <div class="card login-card">
-                <div class="card-body">
-                    <h3 class="login-title">Bienvenido</h3>
+                <!-- Tarjeta de Login -->
+                <div class="card login-card">
+                    <div class="card-body">
+                        <h3 class="login-title">Bienvenido</h3>
+                        <p class="login-subtitle">Ingresa tus credenciales para continuar</p>
 
-                    <form id="loginForm" th:action="@{/login}" method="post">
-                        <div class="mb-3">
-                            <label class="form-label">USUARIO</label>
-                            <input type="text" class="form-control" name="email" id="email" placeholder="usuario@iesancarlos.edu" required>
+                        <form id="loginForm" th:action="@{/login}" method="post">
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-icon">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" class="form-control" name="email" id="email"
+                                           placeholder="Correo electrónico" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-icon">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" name="password" id="password"
+                                           placeholder="Contraseña" required>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="remember">
+                                    <label class="form-check-label" for="remember">Recordarme</label>
+                                </div>
+                                <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                            </div>
+
+                            <button type="submit" class="btn btn-ingresar w-100">
+                                <i class="fas fa-arrow-right-to-bracket"></i> Iniciar Sesión
+                            </button>
+                        </form>
+
+                        <div class="login-footer">
+                            <a th:href="@{/}" class="back-home">
+                                <i class="fas fa-home"></i> Volver al inicio
+                            </a>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">CONTRASEÑA</label>
-                            <input type="password" class="form-control" name="password" id="password" placeholder="********" required>
-                        </div>
-                        <button type="submit" class="btn btn-ingresar w-100">
-                            INGRESAR
-                        </button>
-                    </form>
-
-                    <div class="forgot-password">
-                        <a href="#">¿Olvidaste tu contraseña?</a>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Menú de Servicios del Sistema -->
-    <div class="row g-4 mb-5 mt-2">
-        <div class="col-md-4">
-            <div class="card service-card text-center">
-                <div class="card-body">
-                    <i class="fas fa-users service-icon text-primary"></i>
-                    <h5 class="service-title">Estudiantes</h5>
-                    <p class="service-description">Consulta tu información, cursos disponibles y estado de matrícula</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card service-card text-center">
-                <div class="card-body">
-                    <i class="fas fa-chalkboard-teacher service-icon text-success"></i>
-                    <h5 class="service-title">Docentes</h5>
-                    <p class="service-description">Gestiona tus cursos asignados y visualiza tus estudiantes</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card service-card text-center">
-                <div class="card-body">
-                    <i class="fas fa-file-signature service-icon text-warning"></i>
-                    <h5 class="service-title">Matrículas</h5>
-                    <p class="service-description">Realiza tu matrícula de forma virtual y consulta su estado</p>
+                <!-- Información adicional -->
+                <div class="text-center mt-4">
+                    <p class="help-text">
+                        <i class="fas fa-question-circle"></i> ¿Problemas para acceder?
+                        <a href="#">Contáctanos</a>
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Footer -->
-<footer class="footer">
-    <div class="container text-center">
-        <p class="footer-text">
-            <i class="fas fa-envelope"></i> info@iesancarlos.edu |
-            <i class="fas fa-phone"></i> (056) 123456 |
-            <i class="fas fa-map-marker-alt"></i> Independencia 397-291, Ica - Perú
-        </p>
-        <p class="footer-text mt-2">
-            &copy; 2024 Institución Educativa "San Carlos" - Todos los derechos reservados
-        </p>
-    </div>
-</footer>
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
