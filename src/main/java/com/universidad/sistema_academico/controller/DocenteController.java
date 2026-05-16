@@ -3,9 +3,11 @@ package com.universidad.sistema_academico.controller;
 import com.universidad.sistema_academico.dto.DocenteDTO;
 import com.universidad.sistema_academico.model.Curso;
 import com.universidad.sistema_academico.model.Docente;
+import com.universidad.sistema_academico.model.Estudiante;
 import com.universidad.sistema_academico.model.Usuario;
 import com.universidad.sistema_academico.repository.CursoRepository;
 import com.universidad.sistema_academico.repository.DocenteRepository;
+import com.universidad.sistema_academico.repository.EstudianteRepository;
 import com.universidad.sistema_academico.repository.UsuarioRepository;
 import com.universidad.sistema_academico.service.DocenteService;
 import jakarta.validation.Valid;
@@ -21,8 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-@Controller  // Cambiado de @RestController a @Controller
+@Controller
 @RequestMapping("/docente")
 public class DocenteController {
 
@@ -37,11 +38,12 @@ public class DocenteController {
     @Autowired
     private CursoRepository cursoRepository;
 
+    @Autowired
+    private EstudianteRepository estudianteRepository;  // ← NUEVA INYECCIÓN
+
     public DocenteController(DocenteService docenteService) {
         this.docenteService = docenteService;
     }
-
-
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
@@ -89,7 +91,36 @@ public class DocenteController {
         }
     }
 
+    @GetMapping("/curso/{id}/estudiantes")
+    public String verEstudiantesPorCurso(@PathVariable Long id, Authentication authentication, Model model) {
+        try {
+            String email = authentication.getName();
 
+            Docente docente = docenteRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Docente no encontrado"));
+
+            Curso curso = cursoRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+
+            // Verificar que el curso pertenezca al docente
+            if (!curso.getIdDocente().equals(docente.getIdDocente())) {
+                throw new RuntimeException("No tiene acceso a este curso");
+            }
+
+            List<Estudiante> estudiantes = estudianteRepository.findByCursoId(id);
+
+            model.addAttribute("curso", curso);
+            model.addAttribute("estudiantes", estudiantes != null ? estudiantes : List.of());
+            model.addAttribute("docente", docente);
+            model.addAttribute("totalEstudiantes", estudiantes != null ? estudiantes.size() : 0);
+
+            return "docente/estudiantes-por-curso";
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
+    }
 
     @GetMapping("/api")
     @ResponseBody
