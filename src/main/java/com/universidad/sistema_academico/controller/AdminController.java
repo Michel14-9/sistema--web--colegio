@@ -1,20 +1,19 @@
 package com.universidad.sistema_academico.controller;
 
-import com.universidad.sistema_academico.model.Actividad;
-import com.universidad.sistema_academico.model.Curso;
-import com.universidad.sistema_academico.model.Docente;
-import com.universidad.sistema_academico.model.Estudiante;
-import com.universidad.sistema_academico.model.Matricula;
+import com.universidad.sistema_academico.model.*;
 import com.universidad.sistema_academico.repository.ActividadRepository;
 import com.universidad.sistema_academico.repository.CursoRepository;
 import com.universidad.sistema_academico.repository.DocenteRepository;
 import com.universidad.sistema_academico.repository.EstudianteRepository;
 import com.universidad.sistema_academico.repository.MatriculaRepository;
+import com.universidad.sistema_academico.service.SolicitudMatriculaService;
+import com.universidad.sistema_academico.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,7 +22,8 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-
+    @Autowired
+    private UsuarioService usuarioService;
     @Autowired
     private EstudianteRepository estudianteRepository;
 
@@ -306,5 +306,60 @@ public class AdminController {
         matriculaRepository.deleteById(id);
         registrarActividad(usuario, "ELIMINAR", "Matrícula", detalles);
         return "redirect:/admin/matriculas";
+    }
+    // ==================== GESTIÓN DE SOLICITUDES DE MATRÍCULA ====================
+
+    @Autowired
+    private SolicitudMatriculaService solicitudMatriculaService;
+
+    @GetMapping("/solicitudes")
+    public String listarSolicitudes(Model model) {
+        model.addAttribute("pendientes", solicitudMatriculaService.listarPendientes());
+        model.addAttribute("aprobadas", solicitudMatriculaService.listarAprobadas());
+        model.addAttribute("rechazadas", solicitudMatriculaService.listarRechazadas());
+        return "admin/solicitudes";
+    }
+
+    @GetMapping("/solicitud/{id}")
+    public String verDetalleSolicitud(@PathVariable Long id, Model model) {
+        SolicitudMatricula solicitud = solicitudMatriculaService.buscarPorId(id);
+        model.addAttribute("solicitud", solicitud);
+        return "admin/solicitud-detalle";
+    }
+
+    @PostMapping("/solicitud/aprobar/{id}")
+    public String aprobarSolicitud(@PathVariable Long id, Authentication auth) {
+        String usuario = auth != null ? auth.getName() : "admin";
+
+        // Buscar el usuario administrador para obtener su ID
+        Usuario admin = usuarioService.findByUsername(usuario)
+                .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+
+        solicitudMatriculaService.aprobarSolicitud(id, admin.getId());
+
+        // Registrar actividad
+        registrarActividad(usuario, "APROBAR", "SolicitudMatricula",
+                "Se aprobó la solicitud de matrícula ID: " + id);
+
+        return "redirect:/admin/solicitudes";
+    }
+
+    @PostMapping("/solicitud/rechazar/{id}")
+    public String rechazarSolicitud(@PathVariable Long id,
+                                    @RequestParam String motivo,
+                                    Authentication auth) {
+        String usuario = auth != null ? auth.getName() : "admin";
+
+        // Buscar el usuario administrador para obtener su ID
+        Usuario admin = usuarioService.findByUsername(usuario)
+                .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+
+        solicitudMatriculaService.rechazarSolicitud(id, admin.getId(), motivo);
+
+        // Registrar actividad
+        registrarActividad(usuario, "RECHAZAR", "SolicitudMatricula",
+                "Se rechazó la solicitud de matrícula ID: " + id + " - Motivo: " + motivo);
+
+        return "redirect:/admin/solicitudes";
     }
 }
