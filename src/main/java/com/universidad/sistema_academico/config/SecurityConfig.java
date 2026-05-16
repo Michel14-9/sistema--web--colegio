@@ -20,7 +20,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         // Recursos públicos
-                        .requestMatchers("/login", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
+                        .requestMatchers("/", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
+                        .requestMatchers("/login").permitAll()
                         // Rutas por rol
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/docente/**").hasRole("DOCENTE")
