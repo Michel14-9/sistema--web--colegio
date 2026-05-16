@@ -94,7 +94,57 @@ h1, h2, h3, h4, .brand-text h3 {
     box-shadow: 0 8px 25px rgba(200,169,81,0.4);
     color: var(--primary-dark);
 }
+/* ========== LOGO EN NAVBAR Y FOOTER ========== */
 
+/* Logo del navbar (reemplaza al ícono) */
+.navbar-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: white;
+    padding: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: var(--transition);
+}
+
+.navbar-logo:hover {
+    transform: scale(1.05);
+}
+
+/* Ajuste para móvil */
+@media (max-width: 768px) {
+    .navbar-logo {
+        width: 38px;
+        height: 38px;
+        padding: 4px;
+    }
+}
+
+/* Logo del footer */
+.footer-logo-img {
+    width: 55px;
+    height: 55px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: white;
+    padding: 6px;
+    transition: var(--transition);
+}
+
+@media (max-width: 768px) {
+    .footer-logo-img {
+        width: 45px;
+        height: 45px;
+    }
+}
+
+/* Ajuste del footer-logo cuando ya tiene imagen */
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 /* ========== HERO SECTION ========== */
 .hero-section {
     background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
