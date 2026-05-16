@@ -7,31 +7,55 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Servicio que contiene la lógica de negocio para la entidad Estudiante.
- * Realiza conversión entre Entity y DTO.
- */
 @Service
 @Transactional
 public class EstudianteService {
 
     private final EstudianteRepository estudianteRepository;
 
-    // Inyección de dependencias por constructor (buena práctica, no requiere @Autowired)
     public EstudianteService(EstudianteRepository estudianteRepository) {
         this.estudianteRepository = estudianteRepository;
     }
 
-    // ========================
-    // MÉTODOS CRUD
-    // ========================
+    // ============================================
+    // MÉTODOS PARA MATRICULA CONTROLLER
+    // ============================================
 
     /**
-     * Lista todos los estudiantes.
-     * @return lista de EstudianteDTO
+     * Guarda una entidad Estudiante directamente
      */
+    public Estudiante saveEstudiante(Estudiante estudiante) {
+        return estudianteRepository.save(estudiante);
+    }
+
+    /**
+     * Verifica si existe un DNI
+     */
+    public boolean existsByDni(String dni) {
+        return estudianteRepository.existsByDni(dni);
+    }
+
+    /**
+     * Busca estudiante por DNI (retorna Optional)
+     */
+    public Optional<Estudiante> findByDni(String dni) {
+        return estudianteRepository.findByDni(dni);
+    }
+
+    /**
+     * Busca estudiante por ID de usuario
+     */
+    public Optional<Estudiante> findByUsuarioId(Long usuarioId) {
+        return estudianteRepository.findByUsuarioId(usuarioId);
+    }
+
+    // ============================================
+    // MÉTODOS CRUD EXISTENTES CON DTO
+    // ============================================
+
     @Transactional(readOnly = true)
     public List<EstudianteDTO> listarTodos() {
         return estudianteRepository.findAll()
@@ -40,65 +64,38 @@ public class EstudianteService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Busca un estudiante por su ID.
-     * @param id identificador del estudiante
-     * @return EstudianteDTO encontrado
-     * @throws RuntimeException si no se encuentra el estudiante
-     */
     @Transactional(readOnly = true)
     public EstudianteDTO buscarPorId(Long id) {
         Estudiante estudiante = estudianteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(
-                        "Estudiante no encontrado con ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado con ID: " + id));
         return convertirADTO(estudiante);
     }
 
-    /**
-     * Guarda un nuevo estudiante o actualiza uno existente.
-     * @param estudianteDTO datos del estudiante
-     * @return EstudianteDTO guardado con su ID generado
-     */
     public EstudianteDTO guardar(EstudianteDTO estudianteDTO) {
-        // Validar unicidad de código y DNI al crear un nuevo estudiante
         if (estudianteDTO.getIdEstudiante() == null) {
             if (estudianteRepository.existsByCodigoEstudiante(estudianteDTO.getCodigoEstudiante())) {
-                throw new RuntimeException(
-                        "Ya existe un estudiante con el código: " + estudianteDTO.getCodigoEstudiante());
+                throw new RuntimeException("Ya existe un estudiante con el código: " + estudianteDTO.getCodigoEstudiante());
             }
             if (estudianteRepository.existsByDni(estudianteDTO.getDni())) {
-                throw new RuntimeException(
-                        "Ya existe un estudiante con el DNI: " + estudianteDTO.getDni());
+                throw new RuntimeException("Ya existe un estudiante con el DNI: " + estudianteDTO.getDni());
             }
         }
-
         Estudiante estudiante = convertirAEntidad(estudianteDTO);
         Estudiante estudianteGuardado = estudianteRepository.save(estudiante);
         return convertirADTO(estudianteGuardado);
     }
 
-    /**
-     * Elimina un estudiante por su ID.
-     * @param id identificador del estudiante a eliminar
-     * @throws RuntimeException si no se encuentra el estudiante
-     */
     public void eliminar(Long id) {
         if (!estudianteRepository.existsById(id)) {
-            throw new RuntimeException(
-                    "No se puede eliminar. Estudiante no encontrado con ID: " + id);
+            throw new RuntimeException("No se puede eliminar. Estudiante no encontrado con ID: " + id);
         }
         estudianteRepository.deleteById(id);
     }
 
-    // ========================
+    // ============================================
     // MÉTODOS DE CONVERSIÓN
-    // ========================
+    // ============================================
 
-    /**
-     * Convierte una entidad Estudiante a EstudianteDTO.
-     * @param estudiante entidad a convertir
-     * @return DTO resultante
-     */
     private EstudianteDTO convertirADTO(Estudiante estudiante) {
         EstudianteDTO dto = new EstudianteDTO();
         dto.setIdEstudiante(estudiante.getIdEstudiante());
@@ -119,11 +116,6 @@ public class EstudianteService {
         return dto;
     }
 
-    /**
-     * Convierte un EstudianteDTO a entidad Estudiante.
-     * @param dto DTO a convertir
-     * @return entidad resultante
-     */
     private Estudiante convertirAEntidad(EstudianteDTO dto) {
         Estudiante estudiante = new Estudiante();
         estudiante.setIdEstudiante(dto.getIdEstudiante());

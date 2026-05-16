@@ -1,0 +1,391 @@
+/* ========== VARIABLES ========== */
+:root {
+    --primary-blue: #1A3A5F;
+    --primary-dark: #0F2B48;
+    --secondary-gold: #C8A951;
+    --secondary-gold-light: #E2C77A;
+    --gray-bg: #F8F9FA;
+    --white: #ffffff;
+    --text-dark: #2D3748;
+    --text-muted: #718096;
+    --border-color: #E2E8F0;
+    --shadow-sm: 0 10px 25px rgba(0,0,0,0.05);
+    --shadow-md: 0 20px 40px rgba(0,0,0,0.1);
+    --shadow-lg: 0 30px 60px rgba(0,0,0,0.12);
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Patrón de fondo decorativo */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path fill="white" d="M10,50 L50,10 L90,50 L50,90 Z"/><circle cx="50" cy="50" r="8"/></svg>');
+    background-repeat: repeat;
+    pointer-events: none;
+}
+
+.matricula-container {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 3rem;
+}
+
+/* ========== LOGO ========== */
+.matricula-logo {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, var(--secondary-gold), var(--secondary-gold-light));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    box-shadow: 0 10px 30px rgba(200,169,81,0.3);
+    padding: 8px;
+    overflow: hidden;
+}
+
+.matricula-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    background: white;
+}
+
+.matricula-brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.matricula-brand-sub {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+}
+
+/* ========== TARJETA PRINCIPAL ========== */
+.matricula-card {
+    border: none;
+    border-radius: 28px;
+    box-shadow: var(--shadow-lg);
+    background: var(--white);
+    transition: var(--transition);
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.matricula-card .card-body {
+    padding: 2rem;
+}
+
+.matricula-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    text-align: center;
+    margin-bottom: 0.5rem;
+    font-family: 'Playfair Display', serif;
+}
+
+.matricula-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ========== SECCIONES DEL FORMULARIO ========== */
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin: 1.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--secondary-gold);
+    display: inline-block;
+}
+
+.section-title i {
+    color: var(--secondary-gold);
+    margin-right: 8px;
+}
+
+/* ========== INPUTS ========== */
+.form-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border-color);
+    transition: var(--transition);
+    font-size: 0.9rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--secondary-gold);
+    box-shadow: 0 0 0 3px rgba(200,169,81,0.15);
+    outline: none;
+}
+
+/* Inputs válidos e inválidos */
+.form-control.is-valid, .form-select.is-valid {
+    border-color: #28a745;
+}
+
+.form-control.is-invalid, .form-select.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    font-size: 0.7rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+}
+
+/* ========== VOUCHER ========== */
+.voucher-area {
+    background: var(--gray-bg);
+    border-radius: 16px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.voucher-info {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.voucher-info i {
+    color: var(--secondary-gold);
+    margin-right: 5px;
+}
+
+.voucher-upload input[type="file"] {
+    padding: 0.5rem;
+}
+
+.voucher-preview {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.voucher-preview img {
+    max-width: 200px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ========== ALERTAS ========== */
+.alert-info {
+    background: linear-gradient(135deg, rgba(26,58,95,0.05), rgba(26,58,95,0.02));
+    border: none;
+    border-left: 4px solid var(--secondary-gold);
+    border-radius: 12px;
+    color: var(--text-dark);
+    font-size: 0.8rem;
+    padding: 1rem;
+}
+
+.alert-info i {
+    color: var(--secondary-gold);
+    margin-right: 8px;
+}
+
+/* ========== BOTÓN PRINCIPAL ========== */
+.btn-matricular {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+    border: none;
+    border-radius: 16px;
+    padding: 0.9rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    color: white;
+    transition: var(--transition);
+    margin-top: 1rem;
+}
+
+.btn-matricular:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(26,58,95,0.4);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+}
+
+.btn-matricular i {
+    margin-right: 8px;
+}
+
+/* ========== FOOTER DEL FORMULARIO ========== */
+.matricula-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.back-home {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-home:hover {
+    color: var(--primary-blue);
+}
+
+.separator {
+    color: var(--border-color);
+    margin: 0 10px;
+}
+
+.login-link {
+    color: var(--secondary-gold);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: var(--transition);
+}
+
+.login-link:hover {
+    color: var(--primary-blue);
+    text-decoration: underline;
+}
+
+/* ========== MENSAJES FLOTANTES ========== */
+.floating-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 12px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    font-size: 0.9rem;
+    animation: slideInRight 0.3s ease;
+    max-width: 350px;
+}
+
+.floating-message.error {
+    background: #dc3545;
+    color: white;
+}
+
+.floating-message.success {
+    background: #28a745;
+    color: white;
+}
+
+.floating-message .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* ========== ANIMACIONES ========== */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.matricula-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .matricula-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .matricula-title {
+        font-size: 1.3rem;
+    }
+
+    .matricula-logo {
+        width: 70px;
+        height: 70px;
+    }
+
+    .matricula-brand {
+        font-size: 1.3rem;
+    }
+
+    .section-title {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .matricula-card .card-body {
+        padding: 1.25rem;
+    }
+
+    .form-control, .form-select {
+        padding: 0.6rem 0.8rem;
+    }
+}

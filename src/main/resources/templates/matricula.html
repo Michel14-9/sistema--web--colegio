@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I.E. San Carlos - Proceso de Matrícula</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/matricula.css}" rel="stylesheet">
+</head>
+<body>
+
+<div class="matricula-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10 col-12">
+
+                <!-- Logo -->
+                <div class="text-center mb-4 mt-4">
+                    <div class="matricula-logo">
+                        <img th:src="@{/img/logo.png}" alt="Logo">
+                    </div>
+                    <h1 class="matricula-brand">I.E. San Carlos</h1>
+                    <p class="matricula-brand-sub">Proceso de Matrícula 2025</p>
+                </div>
+
+                <!-- Formulario de Matrícula -->
+                <div class="card matricula-card">
+                    <div class="card-body">
+                        <h3 class="matricula-title">Registro de Nuevo Estudiante</h3>
+                        <p class="matricula-subtitle">Completa todos los campos para iniciar tu matrícula</p>
+
+                        <form id="matriculaForm" th:action="@{/api/matricula/registrar}" method="post" enctype="multipart/form-data">
+
+                            <!-- Datos Personales -->
+                            <div class="section-title">
+                                <i class="fas fa-user-graduate"></i> Datos Personales
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">DNI *</label>
+                                    <input type="text" class="form-control" name="dni" id="dni" maxlength="8" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Fecha de Nacimiento *</label>
+                                    <input type="date" class="form-control" name="fechaNacimiento" id="fechaNacimiento" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Nombres *</label>
+                                    <input type="text" class="form-control" name="nombres" id="nombres" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Apellido Paterno *</label>
+                                    <input type="text" class="form-control" name="apellidoPaterno" id="apellidoPaterno" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Apellido Materno *</label>
+                                    <input type="text" class="form-control" name="apellidoMaterno" id="apellidoMaterno" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Género *</label>
+                                    <select class="form-select" name="genero" id="genero" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="M">Masculino</option>
+                                        <option value="F">Femenino</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Celular *</label>
+                                    <input type="tel" class="form-control" name="celular" id="celular" required>
+                                </div>
+                            </div>
+
+                            <!-- Datos Académicos -->
+                            <div class="section-title mt-3">
+                                <i class="fas fa-book-open"></i> Datos Académicos
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Grado *</label>
+                                    <select class="form-select" name="idGrado" id="idGrado" required>
+                                        <option value="">Seleccionar grado</option>
+                                        <option value="1">1° de Primaria</option>
+                                        <option value="2">2° de Primaria</option>
+                                        <option value="3">3° de Primaria</option>
+                                        <option value="4">4° de Primaria</option>
+                                        <option value="5">5° de Primaria</option>
+                                        <option value="6">6° de Primaria</option>
+                                        <option value="7">1° de Secundaria</option>
+                                        <option value="8">2° de Secundaria</option>
+                                        <option value="9">3° de Secundaria</option>
+                                        <option value="10">4° de Secundaria</option>
+                                        <option value="11">5° de Secundaria</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Sección *</label>
+                                    <select class="form-select" name="seccion" id="seccion" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Turno *</label>
+                                    <select class="form-select" name="turno" id="turno" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="Mañana">Mañana</option>
+                                        <option value="Tarde">Tarde</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Datos de Contacto (Apoderado) -->
+                            <div class="section-title mt-3">
+                                <i class="fas fa-family"></i> Datos del Apoderado
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nombres del Apoderado *</label>
+                                    <input type="text" class="form-control" name="apoderadoNombres" id="apoderadoNombres" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">DNI del Apoderado *</label>
+                                    <input type="text" class="form-control" name="apoderadoDni" id="apoderadoDni" maxlength="8" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Teléfono Apoderado *</label>
+                                    <input type="tel" class="form-control" name="apoderadoTelefono" id="apoderadoTelefono" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email Apoderado *</label>
+                                    <input type="email" class="form-control" name="apoderadoEmail" id="apoderadoEmail" required>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Dirección *</label>
+                                    <input type="text" class="form-control" name="direccion" id="direccion" required>
+                                </div>
+                            </div>
+
+                            <!-- Voucher de Pago -->
+                            <div class="section-title mt-3">
+                                <i class="fas fa-receipt"></i> Comprobante de Pago
+                            </div>
+                            <div class="voucher-area">
+                                <p class="voucher-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Adjunte el voucher de pago de matrícula (S/ 200.00)
+                                </p>
+                                <div class="voucher-upload">
+                                    <input type="file" class="form-control" name="voucher" id="voucher" accept="image/*,.pdf" required>
+                                    <small class="text-muted">Formatos: JPG, PNG, PDF (máx. 5MB)</small>
+                                </div>
+                                <div id="voucherPreview" class="voucher-preview"></div>
+                            </div>
+
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                Una vez validado su pago, recibirá un email con sus credenciales de acceso.
+                            </div>
+
+                            <button type="submit" class="btn btn-matricular w-100">
+                                <i class="fas fa-check-circle"></i> Enviar Solicitud de Matrícula
+                            </button>
+                        </form>
+
+                        <div class="matricula-footer">
+                            <a th:href="@{/}" class="back-home">
+                                <i class="fas fa-home"></i> Volver al inicio
+                            </a>
+                            <span class="separator">|</span>
+                            <a th:href="@{/login}" class="login-link">
+                                <i class="fas fa-sign-in-alt"></i> ¿Ya tienes cuenta? Inicia sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/matricula.js}"></script>
+</body>
+</html>

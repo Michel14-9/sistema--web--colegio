@@ -22,6 +22,7 @@ public class SecurityConfig {
                         // Recursos públicos
                         .requestMatchers("/", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
                         .requestMatchers("/login").permitAll()
+                        .requestMatchers("/api/matricula/matricula").permitAll()
                         // Rutas por rol
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/docente/**").hasRole("DOCENTE")
