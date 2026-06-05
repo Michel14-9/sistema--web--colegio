@@ -9,11 +9,13 @@ import com.universidad.sistema_academico.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Controller
@@ -34,7 +36,6 @@ public class MatriculaController {
 
     @Autowired
     private VoucherService voucherService;
-
 
     @GetMapping("/matricula")
     public String mostrarMatricula() {
@@ -64,7 +65,8 @@ public class MatriculaController {
             @RequestParam String apoderadoEmail,
             @RequestParam String direccion,
             @RequestParam("voucher") MultipartFile voucher,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes,
+            Model model) {
 
         try {
             // 1. Validar que el DNI no esté registrado
@@ -97,12 +99,18 @@ public class MatriculaController {
             usuario.setPassword(passwordEncoder.encode(passwordTemporal));
             usuario.setRol("ESTUDIANTE");
             usuario.setActivo(true);
+            usuario.setNombre(nombres);
+            usuario.setApellido(apellidoPaterno + " " + apellidoMaterno);
+            usuario.setDocumento(dni);
+            usuario.setTelefono(celular);
+            usuario.setFechaRegistro(LocalDateTime.now());
+
             usuarioService.save(usuario);
 
             // 7. Crear estudiante
             Estudiante estudiante = new Estudiante();
             estudiante.setUsuario(usuario);
-            estudiante.setCodigoEstudiante(generarCodigoEstudiante());
+            estudiante.setCodigoEstudiante("EST" + LocalDate.now().getYear() + usuario.getId());
             estudiante.setDni(dni);
             estudiante.setNombres(nombres);
             estudiante.setApellidoPaterno(apellidoPaterno);
@@ -119,15 +127,30 @@ public class MatriculaController {
 
             estudianteService.saveEstudiante(estudiante);
 
-            // 8. Enviar email con credenciales
-            emailService.enviarCredenciales(apoderadoEmail, emailInstitucional, username, passwordTemporal);
+            // 8. Mostrar credenciales en consola
+            System.out.println("========================================");
+            System.out.println("¡MATRÍCULA EXITOSA!");
+            System.out.println("Usuario: " + username);
+            System.out.println("Contraseña temporal: " + passwordTemporal);
+            System.out.println("Email institucional: " + emailInstitucional);
+            System.out.println("========================================");
 
-            redirectAttributes.addFlashAttribute("success",
-                    "¡Matrícula exitosa! Se han enviado las credenciales al correo del apoderado.\n" +
-                            "Usuario: " + username + "\n" +
-                            "Email institucional: " + emailInstitucional);
 
-            return "redirect:/login";
+            try {
+                emailService.enviarCredenciales(apoderadoEmail, emailInstitucional, username, passwordTemporal);
+                System.out.println("Correo enviado a: " + apoderadoEmail);
+            } catch (Exception e) {
+                System.out.println("Error al enviar correo: " + e.getMessage());
+            }
+
+
+            model.addAttribute("username", username);
+            model.addAttribute("password", passwordTemporal);
+            model.addAttribute("email", emailInstitucional);
+            model.addAttribute("success", "¡Matrícula exitosa! Bienvenido a la I.E. San Carlos");
+
+
+            return "matricula-exito";
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -170,9 +193,5 @@ public class MatriculaController {
 
     private String generarPasswordTemporal() {
         return UUID.randomUUID().toString().substring(0, 8);
-    }
-
-    private String generarCodigoEstudiante() {
-        return "EST-" + LocalDate.now().getYear() + "-" + System.currentTimeMillis();
     }
 }
