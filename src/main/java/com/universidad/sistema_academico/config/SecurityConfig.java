@@ -24,6 +24,7 @@ public class SecurityConfig {
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/api/matricula/matricula").permitAll()
                         .requestMatchers("/api/matricula/registrar").permitAll()
+                        .requestMatchers("/api/reniec/**").permitAll()
                         // Rutas por rol
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/docente/**").hasRole("DOCENTE")
