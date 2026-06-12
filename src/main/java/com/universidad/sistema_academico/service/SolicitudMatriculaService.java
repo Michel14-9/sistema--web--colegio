@@ -197,4 +197,7 @@ public class SolicitudMatriculaService {
         return solicitudRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Solicitud de matrícula no encontrada con ID: " + id));
     }
+    public boolean existeSolicitudPendientePorDni(String dni) {
+        return solicitudRepository.existsByDniAndEstado(dni, "PENDIENTE");
+    }
 }

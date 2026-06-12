@@ -89,7 +89,7 @@ public class SolicitudMatricula {
     // ========== ESTADO Y FECHAS ==========
 
     @Column(name = "estado", length = 20, nullable = false)
-    private String estado = "PENDIENTE";
+    private String estado = "PENDIENTE"; // PENDIENTE, APROBADO, RECHAZADO
 
     @Column(name = "fecha_solicitud")
     private LocalDateTime fechaSolicitud;

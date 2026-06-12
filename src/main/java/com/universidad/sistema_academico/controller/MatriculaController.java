@@ -1,41 +1,30 @@
 package com.universidad.sistema_academico.controller;
 
-import com.universidad.sistema_academico.model.Estudiante;
-import com.universidad.sistema_academico.model.Usuario;
+import com.universidad.sistema_academico.model.SolicitudMatricula;
+import com.universidad.sistema_academico.repository.SolicitudMatriculaRepository;
 import com.universidad.sistema_academico.service.EmailService;
-import com.universidad.sistema_academico.service.EstudianteService;
-import com.universidad.sistema_academico.service.UsuarioService;
 import com.universidad.sistema_academico.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Controller
 @RequestMapping("/api/matricula")
 public class MatriculaController {
 
     @Autowired
-    private EstudianteService estudianteService;
-
-    @Autowired
-    private UsuarioService usuarioService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private EmailService emailService;
+    private SolicitudMatriculaRepository solicitudRepository;
 
     @Autowired
     private VoucherService voucherService;
+
+    @Autowired
+    private EmailService emailService;
 
     @GetMapping("/matricula")
     public String mostrarMatricula() {
@@ -59,141 +48,80 @@ public class MatriculaController {
             @RequestParam Integer idGrado,
             @RequestParam String seccion,
             @RequestParam String turno,
+            @RequestParam String apoderadoDni,
             @RequestParam String apoderadoNombres,
             @RequestParam String apoderadoApellidoPaterno,
             @RequestParam String apoderadoApellidoMaterno,
-            @RequestParam String apoderadoDni,
             @RequestParam String apoderadoTelefono,
             @RequestParam String apoderadoEmail,
             @RequestParam String direccion,
             @RequestParam("voucher") MultipartFile voucher,
-            RedirectAttributes redirectAttributes,
-            Model model) {
+            RedirectAttributes redirectAttributes) {
 
         try {
-            // 1. Validar que el DNI no esté registrado
-            if (estudianteService.existsByDni(dni)) {
-                redirectAttributes.addFlashAttribute("error", "El DNI ya está registrado");
+            // 1. Validar que no exista una solicitud previa con este DNI
+            if (solicitudRepository.existsByDniAndEstado(dni, "PENDIENTE")) {
+                redirectAttributes.addFlashAttribute("error", "Ya existe una solicitud pendiente con este DNI");
                 return "redirect:/api/matricula/nueva";
             }
 
-            // 2. Validar y guardar el voucher
+            // 2. Guardar el voucher
             String voucherPath = voucherService.guardarVoucher(voucher, dni);
 
-            // 3. Validar voucher
-            boolean voucherValido = voucherService.validarVoucher(voucherPath);
-            if (!voucherValido) {
-                redirectAttributes.addFlashAttribute("error", "El voucher no es válido o el monto es incorrecto");
-                return "redirect:/api/matricula/nueva";
-            }
+            // 3. Crear SOLICITUD de matrícula (NO crear usuario aún)
+            SolicitudMatricula solicitud = new SolicitudMatricula();
+            solicitud.setDni(dni);
+            solicitud.setNombres(nombres.toUpperCase());
+            solicitud.setApellidoPaterno(apellidoPaterno.toUpperCase());
+            solicitud.setApellidoMaterno(apellidoMaterno.toUpperCase());
+            solicitud.setFechaNacimiento(fechaNacimiento);
+            solicitud.setGenero(genero);
+            solicitud.setCelular(celular);
+            solicitud.setIdGrado(idGrado);
+            solicitud.setSeccion(seccion);
+            solicitud.setTurno(turno);
+            solicitud.setApoderadoDni(apoderadoDni);
+            solicitud.setApoderadoNombres(apoderadoNombres.toUpperCase());
+            solicitud.setApoderadoApellidoPaterno(apoderadoApellidoPaterno.toUpperCase());
+            solicitud.setApoderadoApellidoMaterno(apoderadoApellidoMaterno.toUpperCase());
+            solicitud.setApoderadoTelefono(apoderadoTelefono);
+            solicitud.setApoderadoEmail(apoderadoEmail);
+            solicitud.setDireccion(direccion.toUpperCase());
+            solicitud.setVoucherPath(voucherPath);
+            solicitud.setEstado("PENDIENTE");
+            solicitud.setFechaSolicitud(LocalDateTime.now());
 
-            // 4. Generar email institucional
-            String emailInstitucional = generarEmail(nombres, apellidoPaterno, apellidoMaterno);
+            solicitudRepository.save(solicitud);
 
-            // 5. Generar username y contraseña temporal
-            String username = generarUsername(nombres, apellidoPaterno, apellidoMaterno);
-            String passwordTemporal = generarPasswordTemporal();
-
-            // 6. Crear usuario
-            Usuario usuario = new Usuario();
-            usuario.setUsername(username);
-            usuario.setEmail(emailInstitucional);
-            usuario.setPassword(passwordEncoder.encode(passwordTemporal));
-            usuario.setRol("ESTUDIANTE");
-            usuario.setActivo(true);
-            usuario.setNombre(nombres);
-            usuario.setApellido(apellidoPaterno + " " + apellidoMaterno);
-            usuario.setDocumento(dni);
-            usuario.setTelefono(celular);
-            usuario.setFechaRegistro(LocalDateTime.now());
-
-            usuarioService.save(usuario);
-
-            // 7. Crear estudiante
-            Estudiante estudiante = new Estudiante();
-            estudiante.setUsuario(usuario);
-            estudiante.setCodigoEstudiante("EST" + LocalDate.now().getYear() + usuario.getId());
-            estudiante.setDni(dni);
-            estudiante.setNombres(nombres);
-            estudiante.setApellidoPaterno(apellidoPaterno);
-            estudiante.setApellidoMaterno(apellidoMaterno);
-            estudiante.setFechaNacimiento(fechaNacimiento);
-            estudiante.setGenero(genero);
-            estudiante.setEmailInstitucional(emailInstitucional);
-            estudiante.setCelular(celular);
-            estudiante.setIdGrado(idGrado);
-            estudiante.setSeccion(seccion);
-            estudiante.setTurno(turno);
-            estudiante.setEstado("ACTIVO");
-            estudiante.setFechaIngreso(LocalDate.now());
-
-            estudianteService.saveEstudiante(estudiante);
-
-            // 8. Mostrar credenciales en consola
-            System.out.println("========================================");
-            System.out.println("¡MATRÍCULA EXITOSA!");
-            System.out.println("Usuario: " + username);
-            System.out.println("Contraseña temporal: " + passwordTemporal);
-            System.out.println("Email institucional: " + emailInstitucional);
-            System.out.println("========================================");
-
-
+            // 4. Enviar correo de confirmación al apoderado
             try {
-                emailService.enviarCredenciales(apoderadoEmail, emailInstitucional, username, passwordTemporal);
-                System.out.println("Correo enviado a: " + apoderadoEmail);
+                emailService.enviarConfirmacionSolicitud(
+                        apoderadoEmail,
+                        nombres + " " + apellidoPaterno + " " + apellidoMaterno
+                );
+                System.out.println(" Correo de confirmación enviado a: " + apoderadoEmail);
             } catch (Exception e) {
-                System.out.println("Error al enviar correo: " + e.getMessage());
+                System.out.println(" Error al enviar correo de confirmación: " + e.getMessage());
             }
 
+            System.out.println("========================================");
+            System.out.println(" NUEVA SOLICITUD DE MATRÍCULA");
+            System.out.println("DNI: " + dni);
+            System.out.println("Estudiante: " + nombres + " " + apellidoPaterno);
+            System.out.println("Apoderado email: " + apoderadoEmail);
+            System.out.println("Estado: PENDIENTE DE APROBACIÓN");
+            System.out.println("========================================");
 
-            model.addAttribute("username", username);
-            model.addAttribute("password", passwordTemporal);
-            model.addAttribute("email", emailInstitucional);
-            model.addAttribute("success", "¡Matrícula exitosa! Bienvenido a la I.E. San Carlos");
+            redirectAttributes.addFlashAttribute("success",
+                    " Solicitud de matrícula registrada correctamente. " +
+                            "Un administrador validará su pago y recibirá sus credenciales por correo electrónico.");
 
-
-            return "matricula-exito";
+            return "redirect:/api/matricula/matricula";
 
         } catch (Exception e) {
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("error", "Error al procesar la matrícula: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Error al procesar la solicitud: " + e.getMessage());
             return "redirect:/api/matricula/nueva";
         }
-    }
-
-    private String generarEmail(String nombres, String apellidoPaterno, String apellidoMaterno) {
-        String base = (nombres.substring(0, 1) + apellidoPaterno + apellidoMaterno)
-                .toLowerCase()
-                .replaceAll("á", "a")
-                .replaceAll("é", "e")
-                .replaceAll("í", "i")
-                .replaceAll("ó", "o")
-                .replaceAll("ú", "u")
-                .replaceAll("ñ", "n");
-        return base + "@estudiante.iesancarlos.edu.pe";
-    }
-
-    private String generarUsername(String nombres, String apellidoPaterno, String apellidoMaterno) {
-        String base = (nombres.substring(0, 1) + apellidoPaterno + apellidoMaterno)
-                .toLowerCase()
-                .replaceAll("á", "a")
-                .replaceAll("é", "e")
-                .replaceAll("í", "i")
-                .replaceAll("ó", "o")
-                .replaceAll("ú", "u")
-                .replaceAll("ñ", "n")
-                .replaceAll("[^a-z0-9]", "");
-
-        String username = base;
-        int contador = 1;
-        while (usuarioService.existsByUsername(username)) {
-            username = base + contador;
-            contador++;
-        }
-        return username;
-    }
-
-    private String generarPasswordTemporal() {
-        return UUID.randomUUID().toString().substring(0, 8);
     }
 }
