@@ -43,12 +43,7 @@ public class VoucherService {
             return false;
         }
 
-        // Aquí puedes agregar validación más avanzada:
-        // - Verificar que el monto sea S/ 200.00
-        // - Verificar que el número de operación sea válido
-        // - Integrar con OCR para leer datos del voucher
 
-        // Por ahora, asumimos que es válido
         return true;
     }
 

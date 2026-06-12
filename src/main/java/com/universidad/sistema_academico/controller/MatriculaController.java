@@ -60,6 +60,8 @@ public class MatriculaController {
             @RequestParam String seccion,
             @RequestParam String turno,
             @RequestParam String apoderadoNombres,
+            @RequestParam String apoderadoApellidoPaterno,
+            @RequestParam String apoderadoApellidoMaterno,
             @RequestParam String apoderadoDni,
             @RequestParam String apoderadoTelefono,
             @RequestParam String apoderadoEmail,

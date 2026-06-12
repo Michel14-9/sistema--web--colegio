@@ -58,28 +58,35 @@ public class SolicitudMatricula {
     @Column(name = "turno", length = 10)
     private String turno;
 
-    // ========== DATOS DEL APODERADO ==========
+    // ========== DATOS DEL APODERADO (COMPLETOS) ==========
 
-    @Column(name = "apoderado_nombres", length = 100)
-    private String apoderadoNombres;
-
-    @Column(name = "apoderado_dni", length = 8)
+    @Column(name = "apoderado_dni", length = 8, nullable = false)
     private String apoderadoDni;
 
-    @Column(name = "apoderado_telefono", length = 15)
+    @Column(name = "apoderado_nombres", length = 100, nullable = false)
+    private String apoderadoNombres;
+
+    @Column(name = "apoderado_apellido_paterno", length = 100, nullable = false)
+    private String apoderadoApellidoPaterno;
+
+    @Column(name = "apoderado_apellido_materno", length = 100, nullable = false)
+    private String apoderadoApellidoMaterno;
+
+    @Column(name = "apoderado_telefono", length = 15, nullable = false)
     private String apoderadoTelefono;
 
-    @Column(name = "apoderado_email", length = 150)
+    @Column(name = "apoderado_email", length = 150, nullable = false)
     private String apoderadoEmail;
 
-    @Column(name = "direccion", columnDefinition = "TEXT")
+    @Column(name = "direccion", columnDefinition = "TEXT", nullable = false)
     private String direccion;
 
-
+    // ========== VOUCHER ==========
 
     @Column(name = "voucher_path", length = 255)
     private String voucherPath;
 
+    // ========== ESTADO Y FECHAS ==========
 
     @Column(name = "estado", length = 20, nullable = false)
     private String estado = "PENDIENTE";
@@ -95,16 +102,15 @@ public class SolicitudMatricula {
 
     // ========== RELACIONES ==========
 
-    /**
-     * ID del usuario que aprobó/rechazó la solicitud (administrador)
-     */
     @Column(name = "administrador_id")
     private Long administradorId;
 
-    /**
-     * Relación con el estudiante creado (solo cuando está APROBADO)
-     */
     @OneToOne
     @JoinColumn(name = "id_estudiante", referencedColumnName = "id_estudiante")
     private Estudiante estudiante;
+
+    // Método helper para obtener nombre completo del apoderado
+    public String getApoderadoNombreCompleto() {
+        return apoderadoNombres + " " + apoderadoApellidoPaterno + " " + apoderadoApellidoMaterno;
+    }
 }
