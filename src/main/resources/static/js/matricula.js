@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const voucherInput = document.getElementById('voucher');
     const voucherPreview = document.getElementById('voucherPreview');
     const submitBtn = document.querySelector('.btn-matricular');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
     // ========== 1. DETECTAR ERRORES/ÉXITO EN URL ==========
     const urlParams = new URLSearchParams(window.location.search);
@@ -127,8 +128,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-
-
     const direccionInput = document.getElementById('direccion');
     if (direccionInput) {
         direccionInput.addEventListener('input', function() {
@@ -173,6 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const apoderadoDni = document.getElementById('apoderadoDni');
+    const apoderadoNombres = document.getElementById('apoderadoNombres');
+
     if (apoderadoDni) {
         apoderadoDni.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8);
@@ -249,8 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-
-
     const terminosCheck = document.getElementById('terminosCondiciones');
     if (terminosCheck) {
         terminosCheck.addEventListener('change', function() {
@@ -262,6 +261,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+
+    // ========== OVERLAY DE CARGA PROFESIONAL ==========
+    function mostrarLoadingProfesional() {
+        if (!loadingOverlay) return;
+
+        resetearPasos();
+        loadingOverlay.classList.add('active');
+
+        setTimeout(() => activarPaso(1), 500);
+        setTimeout(() => completarPaso(1), 1500);
+
+        setTimeout(() => activarPaso(2), 1800);
+        setTimeout(() => completarPaso(2), 2800);
+
+        setTimeout(() => activarPaso(3), 3100);
+        setTimeout(() => completarPaso(3), 4000);
+    }
+
+    function ocultarLoadingProfesional() {
+        if (!loadingOverlay) return;
+        loadingOverlay.classList.remove('active');
+    }
+
+    function resetearPasos() {
+        for (let i = 1; i <= 3; i++) {
+            const paso = document.getElementById(`step${i}`);
+            if (paso) {
+                paso.classList.remove('active', 'completed');
+                const icono = paso.querySelector('i');
+                if (icono) {
+                    if (i === 1) icono.className = 'fas fa-user-check';
+                    if (i === 2) icono.className = 'fas fa-file-upload';
+                    if (i === 3) icono.className = 'fas fa-envelope';
+                }
+            }
+        }
+    }
+
+    function activarPaso(numero) {
+        const paso = document.getElementById(`step${numero}`);
+        if (paso) paso.classList.add('active');
+    }
+
+    function completarPaso(numero) {
+        const paso = document.getElementById(`step${numero}`);
+        if (paso) {
+            paso.classList.remove('active');
+            paso.classList.add('completed');
+            const icono = paso.querySelector('i');
+            if (icono) {
+                icono.className = 'fas fa-check-circle';
+            }
+        }
     }
 
     // ========== 4. VALIDACIÓN AL ENVIAR ==========
@@ -329,7 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (telefonoApoderado && telefonoApoderado.value.trim() && !validarTelefonoApoderado(telefonoApoderado, true)) isValid = false;
             if (apoderadoDni && apoderadoDni.value.trim() && !validarDNIApoderado(apoderadoDni, true)) isValid = false;
 
-            // Validar apellidos del apoderado
             if (apoderadoApellidoPaternoInput && apoderadoApellidoPaternoInput.value.trim() && !validarTexto(apoderadoApellidoPaternoInput, 'apellido', true)) isValid = false;
             if (apoderadoApellidoMaternoInput && apoderadoApellidoMaternoInput.value.trim() && !validarTexto(apoderadoApellidoMaternoInput, 'apellido', true)) isValid = false;
 
@@ -401,7 +453,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             console.log("✅ Usuario confirmó - Enviando formulario");
-            mostrarLoading(true);
+
+            // Mostrar overlay de carga profesional
+            mostrarLoadingProfesional();
+
+            // Deshabilitar botón para evitar doble clic
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+
             return true;
         });
     }
@@ -660,23 +720,6 @@ document.addEventListener('DOMContentLoaded', function() {
             messageDiv.style.animation = 'slideOutRight 0.3s ease';
             setTimeout(() => messageDiv.remove(), 300);
         };
-    }
-
-    function mostrarLoading(isLoading) {
-        if (!submitBtn) return;
-
-        if (isLoading) {
-            submitBtn.setAttribute('data-original-text', submitBtn.innerHTML);
-            submitBtn.innerHTML = `
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                Procesando solicitud...
-            `;
-            submitBtn.disabled = true;
-        } else {
-            const originalText = submitBtn.getAttribute('data-original-text');
-            if (originalText) submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }
     }
 
     // ========== 7. MASCARAS DE ENTRADA ==========

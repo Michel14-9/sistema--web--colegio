@@ -9,12 +9,19 @@ import com.universidad.sistema_academico.repository.MatriculaRepository;
 import com.universidad.sistema_academico.service.SolicitudMatriculaService;
 import com.universidad.sistema_academico.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +29,10 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
+
     @Autowired
     private UsuarioService usuarioService;
+
     @Autowired
     private EstudianteRepository estudianteRepository;
 
@@ -38,6 +47,9 @@ public class AdminController {
 
     @Autowired
     private ActividadRepository actividadRepository;
+
+    @Value("${voucher.upload.directory:uploads/vouchers}")
+    private String uploadDirectory;
 
     // ==================== MÉTODO PARA REGISTRAR ACTIVIDADES ====================
 
@@ -307,6 +319,7 @@ public class AdminController {
         registrarActividad(usuario, "ELIMINAR", "Matrícula", detalles);
         return "redirect:/admin/matriculas";
     }
+
     // ==================== GESTIÓN DE SOLICITUDES DE MATRÍCULA ====================
 
     @Autowired
@@ -331,13 +344,11 @@ public class AdminController {
     public String aprobarSolicitud(@PathVariable Long id, Authentication auth) {
         String usuario = auth != null ? auth.getName() : "admin";
 
-        // Buscar el usuario administrador para obtener su ID
         Usuario admin = usuarioService.findByUsername(usuario)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
 
         solicitudMatriculaService.aprobarSolicitud(id, admin.getId());
 
-        // Registrar actividad
         registrarActividad(usuario, "APROBAR", "SolicitudMatricula",
                 "Se aprobó la solicitud de matrícula ID: " + id);
 
@@ -350,16 +361,46 @@ public class AdminController {
                                     Authentication auth) {
         String usuario = auth != null ? auth.getName() : "admin";
 
-        // Buscar el usuario administrador para obtener su ID
         Usuario admin = usuarioService.findByUsername(usuario)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
 
         solicitudMatriculaService.rechazarSolicitud(id, admin.getId(), motivo);
 
-        // Registrar actividad
         registrarActividad(usuario, "RECHAZAR", "SolicitudMatricula",
                 "Se rechazó la solicitud de matrícula ID: " + id + " - Motivo: " + motivo);
 
         return "redirect:/admin/solicitudes";
+    }
+
+    // ==================== VER VOUCHER ====================
+
+    @GetMapping("/voucher/{filename}")
+    @ResponseBody
+    public ResponseEntity<byte[]> verVoucher(@PathVariable String filename) {
+        try {
+            Path filePath = Paths.get(uploadDirectory, filename);
+
+            if (!Files.exists(filePath)) {
+                return ResponseEntity.notFound().build();
+            }
+
+            byte[] fileBytes = Files.readAllBytes(filePath);
+            String contentType = determineContentType(filename);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .body(fileBytes);
+
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private String determineContentType(String filename) {
+        if (filename.endsWith(".png")) return "image/png";
+        if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+        if (filename.endsWith(".pdf")) return "application/pdf";
+        return "application/octet-stream";
     }
 }
