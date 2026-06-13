@@ -17,7 +17,6 @@ public class Docente {
     @Column(name = "id_docente")
     private Long idDocente;
 
-
     @OneToOne
     @JoinColumn(name = "usuario_id", referencedColumnName = "id")
     private Usuario usuario;
@@ -48,4 +47,37 @@ public class Docente {
 
     @Column(name = "estado", length = 20)
     private String estado;
+
+    @Column(name = "eliminado")
+    private boolean eliminado = false;
+
+    @PrePersist
+    public void generarCodigoAutomatico() {
+        if (codigoDocente == null || codigoDocente.isEmpty()) {
+            String siglas = obtenerSiglas(nombres);
+            String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
+            this.codigoDocente = siglas + "-" + timestamp;
+        }
+
+        if (estado == null) {
+            estado = "ACTIVO";
+        }
+    }
+
+    private String obtenerSiglas(String nombre) {
+        if (nombre == null || nombre.isEmpty()) {
+            return "DOC";
+        }
+        String[] palabras = nombre.trim().split("\\s+");
+        StringBuilder siglas = new StringBuilder();
+        for (String palabra : palabras) {
+            if (palabra.length() > 0) {
+                siglas.append(Character.toUpperCase(palabra.charAt(0)));
+            }
+        }
+        if (siglas.length() < 2 && nombre.length() >= 3) {
+            return nombre.substring(0, 3).toUpperCase();
+        }
+        return siglas.length() >= 2 ? siglas.toString() : "DOC";
+    }
 }
