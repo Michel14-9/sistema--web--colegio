@@ -2,6 +2,7 @@ package com.universidad.sistema_academico.repository;
 
 import com.universidad.sistema_academico.model.Curso;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -41,4 +42,6 @@ public interface CursoRepository extends JpaRepository<Curso, Long> {
      * @return true si existe, false si no
      */
     boolean existsByCodigoCurso(String codigoCurso);
+    @Query("SELECT c FROM Curso c LEFT JOIN FETCH c.docente")
+    List<Curso> findAllWithDocente();
 }

@@ -3,209 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matricular - Administrador</title>
+    <title>I.E. San Carlos - Gestión de Matrículas</title>
 
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- CSS Admin -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/admin.css}" rel="stylesheet">
 </head>
 <body>
 
-<!-- Header / Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/admin/dashboard">
-            <i class="fas fa-user-shield me-2"></i>
-            Sistema Académico - Admin
-        </a>
-        <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle me-1"></i>
-                <span>Administrador</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="/logout">
-                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                </a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<!-- Navbar -->
+<div th:replace="~{fragments/admin-navbar :: navbar}" th:with="tituloPagina='Gestión de Matrículas'"></div>
 
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-2 col-lg-2 d-md-block sidebar p-0">
-            <div class="position-sticky pt-3">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/dashboard">
-                            <i class="fas fa-tachometer-alt me-2"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/estudiantes">
-                            <i class="fas fa-user-graduate me-2"></i>
-                            Estudiantes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/docentes">
-                            <i class="fas fa-chalkboard-teacher me-2"></i>
-                            Docentes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/cursos">
-                            <i class="fas fa-book me-2"></i>
-                            Cursos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/admin/matricular">
-                            <i class="fas fa-clipboard-check me-2"></i>
-                            Matriculas
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+        <div th:replace="~{fragments/admin-sidebar :: sidebar}" th:with="modulo='matriculas'"></div>
 
         <!-- Main Content -->
-        <div class="col-md-10 col-lg-10 ms-sm-auto px-4 py-3">
-            <!-- Título -->
+        <div class="col-md-10 col-lg-10 main-content">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">
-                    <i class="fas fa-clipboard-check me-2 text-info"></i>
-                    Validación de Matrículas
-                </h1>
-            </div>
-
-            <!-- Filtros -->
-            <div class="card mb-4">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-filter me-2"></i>
-                        Filtros de Búsqueda
-                    </h5>
+                <div class="page-header">
+                    <h1><i class="fas fa-clipboard-list me-2 text-info"></i> Gestión de Matrículas</h1>
+                    <p>Administra y valida las matrículas de estudiantes.</p>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <label class="form-label">Estado</label>
-                            <select class="form-select">
-                                <option value="">Todos</option>
-                                <option value="PENDIENTE">Pendiente</option>
-                                <option value="APROBADO">Aprobado</option>
-                                <option value="RECHAZADO">Rechazado</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Ciclo</label>
-                            <select class="form-select">
-                                <option value="">Todos</option>
-                                <option value="2024-I">2024-I</option>
-                                <option value="2024-II">2024-II</option>
-                                <option value="2025-I">2025-I</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Curso</label>
-                            <select class="form-select">
-                                <option value="">Todos los cursos</option>
-                                <option value="MAT-101">Matemáticas I</option>
-                                <option value="FIS-101">Física I</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 d-flex align-items-end">
-                            <button class="btn btn-outline-info w-100">
-                                <i class="fas fa-search me-2"></i>Buscar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <a href="/admin/matricula/nuevo" class="btn-add">
+                    <i class="fas fa-plus me-2"></i>Nueva Matrícula
+                </a>
             </div>
 
             <!-- Estadísticas de matrículas -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card bg-warning text-white h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-clock me-2"></i>Pendientes
-                            </h5>
-                            <h2 class="mb-0">0</h2>
-                        </div>
+            <div class="stats-grid mb-4">
+                <div class="stat-card pending-stats" onclick="filtrarPorEstado('PENDIENTE')">
+                    <div class="stat-icon bg-warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${totalPendientes}">0</h3>
+                        <p>Pendientes</p>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-success text-white h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-check-circle me-2"></i>Aprobadas
-                            </h5>
-                            <h2 class="mb-0">0</h2>
-                        </div>
+                <div class="stat-card approved-stats" onclick="filtrarPorEstado('APROBADO')">
+                    <div class="stat-icon bg-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${totalAprobadas}">0</h3>
+                        <p>Aprobadas</p>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-danger text-white h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-times-circle me-2"></i>Rechazadas
-                            </h5>
-                            <h2 class="mb-0">0</h2>
-                        </div>
+                <div class="stat-card rejected-stats" onclick="filtrarPorEstado('RECHAZADO')">
+                    <div class="stat-icon bg-danger">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${totalRechazadas}">0</h3>
+                        <p>Rechazadas</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="search-card mb-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar por estudiante o DNI...">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="gradoFilter" class="form-select">
+                            <option value="">Todos los grados</option>
+                            <option value="1">1° Primaria</option>
+                            <option value="2">2° Primaria</option>
+                            <option value="3">3° Primaria</option>
+                            <option value="4">4° Primaria</option>
+                            <option value="5">5° Primaria</option>
+                            <option value="6">6° Primaria</option>
+                            <option value="7">1° Secundaria</option>
+                            <option value="8">2° Secundaria</option>
+                            <option value="9">3° Secundaria</option>
+                            <option value="10">4° Secundaria</option>
+                            <option value="11">5° Secundaria</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="estadoFilter" class="form-select">
+                            <option value="">Todos los estados</option>
+                            <option value="ACTIVO">ACTIVO</option>
+                            <option value="INACTIVO">INACTIVO</option>
+                            <option value="PENDIENTE">PENDIENTE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-info w-100" onclick="limpiarFiltros()">
+                            <i class="fas fa-eraser me-2"></i>Limpiar
+                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- Tabla de matrículas -->
-            <div class="card">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Lista de Matrículas</h5>
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <div class="header-title">
+                        <i class="fas fa-list"></i>
+                        <h4>Lista de Matrículas</h4>
+                    </div>
+                    <div class="header-count">
+                        <span class="total-count" th:text="${#lists.size(matriculas)}">0</span> matrículas registradas
+                    </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body-custom p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
+                        <table class="table table-modern" id="matriculasTable">
+                            <thead>
                             <tr>
                                 <th>ID</th>
                                 <th>Estudiante</th>
-                                <th>Curso</th>
-                                <th>Ciclo</th>
-                                <th>Fecha Matrícula</th>
+                                <th>DNI</th>
+                                <th>Grado</th>
+                                <th>Sección</th>
+                                <th>Turno</th>
+                                <th>Fecha</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>Juan Pérez</td>
-                                <td>Matemáticas I</td>
-                                <td>2025-I</td>
-                                <td>01/03/2025</td>
-                                <td><span class="badge bg-warning">PENDIENTE</span></td>
+                            <tr th:each="matricula : ${matriculas}">
+                                <td th:text="${matricula.idMatricula}">-</td>
+                                <td th:text="${matricula.estudiante.nombres + ' ' + matricula.estudiante.apellidoPaterno}">-</td>
+                                <td th:text="${matricula.estudiante.dni}">-</td>
+                                <td th:text="${matricula.grado}">-</td>
+                                <td th:text="${matricula.seccion}">-</td>
+                                <td th:text="${matricula.turno}">-</td>
+                                <td th:text="${#temporals.format(matricula.fechaMatricula, 'dd/MM/yyyy')}">-</td>
                                 <td>
-                                    <button class="btn btn-sm btn-success" title="Aprobar">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" title="Rechazar">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-info" title="Ver Detalle">
-                                        <i class="fas fa-eye"></i>
+                                    <span class="badge" th:class="${matricula.estado == 'ACTIVO'} ? 'bg-success' : (${matricula.estado == 'PENDIENTE'} ? 'bg-warning' : 'bg-danger')"
+                                          th:text="${matricula.estado}">-</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/admin/matricula/editar/{id}(id=${matricula.idMatricula})}" class="btn-icon-edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn-icon-delete ms-1"
+                                            onclick="confirmarEliminarMatricula(${matricula.idMatricula})">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
                             </tr>
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <i class="fas fa-clipboard-check fa-3x text-muted mb-2 d-block"></i>
+                            <tr th:if="${matriculas == null or matriculas.empty}">
+                                <td colspan="9" class="text-center py-4">
+                                    <i class="fas fa-clipboard-list fa-3x text-muted mb-2 d-block"></i>
                                     No hay matrículas registradas
                                 </td>
                             </tr>
@@ -214,26 +162,69 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Paginación -->
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#">Anterior</a>
-                    </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Siguiente</a>
-                    </li>
-                </ul>
-            </nav>
         </div>
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function confirmarEliminarMatricula(id) {
+        if (confirm('¿Está seguro de eliminar esta matrícula?')) {
+            window.location.href = `/admin/matricula/eliminar/${id}`;
+        }
+    }
+
+    function filtrarPorEstado(estado) {
+        window.location.href = `/admin/matriculas?estado=${estado}`;
+    }
+
+    function limpiarFiltros() {
+        window.location.href = '/admin/matriculas';
+    }
+
+    // Filtro de búsqueda en tiempo real
+    document.getElementById('searchInput')?.addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#matriculasTable tbody tr');
+        rows.forEach(row => {
+            if (row.cells && row.cells.length > 0 && !row.cells[0].innerText.includes('No hay')) {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            }
+        });
+    });
+
+    // Filtro por grado
+    document.getElementById('gradoFilter')?.addEventListener('change', function() {
+        let grado = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#matriculasTable tbody tr');
+        rows.forEach(row => {
+            if (row.cells && row.cells.length > 0 && !row.cells[0].innerText.includes('No hay')) {
+                let gradoCelda = row.cells[3]?.innerText.toLowerCase() || '';
+                if (grado === '' || gradoCelda === grado) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    });
+
+    // Filtro por estado
+    document.getElementById('estadoFilter')?.addEventListener('change', function() {
+        let estado = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#matriculasTable tbody tr');
+        rows.forEach(row => {
+            if (row.cells && row.cells.length > 0 && !row.cells[0].innerText.includes('No hay')) {
+                let estadoCelda = row.cells[7]?.innerText.toLowerCase() || '';
+                if (estado === '' || estadoCelda === estado) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    });
+</script>
 </body>
 </html>

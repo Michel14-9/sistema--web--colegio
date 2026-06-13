@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<div class="col-md-2 col-lg-2 d-md-block sidebar p-0" th:fragment="sidebar">
+    <div class="sidebar-menu">
+        <div class="user-info text-center">
+            <div class="user-avatar">
+                <img th:src="@{/img/logo.png}" alt="Logo" class="avatar-img">
+            </div>
+            <h5>Administrador</h5>
+            <p><i class="fas fa-user-shield"></i> <span th:text="${#authentication.name}">admin</span></p>
+            <p><i class="fas fa-tasks"></i> Rol: Administrador</p>
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'dashboard'} ? 'active' : ''" href="/admin/dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'solicitudes'} ? 'active' : ''" href="/admin/solicitudes">
+                    <i class="fas fa-file-alt"></i> Solicitudes
+                    <span class="badge bg-warning ms-1" th:text="${totalPendientes}">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'estudiantes'} ? 'active' : ''" href="/admin/estudiantes">
+                    <i class="fas fa-user-graduate"></i> Estudiantes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'docentes'} ? 'active' : ''" href="/admin/docentes">
+                    <i class="fas fa-chalkboard-user"></i> Docentes
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'cursos'} ? 'active' : ''" href="/admin/cursos">
+                    <i class="fas fa-book"></i> Cursos
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

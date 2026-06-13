@@ -5,81 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>I.E. San Carlos - Panel del Docente</title>
 
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- CSS Docente -->
     <link th:href="@{/css/docente.css}" rel="stylesheet">
 </head>
 <body>
 
 <!-- Navbar -->
-<nav class="navbar">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/docente/dashboard">
-            <div class="brand-icon">
-                <img th:src="@{/img/logo.png}" alt="Logo" class="nav-logo">
-            </div>
-            <div class="brand-text">
-                <h3>I.E. SAN CARLOS</h3>
-                <p>Panel del Docente</p>
-            </div>
-        </a>
-
-        <div class="dropdown">
-            <button class="dropdown-toggle-btn" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle"></i>
-                <span class="user-name" th:text="${docente.nombres}"></span>
-                <span class="user-lastname" th:text="${docente.apellidoPaterno}"></span>
-                <i class="fas fa-chevron-down"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <form th:action="@{/logout}" method="post">
-                        <button type="submit" class="dropdown-item logout-btn">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                        </button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<div th:replace="~{fragments/docente-navbar :: navbar}">
+    <div th:with="tituloPagina='Dashboard'"></div>
+</div>
 
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-2 col-lg-2 d-md-block sidebar p-0">
-            <div class="sidebar-menu">
-                <div class="user-info text-center">
-                    <div class="user-avatar">
-                        <img th:src="@{/img/logo.png}" alt="Logo" class="avatar-img">
-                    </div>
-                    <h5 th:text="${docente.nombres} + ' ' + ${docente.apellidoPaterno}"></h5>
-                    <p><i class="fas fa-id-card"></i> <span th:text="${docente.dni}">-</span></p>
-                    <p><i class="fas fa-envelope"></i> <span th:text="${docente.email}">-</span></p>
-                </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/docente/dashboard">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/docente/mis-cursos">
-                            <i class="fas fa-book-open"></i> Mis Cursos
-                        </a>
-                    </li>
-                </ul>
-            </div>
+        <div th:replace="~{fragments/docente-sidebar :: sidebar}">
+            <div th:with="modulo='dashboard'"></div>
         </div>
 
         <!-- Main Content -->
         <div class="col-md-10 col-lg-10 main-content">
-            <!-- Welcome Hero -->
             <div class="welcome-hero">
                 <div class="welcome-text">
                     <h1>¡Bienvenido, <span th:text="${docente.nombres}"></span>!</h1>

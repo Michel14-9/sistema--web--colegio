@@ -191,7 +191,8 @@ public class SolicitudMatriculaService {
     }
 
     private String generarCodigoEstudiante() {
-        return "EST-" + LocalDate.now().getYear() + "-" + System.currentTimeMillis();
+
+        return "EST" + LocalDate.now().getYear() + String.format("%06d", (int)(Math.random() * 1000000));
     }
     public SolicitudMatricula buscarPorId(Long id) {
         return solicitudRepository.findById(id)

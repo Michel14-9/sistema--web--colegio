@@ -202,7 +202,10 @@ public class AdminController {
 
     @GetMapping("/cursos")
     public String listarCursos(Model model) {
-        model.addAttribute("cursos", cursoRepository.findAll());
+        // Usar el método que carga los cursos con sus docentes
+        List<Curso> cursos = cursoRepository.findAllWithDocente();
+
+        model.addAttribute("cursos", cursos);
         model.addAttribute("docentes", docenteRepository.findAll());
         return "admin/cursos";
     }
@@ -336,20 +339,37 @@ public class AdminController {
     @GetMapping("/solicitud/{id}")
     public String verDetalleSolicitud(@PathVariable Long id, Model model) {
         SolicitudMatricula solicitud = solicitudMatriculaService.buscarPorId(id);
+
+        // Extraer solo el nombre del archivo del voucher
+        String voucherFilename = "";
+        if (solicitud.getVoucherPath() != null && !solicitud.getVoucherPath().isEmpty()) {
+            String fullPath = solicitud.getVoucherPath();
+            // Limpiar la ruta: reemplazar \ por / y luego extraer el nombre
+            String cleanPath = fullPath.replace("\\", "/");
+            voucherFilename = cleanPath.substring(cleanPath.lastIndexOf("/") + 1);
+
+            System.out.println("=== VOUCHER DEBUG ===");
+            System.out.println("Path original: " + fullPath);
+            System.out.println("Path limpio: " + cleanPath);
+            System.out.println("Nombre archivo: " + voucherFilename);
+        }
+
         model.addAttribute("solicitud", solicitud);
+        model.addAttribute("voucherFilename", voucherFilename);
         return "admin/solicitud-detalle";
     }
 
     @PostMapping("/solicitud/aprobar/{id}")
     public String aprobarSolicitud(@PathVariable Long id, Authentication auth) {
-        String usuario = auth != null ? auth.getName() : "admin";
+        String email = auth != null ? auth.getName() : "admin";
 
-        Usuario admin = usuarioService.findByUsername(usuario)
-                .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+        // Buscar por EMAIL, no por username
+        Usuario admin = usuarioService.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Administrador no encontrado con email: " + email));
 
         solicitudMatriculaService.aprobarSolicitud(id, admin.getId());
 
-        registrarActividad(usuario, "APROBAR", "SolicitudMatricula",
+        registrarActividad(email, "APROBAR", "SolicitudMatricula",
                 "Se aprobó la solicitud de matrícula ID: " + id);
 
         return "redirect:/admin/solicitudes";
@@ -359,14 +379,15 @@ public class AdminController {
     public String rechazarSolicitud(@PathVariable Long id,
                                     @RequestParam String motivo,
                                     Authentication auth) {
-        String usuario = auth != null ? auth.getName() : "admin";
+        String email = auth != null ? auth.getName() : "admin";
 
-        Usuario admin = usuarioService.findByUsername(usuario)
-                .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+        // Buscar por EMAIL
+        Usuario admin = usuarioService.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Administrador no encontrado con email: " + email));
 
         solicitudMatriculaService.rechazarSolicitud(id, admin.getId(), motivo);
 
-        registrarActividad(usuario, "RECHAZAR", "SolicitudMatricula",
+        registrarActividad(email, "RECHAZAR", "SolicitudMatricula",
                 "Se rechazó la solicitud de matrícula ID: " + id + " - Motivo: " + motivo);
 
         return "redirect:/admin/solicitudes";

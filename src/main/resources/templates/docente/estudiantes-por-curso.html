@@ -13,54 +13,19 @@
 <body>
 
 <!-- Navbar -->
-<nav class="navbar">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/docente/dashboard">
-            <div class="brand-icon">
-                <img th:src="@{/img/logo.png}" alt="Logo" class="nav-logo">
-            </div>
-            <div class="brand-text">
-                <h3>I.E. SAN CARLOS</h3>
-                <p th:text="'Curso: ' + ${curso.nombreCurso}">Curso</p>
-            </div>
-        </a>
-        <div class="dropdown">
-            <button class="dropdown-toggle-btn" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle"></i>
-                <span class="user-name" th:text="${docente.nombres}"></span>
-                <i class="fas fa-chevron-down"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <form th:action="@{/logout}" method="post">
-                        <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<div th:replace="~{fragments/docente-navbar :: navbar}">
+    <div th:with="tituloPagina=${'Curso: ' + curso.nombreCurso}"></div>
+</div>
 
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-2 col-lg-2 d-md-block sidebar p-0">
-            <div class="sidebar-menu">
-                <div class="user-info text-center">
-                    <div class="user-avatar"><img th:src="@{/img/logo.png}" alt="Logo" class="avatar-img"></div>
-                    <h5 th:text="${docente.nombres} + ' ' + ${docente.apellidoPaterno}"></h5>
-                    <p><i class="fas fa-id-card"></i> <span th:text="${docente.dni}">-</span></p>
-                </div>
-                <ul class="nav flex-column">
-                    <li class="nav-item"><a class="nav-link" href="/docente/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/docente/mis-cursos"><i class="fas fa-book-open"></i> Mis Cursos</a></li>
-                </ul>
-            </div>
+        <div th:replace="~{fragments/docente-sidebar :: sidebar}">
+            <div th:with="modulo='cursos'"></div>
         </div>
 
         <!-- Main Content -->
         <div class="col-md-10 col-lg-10 main-content">
-            <!-- Curso Header -->
             <div class="curso-header">
                 <div class="curso-header-icon">
                     <i class="fas fa-chalkboard-user"></i>
@@ -75,7 +40,6 @@
                 </a>
             </div>
 
-            <!-- Lista de Estudiantes -->
             <div class="content-card">
                 <div class="card-header-custom">
                     <div class="header-title">
@@ -90,13 +54,7 @@
                     <div class="table-responsive">
                         <table class="table table-modern">
                             <thead>
-                            <tr>
-                                <th><i class="fas fa-hashtag"></i> #</th>
-                                <th><i class="fas fa-id-card"></i> DNI</th>
-                                <th><i class="fas fa-user-graduate"></i> Apellidos y Nombres</th>
-                                <th><i class="fas fa-envelope"></i> Email</th>
-                                <th><i class="fas fa-calendar-alt"></i> Estado</th>
-                            </tr>
+                            <tr><th><i class="fas fa-hashtag"></i> #</th><th><i class="fas fa-id-card"></i> DNI</th><th><i class="fas fa-user-graduate"></i> Apellidos y Nombres</th><th><i class="fas fa-envelope"></i> Email</th><th><i class="fas fa-calendar-alt"></i> Estado</th></tr>
                             </thead>
                             <tbody>
                             <tr th:each="estudiante, iterStat : ${estudiantes}">
@@ -104,16 +62,10 @@
                                 <td th:text="${estudiante.dni}">-</td>
                                 <td th:text="${estudiante.apellidoPaterno} + ' ' + ${estudiante.apellidoMaterno} + ', ' + ${estudiante.nombres}">-</td>
                                 <td th:text="${estudiante.emailInstitucional}">-</td>
-                                <td>
-                                    <span class="status-badge status-active" th:if="${estudiante.estado == 'ACTIVO'}" th:text="${estudiante.estado}">ACTIVO</span>
-                                    <span class="status-badge status-inactive" th:unless="${estudiante.estado == 'ACTIVO'}" th:text="${estudiante.estado}">INACTIVO</span>
-                                </td>
+                                <td><span class="status-badge status-active" th:if="${estudiante.estado == 'ACTIVO'}" th:text="${estudiante.estado}">ACTIVO</span></td>
                             </tr>
                             <tr th:if="${estudiantes == null or estudiantes.empty}">
-                                <td colspan="5" class="text-center py-5">
-                                    <i class="fas fa-user-slash fa-3x text-muted mb-3 d-block"></i>
-                                    No hay estudiantes matriculados en este curso.
-                                </td>
+                                <td colspan="5" class="text-center py-5">No hay estudiantes matriculados en este curso.</td>
                             </tr>
                             </tbody>
                         </table>
