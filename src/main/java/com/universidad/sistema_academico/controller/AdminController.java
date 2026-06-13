@@ -204,25 +204,92 @@ public class AdminController {
     // ==================== CRUD CURSOS ====================
 
     @GetMapping("/cursos")
-    public String listarCursos(Model model) {
-        // Usar el método que carga los cursos con sus docentes
-        List<Curso> cursos = cursoRepository.findAllWithDocente();
+    public String listarCursos(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Integer filtroGrado,
+            @RequestParam(required = false) String filtroTurno,
+            @RequestParam(required = false) String filtroArea,
+            @RequestParam(required = false) String filtroEstado,
+            @RequestParam(required = false) String filtroNombre,
+            Model model) {
 
-        model.addAttribute("cursos", cursos);
-        model.addAttribute("docentes", docenteRepository.findAll());
+        // ========== DEPURACIÓN: Mostrar parámetros recibidos ==========
+        System.out.println("=== PAGINACIÓN DEBUG ===");
+        System.out.println("Página solicitada: " + page);
+        System.out.println("filtroGrado recibido: " + filtroGrado);
+        System.out.println("filtroTurno recibido: " + filtroTurno);
+        System.out.println("filtroArea recibido: " + filtroArea);
+        System.out.println("filtroEstado recibido: " + filtroEstado);
+        System.out.println("filtroNombre recibido: " + filtroNombre);
+
+        // Limpiar filtros vacíos
+        if (filtroGrado != null && filtroGrado == 0) filtroGrado = null;
+        if (filtroTurno != null && filtroTurno.isEmpty()) filtroTurno = null;
+        if (filtroArea != null && filtroArea.isEmpty()) filtroArea = null;
+        if (filtroEstado != null && filtroEstado.isEmpty()) filtroEstado = null;
+        if (filtroNombre != null && filtroNombre.isEmpty()) filtroNombre = null;
+
+        System.out.println("=== FILTROS DESPUÉS DE LIMPIAR ===");
+        System.out.println("filtroGrado: " + filtroGrado);
+        System.out.println("filtroTurno: " + filtroTurno);
+        System.out.println("filtroArea: " + filtroArea);
+        System.out.println("filtroEstado: " + filtroEstado);
+        System.out.println("filtroNombre: " + filtroNombre);
+
+        // Configurar paginación (10 cursos por página)
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, 10);
+
+        // Aplicar filtros con paginación
+        org.springframework.data.domain.Page<Curso> cursosPage = cursoRepository.findWithFilters(
+                filtroGrado,
+                filtroTurno,
+                filtroArea,
+                filtroEstado,
+                filtroNombre,
+                pageable
+        );
+
+        // ========== DEPURACIÓN: Mostrar resultados ==========
+        System.out.println("=== RESULTADOS DE LA CONSULTA ===");
+        System.out.println("Total de elementos en BD: " + cursosPage.getTotalElements());
+        System.out.println("Total de páginas: " + cursosPage.getTotalPages());
+        System.out.println("Elementos en página actual: " + cursosPage.getNumberOfElements());
+        System.out.println("Contenido size: " + cursosPage.getContent().size());
+        System.out.println("¿Tiene página anterior? " + cursosPage.hasPrevious());
+        System.out.println("¿Tiene página siguiente? " + cursosPage.hasNext());
+        System.out.println("=====================================");
 
         // Estadísticas para el dashboard de cursos
-        long totalCursos = cursos.size();
-        long cursosActivos = cursos.stream().filter(c -> "ACTIVO".equals(c.getEstado())).count();
-        long cursosInactivos = cursos.stream().filter(c -> "INACTIVO".equals(c.getEstado())).count();
-        long cursosSinDocente = cursos.stream().filter(c -> c.getIdDocente() == null || c.getIdDocente() == 0).count();
-        int totalCupos = cursos.stream().mapToInt(c -> c.getCapacidadMaxima() != null ? c.getCapacidadMaxima() : 36).sum();
+        List<Curso> todosCursos = cursoRepository.findAllWithDocente();
+        long totalCursos = todosCursos.size();
+        long cursosActivos = todosCursos.stream().filter(c -> "ACTIVO".equals(c.getEstado())).count();
+        long cursosInactivos = todosCursos.stream().filter(c -> "INACTIVO".equals(c.getEstado())).count();
+        long cursosSinDocente = todosCursos.stream().filter(c -> c.getIdDocente() == null || c.getIdDocente() == 0).count();
+        int totalCupos = todosCursos.stream().mapToInt(c -> c.getCapacidadMaxima() != null ? c.getCapacidadMaxima() : 36).sum();
 
+        // Agregar atributos al modelo
+        model.addAttribute("cursos", cursosPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", cursosPage.getTotalPages());
+        model.addAttribute("totalItems", cursosPage.getTotalElements());
+        model.addAttribute("hasPrevious", cursosPage.hasPrevious());
+        model.addAttribute("hasNext", cursosPage.hasNext());
+
+        // Mantener filtros en la vista
+        model.addAttribute("filtroGrado", filtroGrado);
+        model.addAttribute("filtroTurno", filtroTurno);
+        model.addAttribute("filtroArea", filtroArea);
+        model.addAttribute("filtroEstado", filtroEstado);
+        model.addAttribute("filtroNombre", filtroNombre);
+
+        // Estadísticas
         model.addAttribute("totalCursos", totalCursos);
         model.addAttribute("cursosActivos", cursosActivos);
         model.addAttribute("cursosInactivos", cursosInactivos);
         model.addAttribute("cursosSinDocente", cursosSinDocente);
         model.addAttribute("totalCupos", totalCupos);
+        model.addAttribute("docentes", docenteRepository.findAll());
 
         return "admin/cursos";
     }
@@ -320,6 +387,7 @@ public class AdminController {
 
         return "redirect:/admin/cursos";
     }
+
     @GetMapping("/curso/editar/{id}")
     public String mostrarFormularioEditarCurso(@PathVariable Long id, Model model) {
         Optional<Curso> curso = cursoRepository.findById(id);
@@ -421,10 +489,13 @@ public class AdminController {
         Optional<Curso> curso = cursoRepository.findById(id);
         if (curso.isPresent()) {
             String nombreCurso = curso.get().getNombreCurso();
-            cursoRepository.deleteById(id);
+
+            // Soft Delete: solo marcar como eliminado
+            Curso cursoParaEliminar = curso.get();
+            cursoParaEliminar.setEliminado(true);
+            cursoRepository.save(cursoParaEliminar);
+
             registrarActividad(usuario, "ELIMINAR", "Curso", "Se eliminó curso: " + nombreCurso);
-
-
             redirectAttributes.addFlashAttribute("success", " Curso '" + nombreCurso + "' eliminado correctamente");
         } else {
             redirectAttributes.addFlashAttribute("error", " Error: Curso no encontrado");
@@ -432,6 +503,7 @@ public class AdminController {
 
         return "redirect:/admin/cursos";
     }
+
     // ==================== VALIDACIÓN EN TIEMPO REAL ====================
 
     /**
@@ -456,6 +528,7 @@ public class AdminController {
         response.put("conflicto", tieneConflicto);
         return ResponseEntity.ok(response);
     }
+
     // ==================== CRUD MATRÍCULAS ====================
 
     @GetMapping("/matriculas")
