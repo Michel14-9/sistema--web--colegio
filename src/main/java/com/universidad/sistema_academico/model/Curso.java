@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Entity
 @Table(name = "curso", schema = "academico")
 @Data
@@ -42,21 +41,21 @@ public class Curso {
     @Column(name = "estado", length = 20)
     private String estado;
 
+    // ========== RELACIONES ==========
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_docente", referencedColumnName = "id_docente", insertable = false, updatable = false)
+    private Docente docente;
 
     @PrePersist
     public void generarCodigoAutomatico() {
         if (codigoCurso == null || codigoCurso.isEmpty()) {
-            // Generar código basado en el nombre + timestamp
             String siglas = obtenerSiglas(nombreCurso);
             String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
             this.codigoCurso = siglas + "-" + timestamp;
         }
     }
 
-    /**
-     * Método auxiliar para obtener las siglas del nombre del curso.
-     * Ejemplo: "Matemáticas Avanzadas" -> "MA"
-     */
     private String obtenerSiglas(String nombre) {
         if (nombre == null || nombre.isEmpty()) {
             return "CUR";
@@ -71,7 +70,6 @@ public class Curso {
             }
         }
 
-        // Si las siglas son muy cortas, usar primeras 3 letras del nombre
         if (siglas.length() < 2 && nombre.length() >= 3) {
             return nombre.substring(0, 3).toUpperCase();
         }
