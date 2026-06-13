@@ -143,27 +143,99 @@ public class AdminController {
         return "redirect:/admin/estudiantes";
     }
 
-    // ==================== CRUD DOCENTES ====================
+    // ==================== CRUD DOCENTES MEJORADO ====================
 
     @GetMapping("/docentes")
-    public String listarDocentes(Model model) {
-        model.addAttribute("docentes", docenteRepository.findAll());
+    public String listarDocentes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String filtroNombre,
+            @RequestParam(required = false) String filtroEspecialidad,
+            @RequestParam(required = false) String filtroEstado,
+            Model model) {
+
+        System.out.println("=== DOCENTES PAGINACIÓN ===");
+        System.out.println("Página: " + page);
+        System.out.println("filtroNombre: " + filtroNombre);
+        System.out.println("filtroEspecialidad: " + filtroEspecialidad);
+        System.out.println("filtroEstado: " + filtroEstado);
+
+        // Limpiar filtros vacíos
+        if (filtroNombre != null && filtroNombre.isEmpty()) filtroNombre = null;
+        if (filtroEspecialidad != null && filtroEspecialidad.isEmpty()) filtroEspecialidad = null;
+        if (filtroEstado != null && filtroEstado.isEmpty()) filtroEstado = null;
+
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, 10);
+
+        org.springframework.data.domain.Page<Docente> docentesPage = docenteRepository.findWithFilters(
+                filtroNombre, filtroEspecialidad, filtroEstado, pageable);
+
+        System.out.println("Total elementos: " + docentesPage.getTotalElements());
+        System.out.println("Total páginas: " + docentesPage.getTotalPages());
+
+        // Obtener lista de especialidades únicas para el filtro
+        List<String> especialidades = docenteRepository.findAllActive().stream()
+                .map(Docente::getEspecialidad)
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+
+        model.addAttribute("docentes", docentesPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", docentesPage.getTotalPages());
+        model.addAttribute("totalItems", docentesPage.getTotalElements());
+        model.addAttribute("hasPrevious", docentesPage.hasPrevious());
+        model.addAttribute("hasNext", docentesPage.hasNext());
+        model.addAttribute("filtroNombre", filtroNombre);
+        model.addAttribute("filtroEspecialidad", filtroEspecialidad);
+        model.addAttribute("filtroEstado", filtroEstado);
+        model.addAttribute("especialidades", especialidades);
+
         return "admin/docentes";
     }
 
     @GetMapping("/docente/nuevo")
     public String mostrarFormularioNuevoDocente(Model model) {
         model.addAttribute("docente", new Docente());
+        model.addAttribute("especialidades", getEspecialidadesList());
         return "admin/docente-form";
     }
 
     @PostMapping("/docente/guardar")
-    public String guardarDocente(@ModelAttribute Docente docente, Authentication auth) {
+    public String guardarDocente(@ModelAttribute Docente docente,
+                                 Authentication auth,
+                                 RedirectAttributes redirectAttributes) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se registró docente: " + docente.getNombres() + " " + docente.getApellidoPaterno() + " " + docente.getApellidoMaterno();
 
-        docenteRepository.save(docente);
-        registrarActividad(usuario, "CREAR", "Docente", detalles);
+        try {
+            // 1. Validar DNI único
+            if (docenteRepository.existsByDni(docente.getDni())) {
+                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el DNI: " + docente.getDni());
+                return "redirect:/admin/docentes";
+            }
+
+            // 2. Validar Email único
+            if (docente.getEmail() != null && !docente.getEmail().isEmpty() &&
+                    docenteRepository.existsByEmail(docente.getEmail())) {
+                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + docente.getEmail());
+                return "redirect:/admin/docentes";
+            }
+
+            // Generar código automático si está vacío
+            if (docente.getCodigoDocente() == null || docente.getCodigoDocente().isEmpty()) {
+                docente.generarCodigoAutomatico();
+            }
+
+            if (docente.getEstado() == null) docente.setEstado("ACTIVO");
+
+            docenteRepository.save(docente);
+            registrarActividad(usuario, "CREAR", "Docente", "Se registró docente: " + docente.getNombres() + " " + docente.getApellidoPaterno());
+            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() + "' creado correctamente");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
+        }
+
         return "redirect:/admin/docentes";
     }
 
@@ -172,33 +244,102 @@ public class AdminController {
         Optional<Docente> docente = docenteRepository.findById(id);
         if (docente.isPresent()) {
             model.addAttribute("docente", docente.get());
+            model.addAttribute("especialidades", getEspecialidadesList());
             return "admin/docente-form";
         }
         return "redirect:/admin/docentes";
     }
 
     @PostMapping("/docente/actualizar/{id}")
-    public String actualizarDocente(@PathVariable Long id, @ModelAttribute Docente docente, Authentication auth) {
+    public String actualizarDocente(@PathVariable Long id,
+                                    @ModelAttribute Docente docente,
+                                    Authentication auth,
+                                    RedirectAttributes redirectAttributes) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se actualizó docente: " + docente.getNombres() + " " + docente.getApellidoPaterno();
 
-        docente.setIdDocente(id);
-        docenteRepository.save(docente);
-        registrarActividad(usuario, "EDITAR", "Docente", detalles);
+        try {
+            Optional<Docente> docenteExistenteOpt = docenteRepository.findById(id);
+            if (!docenteExistenteOpt.isPresent()) {
+                redirectAttributes.addFlashAttribute("error", "✗ Docente no encontrado");
+                return "redirect:/admin/docentes";
+            }
+
+            Docente docenteOriginal = docenteExistenteOpt.get();
+            docente.setIdDocente(id);
+
+            // 1. Validar DNI único (excluyendo el actual)
+            if (!docente.getDni().equals(docenteOriginal.getDni()) &&
+                    docenteRepository.existsByDni(docente.getDni())) {
+                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el DNI: " + docente.getDni());
+                return "redirect:/admin/docentes";
+            }
+
+            // 2. Validar Email único (excluyendo el actual)
+            if (docente.getEmail() != null && !docente.getEmail().isEmpty() &&
+                    !docente.getEmail().equals(docenteOriginal.getEmail()) &&
+                    docenteRepository.existsByEmail(docente.getEmail())) {
+                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + docente.getEmail());
+                return "redirect:/admin/docentes";
+            }
+
+            docenteRepository.save(docente);
+            registrarActividad(usuario, "EDITAR", "Docente", "Se actualizó docente: " + docente.getNombres());
+            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() + "' actualizado correctamente");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "✗ Error al actualizar: " + e.getMessage());
+        }
+
         return "redirect:/admin/docentes";
     }
 
     @GetMapping("/docente/eliminar/{id}")
-    public String eliminarDocente(@PathVariable Long id, Authentication auth) {
+    public String eliminarDocente(@PathVariable Long id,
+                                  Authentication auth,
+                                  RedirectAttributes redirectAttributes) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        Optional<Docente> docente = docenteRepository.findById(id);
 
+        Optional<Docente> docente = docenteRepository.findById(id);
         if (docente.isPresent()) {
-            String detalles = "Se eliminó docente: " + docente.get().getNombres() + " " + docente.get().getApellidoPaterno();
-            docenteRepository.deleteById(id);
-            registrarActividad(usuario, "ELIMINAR", "Docente", detalles);
+            String nombreDocente = docente.get().getNombres();
+
+            // Validar que no tenga cursos asignados activos
+            List<Curso> cursosAsignados = cursoRepository.findByIdDocenteAndEstado(id, "ACTIVO");
+            if (!cursosAsignados.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error",
+                        "❌ No se puede eliminar al docente '" + nombreDocente +
+                                "' porque tiene " + cursosAsignados.size() + " curso(s) asignado(s)");
+                return "redirect:/admin/docentes";
+            }
+
+            // Soft Delete
+            Docente docenteParaEliminar = docente.get();
+            docenteParaEliminar.setEliminado(true);
+            docenteParaEliminar.setEstado("INACTIVO");
+            docenteRepository.save(docenteParaEliminar);
+
+            registrarActividad(usuario, "ELIMINAR", "Docente", "Se eliminó docente: " + nombreDocente);
+            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + nombreDocente + "' eliminado correctamente");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "❌ Error: Docente no encontrado");
         }
+
         return "redirect:/admin/docentes";
+    }
+
+    // Método auxiliar para obtener lista de especialidades
+    private List<String> getEspecialidadesList() {
+        return java.util.Arrays.asList(
+                "MATEMÁTICAS",
+                "COMUNICACIÓN",
+                "CIENCIA Y TECNOLOGÍA",
+                "CIENCIAS SOCIALES",
+                "INGLÉS",
+                "ARTE",
+                "EDUCACIÓN FÍSICA",
+                "RELIGIÓN",
+                "TUTORÍA"
+        );
     }
 
     // ==================== CRUD CURSOS ====================

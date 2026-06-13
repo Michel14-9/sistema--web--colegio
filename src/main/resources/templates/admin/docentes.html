@@ -22,39 +22,71 @@
 
         <!-- Main Content -->
         <div class="col-md-10 col-lg-10 main-content">
+
+            <!-- ALERTAS -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="me-3"><i class="fas fa-check-circle fa-2x"></i></div>
+                    <div><strong>¡Éxito!</strong><br><span th:text="${success}"></span></div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="me-3"><i class="fas fa-exclamation-circle fa-2x"></i></div>
+                    <div><strong>¡Error!</strong><br><span th:text="${error}"></span></div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+
+            <!-- FILTROS DE BÚSQUEDA -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Buscar docente</label>
+                            <input type="text" class="form-control form-control-sm" id="filtroNombre"
+                                   th:value="${filtroNombre}" placeholder="Nombre, apellido...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Especialidad</label>
+                            <select class="form-select form-select-sm" id="filtroEspecialidad" th:value="${filtroEspecialidad}">
+                                <option value="">Todas</option>
+                                <option th:each="esp : ${especialidades}" th:value="${esp}" th:text="${esp}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Estado</label>
+                            <select class="form-select form-select-sm" id="filtroEstado" th:value="${filtroEstado}">
+                                <option value="">Todos</option>
+                                <option value="ACTIVO">Activo</option>
+                                <option value="INACTIVO">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end gap-2">
+                            <button type="button" class="btn btn-primary btn-sm flex-grow-1" id="btnBuscar">
+                                <i class="fas fa-search me-1"></i> Buscar
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnLimpiar" title="Limpiar filtros">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ENCABEZADO -->
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <div class="page-header">
                     <h1><i class="fas fa-chalkboard-user me-2 text-success"></i> Gestión de Docentes</h1>
                     <p>Administra los docentes, edita o elimina información.</p>
                 </div>
-                <a href="/admin/docente/nuevo" class="btn-add">
+                <button type="button" class="btn-add" data-bs-toggle="modal" data-bs-target="#docenteModal" onclick="limpiarFormularioDocente()">
                     <i class="fas fa-plus me-2"></i>Nuevo Docente
-                </a>
+                </button>
             </div>
 
-            <!-- Buscador -->
-            <div class="search-card mb-4">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre, DNI o especialidad...">
-                    </div>
-                    <div class="col-md-3">
-                        <select id="especialidadFilter" class="form-select">
-                            <option value="">Todas las especialidades</option>
-                            <option th:each="esp : ${especialidades}" th:value="${esp}" th:text="${esp}"></option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select id="estadoFilter" class="form-select">
-                            <option value="">Todos los estados</option>
-                            <option value="ACTIVO">ACTIVO</option>
-                            <option value="INACTIVO">INACTIVO</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabla de docentes -->
+            <!-- TABLA DE DOCENTES -->
             <div class="content-card">
                 <div class="card-header-custom">
                     <div class="header-title">
@@ -62,12 +94,12 @@
                         <h4>Lista de Docentes</h4>
                     </div>
                     <div class="header-count">
-                        <span class="total-count" th:text="${#lists.size(docentes)}">0</span> docentes registrados
+                        <span class="total-count" th:text="${totalItems != null ? totalItems : #lists.size(docentes)}">0</span> docentes registrados
                     </div>
                 </div>
                 <div class="card-body-custom p-0">
                     <div class="table-responsive">
-                        <table class="table table-modern" id="docentesTable">
+                        <table class="table table-modern">
                             <thead>
                             <tr>
                                 <th>ID</th>
@@ -97,11 +129,25 @@
                                           th:text="${docente.estado}">-</span>
                                 </td>
                                 <td>
-                                    <a th:href="@{/admin/docente/editar/{id}(id=${docente.idDocente})}" class="btn-icon-edit">
+                                    <button type="button" class="btn-icon-edit"
+                                            th:data-id="${docente.idDocente}"
+                                            th:data-codigo="${docente.codigoDocente}"
+                                            th:data-dni="${docente.dni}"
+                                            th:data-nombres="${docente.nombres}"
+                                            th:data-apellido-paterno="${docente.apellidoPaterno}"
+                                            th:data-apellido-materno="${docente.apellidoMaterno}"
+                                            th:data-email="${docente.email}"
+                                            th:data-celular="${docente.celular}"
+                                            th:data-especialidad="${docente.especialidad}"
+                                            th:data-estado="${docente.estado}"
+                                            onclick="editarDocente(this)"
+                                            data-bs-toggle="modal" data-bs-target="#docenteModal">
                                         <i class="fas fa-edit"></i>
-                                    </a>
+                                    </button>
                                     <button type="button" class="btn-icon-delete ms-1"
-                                            onclick="confirmarEliminarDocente(${docente.idDocente}, '${docente.nombres}')">
+                                            th:data-id="${docente.idDocente}"
+                                            th:data-nombre="${docente.nombres + ' ' + docente.apellidoPaterno}"
+                                            onclick="confirmarEliminarDocente(this)">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
@@ -117,27 +163,137 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PAGINACIÓN -->
+            <div th:if="${totalPages > 0}" class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+                    <small class="text-muted">
+                        <i class="fas fa-table me-1"></i> Mostrando <span th:text="${docentes.size()}"></span> de <span th:text="${totalItems}"></span> docentes
+                        <span th:if="${totalPages > 1}"> — Página <strong th:text="${currentPage + 1}"></strong> de <strong th:text="${totalPages}"></strong></span>
+                    </small>
+                </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- Anterior -->
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                            <a class="page-link" th:if="${currentPage > 0}"
+                               th:href="@{/admin/docentes(page=${currentPage - 1}, filtroNombre=${filtroNombre}, filtroEspecialidad=${filtroEspecialidad}, filtroEstado=${filtroEstado})}">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </a>
+                            <span class="page-link" th:unless="${currentPage > 0}">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </span>
+                        </li>
+
+                        <!-- Números de página -->
+                        <li th:each="i: ${#numbers.sequence(0, totalPages - 1)}"
+                            th:if="${i >= currentPage - 2 and i <= currentPage + 2}"
+                            class="page-item" th:classappend="${i == currentPage} ? 'active'">
+                            <a class="page-link" th:href="@{/admin/docentes(page=${i}, filtroNombre=${filtroNombre}, filtroEspecialidad=${filtroEspecialidad}, filtroEstado=${filtroEstado})}"
+                               th:text="${i + 1}"></a>
+                        </li>
+
+                        <!-- Siguiente -->
+                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                            <a class="page-link" th:if="${currentPage < totalPages - 1}"
+                               th:href="@{/admin/docentes(page=${currentPage + 1}, filtroNombre=${filtroNombre}, filtroEspecialidad=${filtroEspecialidad}, filtroEstado=${filtroEstado})}">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </a>
+                            <span class="page-link" th:unless="${currentPage < totalPages - 1}">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL para Nuevo/Editar Docente -->
+<div class="modal fade" id="docenteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-chalkboard-user me-2"></i>
+                    <span id="modalTitulo">Nuevo Docente</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="docenteForm" method="post" th:action="@{/admin/docente/guardar}">
+                <div class="modal-body">
+                    <input type="hidden" id="docenteId" name="idDocente">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Código Docente</label>
+                            <input type="text" class="form-control" id="codigoDocente" name="codigoDocente"
+                                   readonly style="background-color: #e9ecef;" placeholder="Se generará automáticamente">
+                            <small class="text-muted">Se genera automáticamente al guardar</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">DNI *</label>
+                            <input type="text" class="form-control" id="dni" name="dni"
+                                   maxlength="8" placeholder="Ingrese 8 dígitos" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Apellido Paterno *</label>
+                            <input type="text" class="form-control" id="apellidoPaterno" name="apellidoPaterno" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Apellido Materno *</label>
+                            <input type="text" class="form-control" id="apellidoMaterno" name="apellidoMaterno" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono/Celular</label>
+                            <input type="text" class="form-control" id="celular" name="celular" maxlength="15">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Especialidad *</label>
+                            <select class="form-select" id="especialidad" name="especialidad" required>
+                                <option value="">Seleccionar especialidad...</option>
+                                <option th:each="esp : ${especialidades}" th:value="${esp}" th:text="${esp}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="ACTIVO">ACTIVO</option>
+                                <option value="INACTIVO">INACTIVO</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar Docente</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function confirmarEliminarDocente(id, nombre) {
-        if (confirm(`¿Está seguro de eliminar al docente "${nombre}"?`)) {
-            window.location.href = `/admin/docente/eliminar/${id}`;
-        }
-    }
+<script th:src="@{/js/docente.js}"></script>
 
-    // Filtros en tiempo real
-    document.getElementById('searchInput')?.addEventListener('keyup', function() {
-        let filter = this.value.toLowerCase();
-        let rows = document.querySelectorAll('#docentesTable tbody tr');
-        rows.forEach(row => {
-            let text = row.innerText.toLowerCase();
-            row.style.display = text.includes(filter) ? '' : 'none';
-        });
-    });
-</script>
+
 </body>
 </html>
