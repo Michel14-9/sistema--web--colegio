@@ -17,13 +17,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -207,6 +210,20 @@ public class AdminController {
 
         model.addAttribute("cursos", cursos);
         model.addAttribute("docentes", docenteRepository.findAll());
+
+        // Estadísticas para el dashboard de cursos
+        long totalCursos = cursos.size();
+        long cursosActivos = cursos.stream().filter(c -> "ACTIVO".equals(c.getEstado())).count();
+        long cursosInactivos = cursos.stream().filter(c -> "INACTIVO".equals(c.getEstado())).count();
+        long cursosSinDocente = cursos.stream().filter(c -> c.getIdDocente() == null || c.getIdDocente() == 0).count();
+        int totalCupos = cursos.stream().mapToInt(c -> c.getCapacidadMaxima() != null ? c.getCapacidadMaxima() : 36).sum();
+
+        model.addAttribute("totalCursos", totalCursos);
+        model.addAttribute("cursosActivos", cursosActivos);
+        model.addAttribute("cursosInactivos", cursosInactivos);
+        model.addAttribute("cursosSinDocente", cursosSinDocente);
+        model.addAttribute("totalCupos", totalCupos);
+
         return "admin/cursos";
     }
 
@@ -218,15 +235,91 @@ public class AdminController {
     }
 
     @PostMapping("/curso/guardar")
-    public String guardarCurso(@ModelAttribute Curso curso, Authentication auth) {
+    public String guardarCurso(@ModelAttribute Curso curso,
+                               Authentication auth,
+                               RedirectAttributes redirectAttributes) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se registró curso: " + curso.getNombreCurso() + " (Código: " + curso.getCodigoCurso() + ")";
 
-        cursoRepository.save(curso);
-        registrarActividad(usuario, "CREAR", "Curso", detalles);
+        try {
+            // ========== VALIDACIONES ==========
+
+            // 1. Validar curso duplicado (mismo nombre, grado, sección, turno)
+            boolean duplicado = cursoRepository.existsByNombreCursoAndIdGradoAndSeccionAndTurno(
+                    curso.getNombreCurso(),
+                    curso.getIdGrado(),
+                    curso.getSeccion(),
+                    curso.getTurno()
+            );
+
+            if (duplicado) {
+                redirectAttributes.addFlashAttribute("error",
+                        "✗ Ya existe un curso con el mismo nombre, grado, sección y turno");
+                return "redirect:/admin/cursos";
+            }
+
+            // 2. Validar límite de 4 cursos por grado/área/turno
+            int cantidadCursos = cursoRepository.countByIdGradoAndAreaAndTurno(
+                    curso.getIdGrado(),
+                    curso.getArea(),
+                    curso.getTurno()
+            );
+
+            if (cantidadCursos >= 4) {
+                redirectAttributes.addFlashAttribute("error",
+                        "✗ Máximo 4 cursos permitidos por grado, área y turno (secciones A, B, C, D)");
+                return "redirect:/admin/cursos";
+            }
+
+            // 3. Validar horas del docente (no exceder 30 semanales)
+            if (curso.getIdDocente() != null && curso.getIdDocente() > 0) {
+                Integer horasActuales = cursoRepository.sumHorasSemanalesByDocente(curso.getIdDocente());
+                if (horasActuales == null) horasActuales = 0;
+
+                int nuevasHoras = curso.getHorasSemanales() != null ? curso.getHorasSemanales() : 0;
+                int totalHoras = horasActuales + nuevasHoras;
+
+                if (totalHoras > 30) {
+                    redirectAttributes.addFlashAttribute("error",
+                            "✗ El docente excede las 30 horas semanales permitidas. " +
+                                    "Horas actuales: " + horasActuales + ", Nuevas horas: " + nuevasHoras);
+                    return "redirect:/admin/cursos";
+                }
+            }
+
+            // 4. Validar cruce de horarios del docente
+            if (curso.getIdDocente() != null && curso.getIdDocente() > 0 && curso.getHorario() != null && !curso.getHorario().isEmpty()) {
+                boolean tieneConflicto = cursoRepository.existsByDocenteAndHorarioAndIdCursoNot(
+                        curso.getIdDocente(),
+                        curso.getHorario(),
+                        0L
+                );
+
+                if (tieneConflicto) {
+                    redirectAttributes.addFlashAttribute("error",
+                            "✗ El docente ya tiene un curso asignado en el horario: " + curso.getHorario());
+                    return "redirect:/admin/cursos";
+                }
+            }
+
+            // Generar código si está vacío
+            if (curso.getCodigoCurso() == null || curso.getCodigoCurso().isEmpty()) {
+                curso.generarCodigoAutomatico();
+            }
+
+            // Establecer valores por defecto
+            if (curso.getCapacidadMaxima() == null) curso.setCapacidadMaxima(36);
+            if (curso.getAlumnosActuales() == null) curso.setAlumnosActuales(0);
+
+            cursoRepository.save(curso);
+            registrarActividad(usuario, "CREAR", "Curso", "Se registró curso: " + curso.getNombreCurso());
+            redirectAttributes.addFlashAttribute("success", "✅ Curso '" + curso.getNombreCurso() + "' creado correctamente");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
+        }
+
         return "redirect:/admin/cursos";
     }
-
     @GetMapping("/curso/editar/{id}")
     public String mostrarFormularioEditarCurso(@PathVariable Long id, Model model) {
         Optional<Curso> curso = cursoRepository.findById(id);
@@ -239,29 +332,130 @@ public class AdminController {
     }
 
     @PostMapping("/curso/actualizar/{id}")
-    public String actualizarCurso(@PathVariable Long id, @ModelAttribute Curso curso, Authentication auth) {
+    public String actualizarCurso(@PathVariable Long id,
+                                  @ModelAttribute Curso curso,
+                                  Authentication auth,
+                                  RedirectAttributes redirectAttributes) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se actualizó curso: " + curso.getNombreCurso();
 
-        curso.setIdCurso(id);
-        cursoRepository.save(curso);
-        registrarActividad(usuario, "EDITAR", "Curso", detalles);
+        try {
+            Optional<Curso> cursoExistenteOpt = cursoRepository.findById(id);
+            if (!cursoExistenteOpt.isPresent()) {
+                redirectAttributes.addFlashAttribute("error", "✗ Curso no encontrado");
+                return "redirect:/admin/cursos";
+            }
+
+            Curso cursoOriginal = cursoExistenteOpt.get();
+            curso.setIdCurso(id);
+
+            // ========== VALIDACIONES ==========
+
+            // 1. Validar curso duplicado (excluyendo el curso actual)
+            boolean duplicado = cursoRepository.existsByNombreCursoAndIdGradoAndSeccionAndTurno(
+                    curso.getNombreCurso(),
+                    curso.getIdGrado(),
+                    curso.getSeccion(),
+                    curso.getTurno()
+            );
+
+            // Si hay duplicado y no es el mismo curso
+            if (duplicado && !cursoOriginal.getNombreCurso().equals(curso.getNombreCurso())) {
+                redirectAttributes.addFlashAttribute("error",
+                        "✗ Ya existe un curso con el mismo nombre, grado, sección y turno");
+                return "redirect:/admin/cursos";
+            }
+
+            // 2. Validar horas del docente
+            if (curso.getIdDocente() != null && curso.getIdDocente() > 0) {
+                Integer horasActuales = cursoRepository.sumHorasSemanalesByDocente(curso.getIdDocente());
+                if (horasActuales == null) horasActuales = 0;
+
+                // Restar horas del curso original si es el mismo docente
+                if (cursoOriginal.getIdDocente() != null && cursoOriginal.getIdDocente().equals(curso.getIdDocente())) {
+                    horasActuales -= (cursoOriginal.getHorasSemanales() != null ? cursoOriginal.getHorasSemanales() : 0);
+                }
+
+                int nuevasHoras = curso.getHorasSemanales() != null ? curso.getHorasSemanales() : 0;
+                int totalHoras = horasActuales + nuevasHoras;
+
+                if (totalHoras > 30) {
+                    redirectAttributes.addFlashAttribute("error",
+                            "✗ El docente excede las 30 horas semanales permitidas. " +
+                                    "Horas actuales: " + horasActuales + ", Nuevas horas: " + nuevasHoras);
+                    return "redirect:/admin/cursos";
+                }
+            }
+
+            // 3. Validar cruce de horarios del docente (excluyendo el curso actual)
+            if (curso.getIdDocente() != null && curso.getIdDocente() > 0 && curso.getHorario() != null && !curso.getHorario().isEmpty()) {
+                boolean tieneConflicto = cursoRepository.existsByDocenteAndHorarioAndIdCursoNot(
+                        curso.getIdDocente(),
+                        curso.getHorario(),
+                        id
+                );
+
+                if (tieneConflicto) {
+                    redirectAttributes.addFlashAttribute("error",
+                            "✗ El docente ya tiene un curso asignado en el horario: " + curso.getHorario());
+                    return "redirect:/admin/cursos";
+                }
+            }
+
+            cursoRepository.save(curso);
+            registrarActividad(usuario, "EDITAR", "Curso", "Se actualizó curso: " + curso.getNombreCurso());
+            redirectAttributes.addFlashAttribute("success", "✅ Curso '" + curso.getNombreCurso() + "' actualizado correctamente");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "✗ Error al actualizar: " + e.getMessage());
+        }
+
         return "redirect:/admin/cursos";
     }
 
     @GetMapping("/curso/eliminar/{id}")
-    public String eliminarCurso(@PathVariable Long id, Authentication auth) {
+    public String eliminarCurso(@PathVariable Long id,
+                                Authentication auth,
+                                RedirectAttributes redirectAttributes) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        Optional<Curso> curso = cursoRepository.findById(id);
 
+        Optional<Curso> curso = cursoRepository.findById(id);
         if (curso.isPresent()) {
-            String detalles = "Se eliminó curso: " + curso.get().getNombreCurso();
+            String nombreCurso = curso.get().getNombreCurso();
             cursoRepository.deleteById(id);
-            registrarActividad(usuario, "ELIMINAR", "Curso", detalles);
+            registrarActividad(usuario, "ELIMINAR", "Curso", "Se eliminó curso: " + nombreCurso);
+
+
+            redirectAttributes.addFlashAttribute("success", " Curso '" + nombreCurso + "' eliminado correctamente");
+        } else {
+            redirectAttributes.addFlashAttribute("error", " Error: Curso no encontrado");
         }
+
         return "redirect:/admin/cursos";
     }
+    // ==================== VALIDACIÓN EN TIEMPO REAL ====================
 
+    /**
+     * Validar si hay cruce de horario en tiempo real (AJAX)
+     */
+    @GetMapping("/curso/validar-horario")
+    @ResponseBody
+    public ResponseEntity<Map<String, Boolean>> validarHorario(
+            @RequestParam Long idDocente,
+            @RequestParam String horario,
+            @RequestParam(required = false) Long idCurso) {
+
+        Map<String, Boolean> response = new HashMap<>();
+        Long cursoId = (idCurso != null) ? idCurso : 0L;
+
+        boolean tieneConflicto = cursoRepository.existsByDocenteAndHorarioAndIdCursoNot(
+                idDocente,
+                horario,
+                cursoId
+        );
+
+        response.put("conflicto", tieneConflicto);
+        return ResponseEntity.ok(response);
+    }
     // ==================== CRUD MATRÍCULAS ====================
 
     @GetMapping("/matriculas")

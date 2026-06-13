@@ -41,6 +41,23 @@ public class Curso {
     @Column(name = "estado", length = 20)
     private String estado;
 
+    // ========== NUEVOS CAMPOS ==========
+
+    @Column(name = "seccion", length = 5)
+    private String seccion;  // A, B, C, D
+
+    @Column(name = "turno", length = 10)
+    private String turno;    // MAÑANA, TARDE
+
+    @Column(name = "capacidad_maxima")
+    private Integer capacidadMaxima;  // default 36
+
+    @Column(name = "alumnos_actuales")
+    private Integer alumnosActuales;  // alumnos matriculados
+
+    @Column(name = "horario", length = 50)
+    private String horario;  // Ej: "LUNES 7-9", "MARTES 14-16"
+
     // ========== RELACIONES ==========
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -54,26 +71,47 @@ public class Curso {
             String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
             this.codigoCurso = siglas + "-" + timestamp;
         }
+
+        // Valores por defecto para los nuevos campos
+        if (capacidadMaxima == null) {
+            capacidadMaxima = 36;
+        }
+        if (alumnosActuales == null) {
+            alumnosActuales = 0;
+        }
     }
 
     private String obtenerSiglas(String nombre) {
         if (nombre == null || nombre.isEmpty()) {
             return "CUR";
         }
-
         String[] palabras = nombre.trim().split("\\s+");
         StringBuilder siglas = new StringBuilder();
-
         for (String palabra : palabras) {
             if (palabra.length() > 0) {
                 siglas.append(Character.toUpperCase(palabra.charAt(0)));
             }
         }
-
         if (siglas.length() < 2 && nombre.length() >= 3) {
             return nombre.substring(0, 3).toUpperCase();
         }
-
         return siglas.length() >= 2 ? siglas.toString() : "CUR";
+    }
+
+    // ========== MÉTODOS HELPER ==========
+
+    public int getCuposDisponibles() {
+        return (capacidadMaxima != null ? capacidadMaxima : 36) - (alumnosActuales != null ? alumnosActuales : 0);
+    }
+
+    public boolean hayCupo() {
+        return getCuposDisponibles() > 0;
+    }
+
+    public double getPorcentajeOcupacion() {
+        int capacidad = capacidadMaxima != null ? capacidadMaxima : 36;
+        int actuales = alumnosActuales != null ? alumnosActuales : 0;
+        if (capacidad == 0) return 0;
+        return (actuales * 100.0) / capacidad;
     }
 }
