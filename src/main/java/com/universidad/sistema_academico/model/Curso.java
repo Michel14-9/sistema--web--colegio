@@ -57,6 +57,8 @@ public class Curso {
 
     @Column(name = "horario", length = 50)
     private String horario;  // Ej: "LUNES 7-9", "MARTES 14-16"
+    @Column(name = "eliminado")
+    private boolean eliminado = false;
 
     // ========== RELACIONES ==========
 
