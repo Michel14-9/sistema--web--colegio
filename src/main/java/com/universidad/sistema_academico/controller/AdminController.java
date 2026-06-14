@@ -10,6 +10,9 @@ import com.universidad.sistema_academico.service.SolicitudMatriculaService;
 import com.universidad.sistema_academico.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import java.text.Normalizer;
@@ -91,8 +94,31 @@ public class AdminController {
     // ==================== CRUD ESTUDIANTES ====================
 
     @GetMapping("/estudiantes")
-    public String listarEstudiantes(Model model) {
-        model.addAttribute("estudiantes", estudianteRepository.findAll());
+    public String listarEstudiantes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String filtroNombre,
+            @RequestParam(required = false) String filtroEstado,
+            @RequestParam(required = false) String filtroGrado,
+            Model model) {
+
+        // Limpiar filtros vacíos
+        if (filtroNombre != null && filtroNombre.isEmpty()) filtroNombre = null;
+        if (filtroEstado != null && filtroEstado.isEmpty()) filtroEstado = null;
+        if (filtroGrado != null && filtroGrado.isEmpty()) filtroGrado = null;
+
+        Pageable pageable = PageRequest.of(page, 10);
+
+        Page<Estudiante> estudiantesPage = estudianteRepository.findWithFilters(
+                filtroNombre, filtroEstado, filtroGrado, pageable);
+
+        model.addAttribute("estudiantes", estudiantesPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", estudiantesPage.getTotalPages());
+        model.addAttribute("totalItems", estudiantesPage.getTotalElements());
+        model.addAttribute("filtroNombre", filtroNombre);
+        model.addAttribute("filtroEstado", filtroEstado);
+        model.addAttribute("filtroGrado", filtroGrado);
+
         return "admin/estudiantes";
     }
 
@@ -122,16 +148,7 @@ public class AdminController {
         return "redirect:/admin/estudiantes";
     }
 
-    @PostMapping("/estudiante/actualizar/{id}")
-    public String actualizarEstudiante(@PathVariable Long id, @ModelAttribute Estudiante estudiante, Authentication auth) {
-        String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se actualizó estudiante: " + estudiante.getNombres() + " " + estudiante.getApellidoPaterno();
 
-        estudiante.setIdEstudiante(id);
-        estudianteRepository.save(estudiante);
-        registrarActividad(usuario, "EDITAR", "Estudiante", detalles);
-        return "redirect:/admin/estudiantes";
-    }
 
     @GetMapping("/estudiante/eliminar/{id}")
     public String eliminarEstudiante(@PathVariable Long id, Authentication auth) {
@@ -183,9 +200,9 @@ public class AdminController {
         for (int i = 0; i < listaDocentes.size(); i++) {
             Docente d = listaDocentes.get(i);
             if (d == null) {
-                System.err.println("❌❌❌ DOCENTE NULL en índice: " + i + " ❌❌❌");
+                System.err.println(" DOCENTE NULL en índice: " + i + " ");
             } else {
-                System.out.println("✅ Docente [" + i + "]: ID=" + d.getIdDocente() +
+                System.out.println(" Docente [" + i + "]: ID=" + d.getIdDocente() +
                         ", Código=" + d.getCodigoDocente() +
                         ", Nombre=" + d.getNombres() + " " + d.getApellidoPaterno() +
                         ", DNI=" + d.getDni() +
@@ -196,7 +213,7 @@ public class AdminController {
 
         // Contar cuántos nulos hay
         long nulosCount = listaDocentes.stream().filter(d -> d == null).count();
-        System.out.println("\n📊 TOTAL DE NULOS ENCONTRADOS: " + nulosCount);
+        System.out.println("\nTOTAL DE NULOS ENCONTRADOS: " + nulosCount);
         System.out.println("=== FIN DEPURACIÓN DOCENTES ===\n");
 
         // Filtrar nulos para la vista (solución temporal)
@@ -205,7 +222,7 @@ public class AdminController {
                 .collect(java.util.stream.Collectors.toList());
 
         if (nulosCount > 0) {
-            System.err.println("⚠️ ADVERTENCIA: Se encontraron " + nulosCount + " docente(s) nulo(s). Se han filtrado para la vista.");
+            System.err.println("ADVERTENCIA: Se encontraron " + nulosCount + " docente(s) nulo(s). Se han filtrado para la vista.");
         }
 
         // ========== ESPECIALIDADES PREDEFINIDAS ==========
@@ -299,7 +316,7 @@ public class AdminController {
             }
 
             registrarActividad(usuario, "CREAR", "Docente", "Se registró docente: " + docente.getNombres() + " " + docente.getApellidoPaterno());
-            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() + "' creado correctamente. Se enviaron credenciales a su correo.");
+            redirectAttributes.addFlashAttribute("success", " Docente '" + docente.getNombres() + "' creado correctamente. Se enviaron credenciales a su correo.");
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
@@ -388,7 +405,7 @@ public class AdminController {
             List<Curso> cursosAsignados = cursoRepository.findByIdDocenteAndEstado(id, "ACTIVO");
             if (!cursosAsignados.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error",
-                        "❌ No se puede eliminar al docente '" + nombreDocente +
+                        " No se puede eliminar al docente '" + nombreDocente +
                                 "' porque tiene " + cursosAsignados.size() + " curso(s) asignado(s)");
                 return "redirect:/admin/docentes";
             }
@@ -400,9 +417,9 @@ public class AdminController {
             docenteRepository.save(docenteParaEliminar);
 
             registrarActividad(usuario, "ELIMINAR", "Docente", "Se eliminó docente: " + nombreDocente);
-            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + nombreDocente + "' eliminado correctamente");
+            redirectAttributes.addFlashAttribute("success", " Docente '" + nombreDocente + "' eliminado correctamente");
         } else {
-            redirectAttributes.addFlashAttribute("error", "❌ Error: Docente no encontrado");
+            redirectAttributes.addFlashAttribute("error", "Error: Docente no encontrado");
         }
 
         return "redirect:/admin/docentes";
@@ -1089,5 +1106,79 @@ public class AdminController {
         return Normalizer.normalize(texto.toUpperCase(), Normalizer.Form.NFD)
                 .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
                 .replaceAll("[^A-Z0-9\\s]", "");
+    }
+    // ==================== GESTIÓN DE ESTUDIANTES (NUEVOS MÉTODOS) ====================
+
+    /**
+     * Ver detalle completo de un estudiante con su historial de matrículas
+     */
+    @GetMapping("/estudiante/ver/{id}")
+    public String verDetalleEstudiante(@PathVariable Long id, Model model) {
+        Optional<Estudiante> estudianteOpt = estudianteRepository.findById(id);
+        if (estudianteOpt.isPresent()) {
+            Estudiante estudiante = estudianteOpt.get();
+            model.addAttribute("estudiante", estudiante);
+
+            // Obtener matrículas del estudiante
+            List<Matricula> matriculas = matriculaRepository.findHistorialByEstudianteId(id);
+
+            model.addAttribute("matriculas", matriculas);
+
+
+            long matriculasActivas = matriculas.stream()
+                    .filter(m -> "ACTIVA".equals(m.getEstado()))
+                    .count();
+            model.addAttribute("matriculasActivas", matriculasActivas);
+
+            return "admin/estudiante-detalle";
+        }
+        return "redirect:/admin/estudiantes";
+    }
+
+    /**
+     * Cambiar estado del estudiante (ACTIVO/INACTIVO) - Soft Delete
+     */
+    @GetMapping("/estudiante/cambiar-estado/{id}")
+    public String cambiarEstadoEstudiante(@PathVariable Long id,
+                                          @RequestParam String estado,
+                                          RedirectAttributes redirectAttributes) {
+        Optional<Estudiante> estudianteOpt = estudianteRepository.findById(id);
+        if (estudianteOpt.isPresent()) {
+            Estudiante estudiante = estudianteOpt.get();
+            String estadoAnterior = estudiante.getEstado();
+            estudiante.setEstado(estado);
+            estudianteRepository.save(estudiante);
+
+            String mensaje = "Estudiante '" + estudiante.getNombres() + "' " +
+                    (estado.equals("ACTIVO") ? "habilitado" : "deshabilitado") +
+                    " correctamente";
+            redirectAttributes.addFlashAttribute("success", mensaje);
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Estudiante no encontrado");
+        }
+        return "redirect:/admin/estudiantes";
+    }
+
+    /**
+     * Actualizar datos del estudiante (manteniendo el flujo de solicitudes)
+     */
+    @PostMapping("/estudiante/actualizar/{id}")
+    public String actualizarEstudiante(@PathVariable Long id,
+                                       @ModelAttribute Estudiante estudiante,
+                                       RedirectAttributes redirectAttributes) {
+        try {
+            Optional<Estudiante> existente = estudianteRepository.findById(id);
+            if (!existente.isPresent()) {
+                redirectAttributes.addFlashAttribute("error", "Estudiante no encontrado");
+                return "redirect:/admin/estudiantes";
+            }
+
+            estudiante.setIdEstudiante(id);
+            estudianteRepository.save(estudiante);
+            redirectAttributes.addFlashAttribute("success", "Estudiante actualizado correctamente");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Error al actualizar: " + e.getMessage());
+        }
+        return "redirect:/admin/estudiantes";
     }
 }

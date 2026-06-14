@@ -1,6 +1,8 @@
 package com.universidad.sistema_academico.repository;
 
 import com.universidad.sistema_academico.model.Estudiante;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,10 +54,40 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
     Optional<Estudiante> findByUsuarioId(Long usuarioId);
 
     /**
-     * Busca estudiantes matriculados en un curso específico
-     * @param cursoId ID del curso
-     * @return Lista de estudiantes matriculados en el curso
+     * Busca estudiantes por grado y año académico (NUEVO - reemplaza al antiguo findByCursoId)
+     * @param grado grado del estudiante (1-11)
+     * @param anio año académico
+     * @return Lista de estudiantes matriculados en ese grado y año
      */
-    @Query("SELECT e FROM Estudiante e JOIN Matricula m ON e.idEstudiante = m.estudiante.idEstudiante WHERE m.curso.idCurso = :cursoId")
-    List<Estudiante> findByCursoId(@Param("cursoId") Long cursoId);
+    @Query("SELECT e FROM Estudiante e JOIN Matricula m ON e.idEstudiante = m.estudiante.idEstudiante WHERE m.idGrado = :grado AND m.anioAcademico = :anio")
+    List<Estudiante> findByGradoYAnio(@Param("grado") Integer grado, @Param("anio") Integer anio);
+
+    // ==================== MÉTODOS PARA PAGINACIÓN Y FILTROS ====================
+
+    /**
+     * Busca estudiantes con filtros (nombre, estado, grado) y paginación
+     * Usa consulta nativa con ILIKE para búsqueda case-insensitive
+     */
+    @Query(value = "SELECT e.* FROM academico.estudiante e " +
+            "WHERE (:nombre IS NULL OR " +
+            "e.nombres ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%') OR " +
+            "e.apellido_paterno ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%') OR " +
+            "e.apellido_materno ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%') OR " +
+            "e.dni ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%')) AND " +
+            "(:estado IS NULL OR e.estado = CAST(:estado AS VARCHAR)) AND " +
+            "(:grado IS NULL OR e.id_grado = CAST(:grado AS INTEGER)) " +
+            "ORDER BY e.id_estudiante DESC",
+            countQuery = "SELECT COUNT(*) FROM academico.estudiante e " +
+                    "WHERE (:nombre IS NULL OR " +
+                    "e.nombres ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%') OR " +
+                    "e.apellido_paterno ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%') OR " +
+                    "e.apellido_materno ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%') OR " +
+                    "e.dni ILIKE CONCAT('%', CAST(:nombre AS VARCHAR), '%')) AND " +
+                    "(:estado IS NULL OR e.estado = CAST(:estado AS VARCHAR)) AND " +
+                    "(:grado IS NULL OR e.id_grado = CAST(:grado AS INTEGER))",
+            nativeQuery = true)
+    Page<Estudiante> findWithFilters(@Param("nombre") String nombre,
+                                     @Param("estado") String estado,
+                                     @Param("grado") String grado,
+                                     Pageable pageable);
 }
