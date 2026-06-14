@@ -27,7 +27,11 @@ public interface DocenteRepository extends JpaRepository<Docente, Long> {
     boolean existsByEmail(String email);
 
     List<Docente> findByEstado(String estado);
-
+    /**
+     * Buscar docentes por especialidad, estado ACTIVO y no eliminados
+     */
+    @Query("SELECT d FROM Docente d WHERE d.especialidad = :especialidad AND d.estado = 'ACTIVO' AND (d.eliminado = false OR d.eliminado IS NULL)")
+    List<Docente> findByEspecialidadAndEstadoAndEliminadoFalse(@Param("especialidad") String especialidad);
     // ========== PAGINACIÓN Y FILTROS ==========
 
     @Query("SELECT d FROM Docente d WHERE d.eliminado = false OR d.eliminado IS NULL")

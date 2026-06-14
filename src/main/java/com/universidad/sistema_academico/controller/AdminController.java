@@ -12,13 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import java.text.Normalizer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
+import com.universidad.sistema_academico.service.EmailService;
+import java.util.Random;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +37,8 @@ public class AdminController {
 
     @Autowired
     private UsuarioService usuarioService;
-
+    @Autowired
+    private EmailService emailService;
     @Autowired
     private EstudianteRepository estudianteRepository;
 
@@ -143,8 +146,6 @@ public class AdminController {
         return "redirect:/admin/estudiantes";
     }
 
-    // ==================== CRUD DOCENTES MEJORADO ====================
-
     @GetMapping("/docentes")
     public String listarDocentes(
             @RequestParam(defaultValue = "0") int page,
@@ -173,17 +174,47 @@ public class AdminController {
         System.out.println("Total elementos: " + docentesPage.getTotalElements());
         System.out.println("Total páginas: " + docentesPage.getTotalPages());
 
-        // Obtener lista de especialidades únicas para el filtro
-        List<String> especialidades = docenteRepository.findAllActive().stream()
-                .map(Docente::getEspecialidad)
-                .distinct()
-                .sorted()
+        // ========== DEPURACIÓN DETALLADA ==========
+        System.out.println("\n=== INICIO DEPURACIÓN DOCENTES ===");
+        System.out.println("Tamaño del contenido: " + docentesPage.getContent().size());
+
+        List<Docente> listaDocentes = docentesPage.getContent();
+
+        for (int i = 0; i < listaDocentes.size(); i++) {
+            Docente d = listaDocentes.get(i);
+            if (d == null) {
+                System.err.println("❌❌❌ DOCENTE NULL en índice: " + i + " ❌❌❌");
+            } else {
+                System.out.println("✅ Docente [" + i + "]: ID=" + d.getIdDocente() +
+                        ", Código=" + d.getCodigoDocente() +
+                        ", Nombre=" + d.getNombres() + " " + d.getApellidoPaterno() +
+                        ", DNI=" + d.getDni() +
+                        ", Estado=" + d.getEstado() +
+                        ", Usuario=" + (d.getUsuario() != null ? d.getUsuario().getId() : "NULL"));
+            }
+        }
+
+        // Contar cuántos nulos hay
+        long nulosCount = listaDocentes.stream().filter(d -> d == null).count();
+        System.out.println("\n📊 TOTAL DE NULOS ENCONTRADOS: " + nulosCount);
+        System.out.println("=== FIN DEPURACIÓN DOCENTES ===\n");
+
+        // Filtrar nulos para la vista (solución temporal)
+        List<Docente> docentesFiltrados = listaDocentes.stream()
+                .filter(d -> d != null)
                 .collect(java.util.stream.Collectors.toList());
 
-        model.addAttribute("docentes", docentesPage.getContent());
+        if (nulosCount > 0) {
+            System.err.println("⚠️ ADVERTENCIA: Se encontraron " + nulosCount + " docente(s) nulo(s). Se han filtrado para la vista.");
+        }
+
+        // ========== ESPECIALIDADES PREDEFINIDAS ==========
+        List<String> especialidades = getEspecialidadesList();
+
+        model.addAttribute("docentes", docentesFiltrados); // Usar lista filtrada
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", docentesPage.getTotalPages());
-        model.addAttribute("totalItems", docentesPage.getTotalElements());
+        model.addAttribute("totalItems", docentesFiltrados.size()); // Usar tamaño filtrado
         model.addAttribute("hasPrevious", docentesPage.hasPrevious());
         model.addAttribute("hasNext", docentesPage.hasNext());
         model.addAttribute("filtroNombre", filtroNombre);
@@ -221,6 +252,13 @@ public class AdminController {
                 return "redirect:/admin/docentes";
             }
 
+            // 3. Validar celular (9 dígitos)
+            if (docente.getCelular() != null && !docente.getCelular().isEmpty() &&
+                    docente.getCelular().length() != 9) {
+                redirectAttributes.addFlashAttribute("error", "✗ El número de celular debe tener 9 dígitos");
+                return "redirect:/admin/docentes";
+            }
+
             // Generar código automático si está vacío
             if (docente.getCodigoDocente() == null || docente.getCodigoDocente().isEmpty()) {
                 docente.generarCodigoAutomatico();
@@ -228,17 +266,60 @@ public class AdminController {
 
             if (docente.getEstado() == null) docente.setEstado("ACTIVO");
 
+            // Guardar docente primero
             docenteRepository.save(docente);
+
+            // ========== CREAR USUARIO PARA EL DOCENTE ==========
+            String passwordTemporal = generarPasswordTemporal();
+
+            Usuario usuarioDocente = new Usuario();
+            usuarioDocente.setUsername(docente.getEmail()); // Usar email como username
+            usuarioDocente.setPassword(passwordTemporal);
+            usuarioDocente.setNombre(docente.getNombres());
+            usuarioDocente.setApellido(docente.getApellidoPaterno() + " " + docente.getApellidoMaterno());
+            usuarioDocente.setEmail(docente.getEmail());
+            usuarioDocente.setRol("DOCENTE");
+            usuarioDocente.setActivo(true);
+            usuarioDocente.setFechaRegistro(LocalDateTime.now());
+
+            usuarioService.save(usuarioDocente);
+
+            // Asociar el usuario al docente
+            docente.setUsuario(usuarioDocente);
+            docenteRepository.save(docente);
+
+            // ========== ENVIAR CREDENCIALES POR EMAIL ==========
+            if (docente.getEmail() != null && !docente.getEmail().isEmpty()) {
+                emailService.enviarCredencialesDocente(
+                        docente.getEmail(),
+                        docente.getEmail(), // username = email
+                        passwordTemporal,
+                        docente.getNombres()
+                );
+            }
+
             registrarActividad(usuario, "CREAR", "Docente", "Se registró docente: " + docente.getNombres() + " " + docente.getApellidoPaterno());
-            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() + "' creado correctamente");
+            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() + "' creado correctamente. Se enviaron credenciales a su correo.");
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
         }
 
         return "redirect:/admin/docentes";
-    }
 
+    }
+    /**
+     * Generar contraseña temporal aleatoria
+     */
+    private String generarPasswordTemporal() {
+        String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder password = new StringBuilder();
+        Random random = new Random();
+        for (int i = 0; i < 8; i++) {
+            password.append(caracteres.charAt(random.nextInt(caracteres.length())));
+        }
+        return password.toString();
+    }
     @GetMapping("/docente/editar/{id}")
     public String mostrarFormularioEditarDocente(@PathVariable Long id, Model model) {
         Optional<Docente> docente = docenteRepository.findById(id);
@@ -669,7 +750,35 @@ public class AdminController {
         response.put("conflicto", tieneConflicto);
         return ResponseEntity.ok(response);
     }
+    // ==================== FILTRAR DOCENTES POR ESPECIALIDAD ====================
 
+    /**
+     * Obtener docentes por especialidad (para filtro en tiempo real en el formulario de cursos)
+     */
+    @GetMapping("/docentes/por-especialidad")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getDocentesByEspecialidad(
+            @RequestParam(required = false) String especialidad) {
+
+        List<Docente> docentes;
+        if (especialidad != null && !especialidad.isEmpty()) {
+            docentes = docenteRepository.findByEspecialidadAndEstadoAndEliminadoFalse(especialidad);
+        } else {
+            docentes = docenteRepository.findAllActive();
+        }
+
+        List<Map<String, Object>> response = docentes.stream()
+                .filter(d -> "ACTIVO".equals(d.getEstado()))
+                .map(d -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", d.getIdDocente());
+                    map.put("nombre", d.getNombres() + " " + d.getApellidoPaterno() + " " + d.getApellidoMaterno());
+                    return map;
+                })
+                .collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
     // ==================== CRUD MATRÍCULAS ====================
 
     @GetMapping("/matriculas")
@@ -831,5 +940,154 @@ public class AdminController {
         if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
         if (filename.endsWith(".pdf")) return "application/pdf";
         return "application/octet-stream";
+    }
+
+
+    // ==================== FILTRAR DOCENTES POR ESPECIALIDAD SEGÚN NOMBRE DEL CURSO ====================
+
+    /**
+     * Obtener docentes por especialidad basada en el nombre del curso
+     * Este método detecta la especialidad del nombre del curso y devuelve los docentes de esa especialidad
+     */
+    @GetMapping("/docentes/por-nombre-curso")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getDocentesByNombreCurso(@RequestParam String nombreCurso) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Detectar especialidad desde el nombre del curso
+        String especialidad = detectarEspecialidadDesdeNombreCurso(nombreCurso);
+        response.put("especialidadDetectada", especialidad);
+
+        // Obtener docentes según la especialidad detectada
+        List<Docente> docentes;
+        if (especialidad != null && !especialidad.isEmpty()) {
+            docentes = docenteRepository.findByEspecialidadAndEstadoAndEliminadoFalse(especialidad);
+        } else {
+            docentes = docenteRepository.findAllActive();
+        }
+
+        // Filtrar solo docentes ACTIVOS
+        List<Map<String, Object>> docentesList = docentes.stream()
+                .filter(d -> "ACTIVO".equals(d.getEstado()))
+                .map(d -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", d.getIdDocente());
+                    map.put("nombre", d.getNombres() + " " + d.getApellidoPaterno() + " " + d.getApellidoMaterno());
+                    map.put("especialidad", d.getEspecialidad());
+                    return map;
+                })
+                .collect(java.util.stream.Collectors.toList());
+
+        response.put("docentes", docentesList);
+        response.put("total", docentesList.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Detectar especialidad desde el nombre del curso
+     */
+    private String detectarEspecialidadDesdeNombreCurso(String nombreCurso) {
+        if (nombreCurso == null || nombreCurso.trim().isEmpty()) {
+            return null;
+        }
+
+        String nombreNorm = normalizarTexto(nombreCurso);
+
+        // Mapeo de palabras clave a especialidades
+        Map<String, String> mapaEspecialidades = new HashMap<>();
+        mapaEspecialidades.put("MATEMATICA", "MATEMÁTICAS");
+        mapaEspecialidades.put("MATEMATICAS", "MATEMÁTICAS");
+        mapaEspecialidades.put("ALGEBRA", "MATEMÁTICAS");
+        mapaEspecialidades.put("GEOMETRIA", "MATEMÁTICAS");
+        mapaEspecialidades.put("TRIGONOMETRIA", "MATEMÁTICAS");
+        mapaEspecialidades.put("CALCULO", "MATEMÁTICAS");
+        mapaEspecialidades.put("ARITMETICA", "MATEMÁTICAS");
+        mapaEspecialidades.put("ESTADISTICA", "MATEMÁTICAS");
+        mapaEspecialidades.put("PROBABILIDAD", "MATEMÁTICAS");
+        mapaEspecialidades.put("RAZONAMIENTO", "MATEMÁTICAS");
+        mapaEspecialidades.put("SUMA", "MATEMÁTICAS");
+        mapaEspecialidades.put("RESTA", "MATEMÁTICAS");
+        mapaEspecialidades.put("MULTIPLICACION", "MATEMÁTICAS");
+        mapaEspecialidades.put("DIVISION", "MATEMÁTICAS");
+        mapaEspecialidades.put("NUMEROS", "MATEMÁTICAS");
+
+        mapaEspecialidades.put("COMUNICACION", "COMUNICACIÓN");
+        mapaEspecialidades.put("LENGUAJE", "COMUNICACIÓN");
+        mapaEspecialidades.put("LITERATURA", "COMUNICACIÓN");
+        mapaEspecialidades.put("GRAMATICA", "COMUNICACIÓN");
+        mapaEspecialidades.put("ORTOGRAFIA", "COMUNICACIÓN");
+        mapaEspecialidades.put("REDACCION", "COMUNICACIÓN");
+        mapaEspecialidades.put("LECTURA", "COMUNICACIÓN");
+        mapaEspecialidades.put("ESCRITURA", "COMUNICACIÓN");
+        mapaEspecialidades.put("VOCALES", "COMUNICACIÓN");
+        mapaEspecialidades.put("ORATORIA", "COMUNICACIÓN");
+
+        mapaEspecialidades.put("CIENCIA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("BIOLOGIA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("FISICA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("QUIMICA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("ECOLOGIA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("LABORATORIO", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("ANATOMIA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("ZOOLOGIA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("BOTANICA", "CIENCIA Y TECNOLOGÍA");
+        mapaEspecialidades.put("ASTRONOMIA", "CIENCIA Y TECNOLOGÍA");
+
+        mapaEspecialidades.put("HISTORIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("GEOGRAFIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("PERSONAL SOCIAL", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("CIVICA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("CIUDADANIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("FILOSOFIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("PSICOLOGIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("SOCIOLOGIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("ANTROPOLOGIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("ECONOMIA", "CIENCIAS SOCIALES");
+        mapaEspecialidades.put("CONTABILIDAD", "CIENCIAS SOCIALES");
+
+        mapaEspecialidades.put("INGLES", "INGLÉS");
+        mapaEspecialidades.put("ENGLISH", "INGLÉS");
+
+        mapaEspecialidades.put("ARTE", "ARTE");
+        mapaEspecialidades.put("DIBUJO", "ARTE");
+        mapaEspecialidades.put("PINTURA", "ARTE");
+        mapaEspecialidades.put("MUSICA", "ARTE");
+        mapaEspecialidades.put("TEATRO", "ARTE");
+        mapaEspecialidades.put("DANZA", "ARTE");
+        mapaEspecialidades.put("FOLCLOR", "ARTE");
+        mapaEspecialidades.put("MARINERA", "ARTE");
+
+        mapaEspecialidades.put("EDUCACION FISICA", "EDUCACIÓN FÍSICA");
+        mapaEspecialidades.put("DEPORTE", "EDUCACIÓN FÍSICA");
+        mapaEspecialidades.put("RECREACION", "EDUCACIÓN FÍSICA");
+        mapaEspecialidades.put("SALUD", "EDUCACIÓN FÍSICA");
+        mapaEspecialidades.put("VOLEIBOL", "EDUCACIÓN FÍSICA");
+        mapaEspecialidades.put("FULBITO", "EDUCACIÓN FÍSICA");
+        mapaEspecialidades.put("ATLETISMO", "EDUCACIÓN FÍSICA");
+
+        mapaEspecialidades.put("RELIGION", "RELIGIÓN");
+        mapaEspecialidades.put("VALORES", "RELIGIÓN");
+        mapaEspecialidades.put("ETICA", "RELIGIÓN");
+
+        mapaEspecialidades.put("TUTORIA", "TUTORÍA");
+        mapaEspecialidades.put("ORIENTACION", "TUTORÍA");
+        mapaEspecialidades.put("CONVIVENCIA", "TUTORÍA");
+
+        // Buscar coincidencia
+        for (Map.Entry<String, String> entry : mapaEspecialidades.entrySet()) {
+            if (nombreNorm.contains(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+
+        return null;
+    }
+
+    private String normalizarTexto(String texto) {
+        if (texto == null) return "";
+        return Normalizer.normalize(texto.toUpperCase(), Normalizer.Form.NFD)
+                .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
+                .replaceAll("[^A-Z0-9\\s]", "");
     }
 }

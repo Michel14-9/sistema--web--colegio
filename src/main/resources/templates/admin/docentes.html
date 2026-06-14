@@ -115,43 +115,46 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="docente : ${docentes}">
-                                <td th:text="${docente.idDocente}">-</td>
-                                <td th:text="${docente.codigoDocente}">-</td>
-                                <td th:text="${docente.dni}">-</td>
-                                <td th:text="${docente.nombres}">-</td>
-                                <td th:text="${docente.apellidoPaterno + ' ' + docente.apellidoMaterno}">-</td>
-                                <td th:text="${docente.email}">-</td>
-                                <td th:text="${docente.celular}">-</td>
-                                <td><span class="badge-specialty" th:text="${docente.especialidad}">-</span></td>
-                                <td>
-                                    <span class="badge" th:class="${docente.estado == 'ACTIVO'} ? 'bg-success' : 'bg-danger'"
-                                          th:text="${docente.estado}">-</span>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn-icon-edit"
-                                            th:data-id="${docente.idDocente}"
-                                            th:data-codigo="${docente.codigoDocente}"
-                                            th:data-dni="${docente.dni}"
-                                            th:data-nombres="${docente.nombres}"
-                                            th:data-apellido-paterno="${docente.apellidoPaterno}"
-                                            th:data-apellido-materno="${docente.apellidoMaterno}"
-                                            th:data-email="${docente.email}"
-                                            th:data-celular="${docente.celular}"
-                                            th:data-especialidad="${docente.especialidad}"
-                                            th:data-estado="${docente.estado}"
-                                            onclick="editarDocente(this)"
-                                            data-bs-toggle="modal" data-bs-target="#docenteModal">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn-icon-delete ms-1"
-                                            th:data-id="${docente.idDocente}"
-                                            th:data-nombre="${docente.nombres + ' ' + docente.apellidoPaterno}"
-                                            onclick="confirmarEliminarDocente(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                            <!-- USAR th:block con verificación de null -->
+                            <th:block th:each="docente : ${docentes}">
+                                <tr th:if="${docente != null}">
+                                    <td th:text="${docente?.idDocente}">-</td>
+                                    <td th:text="${docente?.codigoDocente}">-</td>
+                                    <td th:text="${docente?.dni}">-</td>
+                                    <td th:text="${docente?.nombres}">-</td>
+                                    <td th:text="${docente?.apellidoPaterno + ' ' + docente?.apellidoMaterno}">-</td>
+                                    <td th:text="${docente?.email}">-</td>
+                                    <td th:text="${docente?.celular}">-</td>
+                                    <td><span class="badge-specialty" th:text="${docente?.especialidad}">-</span></td>
+                                    <td>
+                                        <span class="badge" th:class="${docente?.estado == 'ACTIVO'} ? 'bg-success' : 'bg-danger'"
+                                              th:text="${docente?.estado}">-</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn-icon-edit"
+                                                th:data-id="${docente?.idDocente}"
+                                                th:data-codigo="${docente?.codigoDocente}"
+                                                th:data-dni="${docente?.dni}"
+                                                th:data-nombres="${docente?.nombres}"
+                                                th:data-apellido-paterno="${docente?.apellidoPaterno}"
+                                                th:data-apellido-materno="${docente?.apellidoMaterno}"
+                                                th:data-email="${docente?.email}"
+                                                th:data-celular="${docente?.celular}"
+                                                th:data-especialidad="${docente?.especialidad}"
+                                                th:data-estado="${docente?.estado}"
+                                                onclick="editarDocente(this)"
+                                                data-bs-toggle="modal" data-bs-target="#docenteModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn-icon-delete ms-1"
+                                                th:data-id="${docente?.idDocente}"
+                                                th:data-nombre="${docente?.nombres + ' ' + docente?.apellidoPaterno}"
+                                                onclick="confirmarEliminarDocente(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </th:block>
                             <tr th:if="${docentes == null or docentes.empty}">
                                 <td colspan="10" class="text-center py-4">
                                     <i class="fas fa-chalkboard-user fa-3x text-muted mb-2 d-block"></i>
@@ -235,22 +238,30 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">DNI *</label>
                             <input type="text" class="form-control" id="dni" name="dni"
-                                   maxlength="8" placeholder="Ingrese 8 dígitos" required>
+                                   maxlength="8" placeholder="Ingrese 8 dígitos" required
+                                   pattern="\d{8}" title="Debe ingresar 8 dígitos numéricos"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Nombres *</label>
-                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                            <input type="text" class="form-control" id="nombres" name="nombres"
+                                   readonly style="background-color: #e9ecef; cursor: default;" required>
+                            <small class="text-muted">Se autocompleta desde RENIEC</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Apellido Paterno *</label>
-                            <input type="text" class="form-control" id="apellidoPaterno" name="apellidoPaterno" required>
+                            <input type="text" class="form-control" id="apellidoPaterno" name="apellidoPaterno"
+                                   readonly style="background-color: #e9ecef; cursor: default;" required>
+                            <small class="text-muted">Se autocompleta desde RENIEC</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Apellido Materno *</label>
-                            <input type="text" class="form-control" id="apellidoMaterno" name="apellidoMaterno" required>
+                            <input type="text" class="form-control" id="apellidoMaterno" name="apellidoMaterno"
+                                   readonly style="background-color: #e9ecef; cursor: default;" required>
+                            <small class="text-muted">Se autocompleta desde RENIEC</small>
                         </div>
                     </div>
 
@@ -261,7 +272,10 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Teléfono/Celular</label>
-                            <input type="text" class="form-control" id="celular" name="celular" maxlength="15">
+                            <input type="tel" class="form-control" id="celular" name="celular" maxlength="9"
+                                   placeholder="9 dígitos" pattern="[0-9]{9}"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <small class="text-muted">9 dígitos, solo números</small>
                         </div>
                     </div>
 
@@ -293,7 +307,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/docente.js}"></script>
-
 
 </body>
 </html>
