@@ -157,4 +157,39 @@ public class EmailService {
             System.err.println("❌ Error al enviar email de rechazo: " + e.getMessage());
         }
     }
+    /**
+     * Envía credenciales al docente cuando es registrado
+     */
+    public void enviarCredencialesDocente(String emailDocente, String username, String passwordTemporal, String nombres) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(emailDocente);
+        message.setSubject("I.E. San Carlos - Credenciales de Acceso para Docente");
+        message.setText(String.format(
+                """
+                Estimado docente %s,
+                
+                Ha sido registrado exitosamente en el Sistema de Gestión Académica de la I.E. San Carlos.
+                
+                CREDENCIALES DE ACCESO:
+                📧 Usuario (email): %s
+                🔑 Contraseña temporal: %s
+                
+                Puede acceder al sistema en: http://localhost:8080/login
+                
+                Recomendamos cambiar su contraseña en el primer inicio de sesión.
+                
+                Atentamente,
+                I.E. San Carlos
+                """,
+                nombres, username, passwordTemporal
+        ));
+
+        try {
+            mailSender.send(message);
+            System.out.println("✅ Credenciales enviadas al docente: " + emailDocente);
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar email al docente: " + e.getMessage());
+        }
+    }
 }

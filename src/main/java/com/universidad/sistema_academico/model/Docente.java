@@ -52,15 +52,34 @@ public class Docente {
     private boolean eliminado = false;
 
     @PrePersist
+    @PreUpdate
+    public void normalizarCampos() {
+        // Normalizar especialidad a mayúsculas
+        if (especialidad != null && !especialidad.isEmpty()) {
+            especialidad = especialidad.toUpperCase().trim();
+        }
+
+        // Normalizar email a minúsculas
+        if (email != null && !email.isEmpty()) {
+            email = email.toLowerCase().trim();
+        }
+
+        // Generar código automático si está vacío
+        if (codigoDocente == null || codigoDocente.isEmpty()) {
+            generarCodigoAutomatico();
+        }
+
+        // Estado por defecto
+        if (estado == null) {
+            estado = "ACTIVO";
+        }
+    }
+
     public void generarCodigoAutomatico() {
         if (codigoDocente == null || codigoDocente.isEmpty()) {
             String siglas = obtenerSiglas(nombres);
             String timestamp = String.valueOf(System.currentTimeMillis()).substring(8);
             this.codigoDocente = siglas + "-" + timestamp;
-        }
-
-        if (estado == null) {
-            estado = "ACTIVO";
         }
     }
 

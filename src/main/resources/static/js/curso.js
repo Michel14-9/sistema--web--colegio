@@ -81,8 +81,8 @@ function mostrarSugerenciasDinamicas() {
     }
     const total = sugerenciasPalabras.length + sugerenciasCursos.length;
     contadorSpan.innerHTML = total > 0
-        ? ` 💡 ${total} sugerencia${total !== 1 ? 's' : ''} disponibles. Escribe y selecciona.`
-        : ` 💡 No hay sugerencias para "${valor}". Escribe el nombre completo del curso.`;
+        ? `  ${total} sugerencia${total !== 1 ? 's' : ''} disponibles. Escribe y selecciona.`
+        : `  No hay sugerencias para "${valor}". Escribe el nombre completo del curso.`;
     contadorSpan.style.color = '#6c757d';
 }
 
@@ -424,6 +424,7 @@ function detectarAreaAutomatica() {
     if (!nombreCurso || nombreCurso.trim() === '') {
         if (areaInput) areaInput.value = '';
         filtrarGradosPorNivel(null);
+        cargarTodosLosDocentes();
         return;
     }
 
@@ -439,6 +440,8 @@ function detectarAreaAutomatica() {
     const nivel = detectarNivelPorNombre(nombreCurso);
     filtrarGradosPorNivel(nivel);
     generarHorarioAutomatico();
+
+    filtrarDocentesPorNombreCurso();
 }
 
 // ==================== HORARIO Y VALIDACIÓN ====================
@@ -537,7 +540,7 @@ async function generarHorarioAutomatico() {
             msg.className = 'text-info mt-1 d-block';
             document.getElementById('horario').closest('.mb-3').appendChild(msg);
         }
-        msg.innerHTML = ` 💡 Horario sugerido: ${horario}. Selecciona esta opción o elige otra.`;
+        msg.innerHTML = `  Horario sugerido: ${horario}. Selecciona esta opción o elige otra.`;
         setTimeout(() => { if (msg) msg.innerHTML = ''; }, 3000);
     } else {
         horarioSelect.style.borderColor = '#28a745';
@@ -561,10 +564,11 @@ function limpiarFormularioCurso() {
     const mensajeNivel = document.getElementById('mensajeNivel');
     if (mensajeNivel) mensajeNivel.innerHTML = '  Escribe el nombre del curso para detectar automáticamente el nivel';
 
-    ['mensajeHorario', 'sugerenciaPrimeraPalabra', 'contadorSugerencias'].forEach(id => {
+    ['mensajeHorario', 'sugerenciaPrimeraPalabra', 'contadorSugerencias','mensajeEspecialidadDocentes'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.remove();
     });
+    setTimeout(() => cargarTodosLosDocentes(), 100);
 }
 
 function editarCurso(boton) {
@@ -602,7 +606,109 @@ function inicializarFormularioCurso() {
     const turno = document.getElementById('turno').value;
     if (grado && seccion && turno) generarHorarioAutomatico();
 }
+async function filtrarDocentesPorNombreCurso() {
+    const nombreCurso = document.getElementById('nombreCurso').value;
+    const docenteSelect = document.getElementById('idDocente');
 
+    if (!nombreCurso || nombreCurso.trim() === '') {
+        cargarTodosLosDocentes();
+        return;
+    }
+
+    try {
+        const response = await fetch(`/admin/docentes/por-nombre-curso?nombreCurso=${encodeURIComponent(nombreCurso)}`);
+        const data = await response.json();
+
+        const valorActual = docenteSelect.value;
+        docenteSelect.innerHTML = '<option value="">Seleccionar docente...</option>';
+
+        if (data.docentes && data.docentes.length > 0) {
+            data.docentes.forEach(docente => {
+                const option = document.createElement('option');
+                option.value = docente.id;
+                option.textContent = `${docente.nombre} (${docente.especialidad})`;
+                docenteSelect.appendChild(option);
+            });
+            mostrarMensajeEspecialidad(data.especialidadDetectada, data.total);
+        } else {
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = ` No hay docentes disponibles para ${data.especialidadDetectada || 'esta especialidad'}`;
+            option.disabled = true;
+            docenteSelect.appendChild(option);
+            mostrarMensajeEspecialidad(data.especialidadDetectada, 0);
+        }
+
+        if (valorActual && Array.from(docenteSelect.options).some(opt => opt.value === valorActual)) {
+            docenteSelect.value = valorActual;
+        }
+
+    } catch (error) {
+        console.error("Error filtrando docentes:", error);
+        cargarTodosLosDocentes();
+    }
+}
+
+function cargarTodosLosDocentes() {
+    fetch('/admin/docentes/por-especialidad')
+        .then(response => response.json())
+        .then(data => {
+            const docenteSelect = document.getElementById('idDocente');
+            const valorActual = docenteSelect.value;
+
+            docenteSelect.innerHTML = '<option value="">Seleccionar docente...</option>';
+
+            if (data && data.length > 0) {
+                data.forEach(docente => {
+                    const option = document.createElement('option');
+                    option.value = docente.id;
+                    option.textContent = docente.nombre;
+                    docenteSelect.appendChild(option);
+                });
+            }
+
+            if (valorActual && Array.from(docenteSelect.options).some(opt => opt.value === valorActual)) {
+                docenteSelect.value = valorActual;
+            }
+
+            ocultarMensajeEspecialidad();
+        })
+        .catch(error => console.error("Error cargando docentes:", error));
+}
+
+function mostrarMensajeEspecialidad(especialidad, totalDocentes) {
+    let mensajeSpan = document.getElementById('mensajeEspecialidadDocentes');
+    const docenteGroup = document.getElementById('idDocente')?.closest('.mb-3');
+
+    if (!mensajeSpan && docenteGroup) {
+        mensajeSpan = document.createElement('small');
+        mensajeSpan.id = 'mensajeEspecialidadDocentes';
+        mensajeSpan.className = 'mt-1 d-block';
+        docenteGroup.appendChild(mensajeSpan);
+    }
+
+    if (mensajeSpan) {
+        if (especialidad) {
+            if (totalDocentes > 0) {
+                mensajeSpan.innerHTML = ` Especialidad detectada: <strong>${especialidad}</strong> - ${totalDocentes} docente(s) disponible(s)`;
+                mensajeSpan.style.color = '#28a745';
+            } else {
+                mensajeSpan.innerHTML = ` Especialidad detectada: <strong>${especialidad}</strong> - No hay docentes disponibles. Puedes seleccionar otro docente manualmente.`;
+                mensajeSpan.style.color = '#fd7e14';
+            }
+        } else {
+            mensajeSpan.innerHTML = ` Escribe el nombre del curso para filtrar docentes por especialidad`;
+            mensajeSpan.style.color = '#6c757d';
+        }
+    }
+}
+
+function ocultarMensajeEspecialidad() {
+    const mensajeSpan = document.getElementById('mensajeEspecialidadDocentes');
+    if (mensajeSpan) {
+        mensajeSpan.innerHTML = '';
+    }
+}
 // ==================== EVENT LISTENERS ====================
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -684,4 +790,5 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Tabla: inicializar filtros
     inicializarFiltros();
+
 });
