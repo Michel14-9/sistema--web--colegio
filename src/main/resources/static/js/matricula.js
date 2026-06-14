@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== 4. VALIDACIÓN AL ENVIAR ==========
     if (matriculaForm) {
         matriculaForm.addEventListener('submit', function(e) {
-            console.log("🔵 INICIO DE VALIDACIÓN");
+            console.log(" INICIO DE VALIDACIÓN");
             let isValid = true;
             let firstInvalidField = null;
 
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
             requiredFields.forEach(field => {
                 if (field.type === 'checkbox') {
                     if (!field.checked) {
-                        console.log(`❌ Checkbox REQUERIDO no marcado: ${field.id || field.name}`);
+                        console.log(` Checkbox REQUERIDO no marcado: ${field.id || field.name}`);
                         isValid = false;
                         field.classList.add('is-invalid');
                         if (!firstInvalidField) firstInvalidField = field;
@@ -357,16 +357,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             invalidFeedback.textContent = 'Debe aceptar los términos y condiciones';
                         }
                     } else {
-                        console.log(`✅ Checkbox OK: ${field.id || field.name}`);
+                        console.log(` Checkbox OK: ${field.id || field.name}`);
                     }
                 } else if (!field.value.trim()) {
-                    console.log(`❌ Campo REQUERIDO vacío: ${field.id || field.name} - valor: "${field.value}"`);
+                    console.log(` Campo REQUERIDO vacío: ${field.id || field.name} - valor: "${field.value}"`);
                     isValid = false;
                     field.classList.add('is-invalid');
                     if (!firstInvalidField) firstInvalidField = field;
                     mostrarErrorPersonalizado(field, 'Este campo es obligatorio');
                 } else {
-                    console.log(`✅ Campo OK: ${field.id || field.name} = "${field.value}"`);
+                    console.log(` Campo OK: ${field.id || field.name} = "${field.value}"`);
                     field.classList.remove('is-invalid');
                 }
             });
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (voucherInput) {
                 const file = voucherInput.files[0];
                 if (!file) {
-                    console.log("❌ Voucher: No hay archivo");
+                    console.log(" Voucher: No hay archivo");
                     isValid = false;
                     voucherInput.classList.add('is-invalid');
                     let errorDiv = voucherInput.parentElement.querySelector('.invalid-feedback');
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     let extension = file.name.split('.').pop().toLowerCase();
                     const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
                     if (!allowedExtensions.includes(extension)) {
-                        console.log(`❌ Voucher: Extensión no válida: ${extension}`);
+                        console.log(` Voucher: Extensión no válida: ${extension}`);
                         isValid = false;
                         voucherInput.classList.add('is-invalid');
                         let errorDiv = voucherInput.parentElement.querySelector('.invalid-feedback');
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         errorDiv.textContent = `Formato no válido: "${extension}". Solo se permiten JPG, PNG o PDF`;
                     } else if (file.size > 5 * 1024 * 1024) {
-                        console.log(`❌ Voucher: Archivo demasiado grande: ${file.size} bytes`);
+                        console.log(` Voucher: Archivo demasiado grande: ${file.size} bytes`);
                         isValid = false;
                         voucherInput.classList.add('is-invalid');
                         let errorDiv = voucherInput.parentElement.querySelector('.invalid-feedback');

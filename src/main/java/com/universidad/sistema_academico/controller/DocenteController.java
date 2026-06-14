@@ -107,7 +107,9 @@ public class DocenteController {
                 throw new RuntimeException("No tiene acceso a este curso");
             }
 
-            List<Estudiante> estudiantes = estudianteRepository.findByCursoId(id);
+            // 🔥 NUEVO: Usar findByGradoYAnio en lugar de findByCursoId
+            int anioActual = java.time.Year.now().getValue();
+            List<Estudiante> estudiantes = estudianteRepository.findByGradoYAnio(curso.getIdGrado(), anioActual);
 
             model.addAttribute("curso", curso);
             model.addAttribute("estudiantes", estudiantes != null ? estudiantes : List.of());

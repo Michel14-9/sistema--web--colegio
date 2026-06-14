@@ -1,5 +1,6 @@
 package com.universidad.sistema_academico.service;
 
+import com.universidad.sistema_academico.model.Matricula;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -83,9 +84,9 @@ public class EmailService {
 
         try {
             mailSender.send(message);
-            System.out.println("✅ Notificación enviada al administrador");
+            System.out.println(" Notificación enviada al administrador");
         } catch (Exception e) {
-            System.err.println("❌ Error al enviar notificación al administrador: " + e.getMessage());
+            System.err.println(" Error al enviar notificación al administrador: " + e.getMessage());
         }
     }
 
@@ -118,9 +119,9 @@ public class EmailService {
 
         try {
             mailSender.send(message);
-            System.out.println("✅ Confirmación de solicitud enviada a: " + emailApoderado);
+            System.out.println(" Confirmación de solicitud enviada a: " + emailApoderado);
         } catch (Exception e) {
-            System.err.println("❌ Error al enviar confirmación: " + e.getMessage());
+            System.err.println(" Error al enviar confirmación: " + e.getMessage());
         }
     }
 
@@ -152,11 +153,12 @@ public class EmailService {
 
         try {
             mailSender.send(message);
-            System.out.println("✅ Email de rechazo enviado a: " + emailApoderado);
+            System.out.println(" Email de rechazo enviado a: " + emailApoderado);
         } catch (Exception e) {
-            System.err.println("❌ Error al enviar email de rechazo: " + e.getMessage());
+            System.err.println(" Error al enviar email de rechazo: " + e.getMessage());
         }
     }
+
     /**
      * Envía credenciales al docente cuando es registrado
      */
@@ -187,9 +189,87 @@ public class EmailService {
 
         try {
             mailSender.send(message);
-            System.out.println("✅ Credenciales enviadas al docente: " + emailDocente);
+            System.out.println(" Credenciales enviadas al docente: " + emailDocente);
         } catch (Exception e) {
-            System.err.println("❌ Error al enviar email al docente: " + e.getMessage());
+            System.err.println(" Error al enviar email al docente: " + e.getMessage());
         }
+    }
+
+
+
+    /**
+     * Envía credenciales con información completa de la matrícula (versión mejorada)
+     */
+    public void enviarCredencialesConMatricula(String emailApoderado, String emailEstudiante,
+                                               String username, String passwordTemporal,
+                                               Matricula matricula) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(emailApoderado);
+        message.setSubject("I.E. San Carlos - Matrícula Aprobada y Credenciales de Acceso");
+
+        String gradoStr = obtenerNombreGrado(matricula.getIdGrado());
+
+        message.setText(String.format(
+                """
+                Estimado apoderado,
+                
+                ¡Felicidades! Su solicitud de matrícula ha sido APROBADA.
+                
+                ========================================
+                📋 DETALLES DE LA MATRÍCULA
+                ========================================
+                🎓 Estudiante: %s %s %s
+                📧 Email institucional: %s
+                🆔 Código de Matrícula: %s
+                📅 Año Académico: %d
+                📚 Grado: %s
+                🔤 Sección: %s
+                🕐 Turno: %s
+                
+                ========================================
+                🔐 CREDENCIALES DE ACCESO
+                ========================================
+                👤 Usuario: %s
+                🔑 Contraseña temporal: %s
+                
+                Puede acceder al sistema en: http://localhost:8080/login
+                
+                ⚠️ Importante: Recomendamos cambiar la contraseña en el primer inicio de sesión.
+                
+                Atentamente,
+                I.E. San Carlos
+                """,
+                matricula.getEstudiante().getNombres(),
+                matricula.getEstudiante().getApellidoPaterno(),
+                matricula.getEstudiante().getApellidoMaterno(),
+                emailEstudiante,
+                matricula.getCodigoMatricula(),
+                matricula.getAnioAcademico(),
+                gradoStr,
+                matricula.getSeccion() != null ? matricula.getSeccion() : "No asignada",
+                matricula.getTurno() != null ? matricula.getTurno() : "No asignado",
+                username,
+                passwordTemporal
+        ));
+
+        try {
+            mailSender.send(message);
+            System.out.println(" Email de credenciales con matrícula enviado a: " + emailApoderado);
+        } catch (Exception e) {
+            System.err.println(" Error al enviar email de credenciales: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Método auxiliar para obtener nombre del grado
+     */
+    private String obtenerNombreGrado(Integer idGrado) {
+        if (idGrado == null) return "No especificado";
+        String[] grados = {
+                "1° Primaria", "2° Primaria", "3° Primaria", "4° Primaria", "5° Primaria", "6° Primaria",
+                "1° Secundaria", "2° Secundaria", "3° Secundaria", "4° Secundaria", "5° Secundaria"
+        };
+        return grados[idGrado - 1];
     }
 }

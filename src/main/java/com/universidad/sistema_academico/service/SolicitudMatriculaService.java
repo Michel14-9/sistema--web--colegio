@@ -1,9 +1,7 @@
 package com.universidad.sistema_academico.service;
 
-import com.universidad.sistema_academico.model.Estudiante;
-import com.universidad.sistema_academico.model.SolicitudMatricula;
-import com.universidad.sistema_academico.model.Usuario;
-import com.universidad.sistema_academico.repository.SolicitudMatriculaRepository;
+import com.universidad.sistema_academico.model.*;
+import com.universidad.sistema_academico.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,6 +30,12 @@ public class SolicitudMatriculaService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MatriculaRepository matriculaRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     /**
      * Guarda una nueva solicitud de matrícula
@@ -64,7 +68,7 @@ public class SolicitudMatriculaService {
     }
 
     /**
-     * Aprueba una solicitud y crea el usuario y estudiante
+     * Aprueba una solicitud, crea el usuario, estudiante y la MATRÍCULA ANUAL
      */
     @Transactional
     public void aprobarSolicitud(Long idSolicitud, Long administradorId) {
@@ -75,6 +79,10 @@ public class SolicitudMatriculaService {
         if (!"PENDIENTE".equals(solicitud.getEstado())) {
             throw new RuntimeException("La solicitud ya fue procesada");
         }
+
+
+        Usuario administrador = usuarioRepository.findById(administradorId)
+                .orElseThrow(() -> new RuntimeException("Administrador no encontrado con ID: " + administradorId));
 
         // Generar credenciales
         String username = generarUsername(solicitud.getNombres(), solicitud.getApellidoPaterno());
@@ -112,7 +120,24 @@ public class SolicitudMatriculaService {
         estudiante.setTurno(solicitud.getTurno());
         estudiante.setEstado("ACTIVO");
         estudiante.setFechaIngreso(LocalDate.now());
-        estudianteService.saveEstudiante(estudiante);
+        estudiante = estudianteService.saveEstudiante(estudiante);
+
+        // ========== CREAR LA MATRÍCULA ANUAL ==========
+        Matricula matricula = new Matricula();
+        matricula.setEstudiante(estudiante);
+        matricula.setAnioAcademico(LocalDate.now().getYear());  // Año actual
+        matricula.setIdGrado(solicitud.getIdGrado());
+        matricula.setSeccion(solicitud.getSeccion());
+        matricula.setTurno(solicitud.getTurno());
+        matricula.setFechaMatricula(LocalDate.now());
+        matricula.setEstado("ACTIVA");
+        matricula.setAprobadoPor(administrador);
+        matricula.setFechaAprobacion(LocalDateTime.now());
+        matricula.setObservaciones("Matrícula generada desde solicitud #" + idSolicitud);
+
+        // El código se genera automáticamente en @PrePersist
+        matricula = matriculaRepository.save(matricula);
+        // =============================================
 
         // Actualizar solicitud
         solicitud.setEstado("APROBADO");
@@ -121,12 +146,13 @@ public class SolicitudMatriculaService {
         solicitud.setEstudiante(estudiante);
         solicitudRepository.save(solicitud);
 
-        // Enviar email con credenciales
-        emailService.enviarCredenciales(
+        // Enviar email con credenciales y datos de matrícula
+        emailService.enviarCredencialesConMatricula(
                 solicitud.getApoderadoEmail(),
                 emailInstitucional,
                 username,
-                passwordTemporal
+                passwordTemporal,
+                matricula
         );
     }
 
@@ -150,6 +176,21 @@ public class SolicitudMatriculaService {
 
         // Enviar email de rechazo
         emailService.enviarRechazo(solicitud.getApoderadoEmail(), motivo);
+    }
+
+    /**
+     * Buscar solicitud por ID
+     */
+    public SolicitudMatricula buscarPorId(Long id) {
+        return solicitudRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Solicitud de matrícula no encontrada con ID: " + id));
+    }
+
+    /**
+     * Verificar si existe solicitud pendiente por DNI
+     */
+    public boolean existeSolicitudPendientePorDni(String dni) {
+        return solicitudRepository.existsByDniAndEstado(dni, "PENDIENTE");
     }
 
     // ========== MÉTODOS PRIVADOS ==========
@@ -191,14 +232,6 @@ public class SolicitudMatriculaService {
     }
 
     private String generarCodigoEstudiante() {
-
         return "EST" + LocalDate.now().getYear() + String.format("%06d", (int)(Math.random() * 1000000));
-    }
-    public SolicitudMatricula buscarPorId(Long id) {
-        return solicitudRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Solicitud de matrícula no encontrada con ID: " + id));
-    }
-    public boolean existeSolicitudPendientePorDni(String dni) {
-        return solicitudRepository.existsByDniAndEstado(dni, "PENDIENTE");
     }
 }
