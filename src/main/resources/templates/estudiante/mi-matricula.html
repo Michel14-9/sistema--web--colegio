@@ -11,63 +11,13 @@
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/estudiante/dashboard">
-            <i class="fas fa-user-graduate me-2"></i>
-            Sistema Académico - Estudiante
-        </a>
-        <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle me-1"></i>
-                <span th:text="${#authentication.name}"></span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <form th:action="@{/logout}" method="post" style="display: inline;">
-                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
-                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                        </button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<nav th:replace="~{fragments/estudiante-navbar :: navbar}"></nav>
 
 <div class="container-fluid">
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-2 sidebar p-0 bg-light">
-            <ul class="nav flex-column pt-3">
-                <li class="nav-item">
-                    <a class="nav-link" href="/estudiante/dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/estudiante/cursos">
-                        <i class="fas fa-book me-2"></i> Mis Cursos
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/estudiante/cursos-disponibles">
-                        <i class="fas fa-list me-2"></i> Cursos Disponibles
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/estudiante/docentes-disponibles">
-                        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="/estudiante/matricula">
-                        <i class="fas fa-file-signature me-2"></i> Mi Matrícula
-                    </a>
-                </li>
-            </ul>
-        </div>
+        <div th:replace="~{fragments/estudiante-sidebar :: sidebar}"></div>
 
         <!-- CONTENIDO -->
         <div class="col-md-10 p-4">
@@ -76,46 +26,138 @@
                     <i class="fas fa-file-signature me-2 text-primary"></i>
                     Mi Matrícula
                 </h1>
+                <span class="text-muted">
+                    <i class="fas fa-calendar-day me-1"></i>
+                    <span id="currentDate"></span>
+                </span>
             </div>
 
+            <!-- Mensaje si no tiene matrícula activa -->
+            <div th:if="${!tieneMatriculaActiva}" class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>No tienes una matrícula activa.</strong>
+                <p class="mb-0 mt-1">Para acceder a los cursos, primero debes matricularte.</p>
+                <a href="/estudiante/cursos-disponibles" class="btn btn-success mt-2">
+                    <i class="fas fa-file-signature me-1"></i> Ver cursos disponibles y matricularme
+                </a>
+            </div>
+
+            <!-- Detalle de matrícula activa -->
+            <div th:if="${tieneMatriculaActiva and matriculaActiva != null}" class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i> Matrícula Activa</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong><i class="fas fa-code me-1"></i> Código:</strong></p>
+                            <p class="text-primary fw-bold" th:text="${matriculaActiva.codigoMatricula}">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong><i class="fas fa-calendar-alt me-1"></i> Año Académico:</strong></p>
+                            <p th:text="${matriculaActiva.anioAcademico}">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong><i class="fas fa-graduation-cap me-1"></i> Estado:</strong></p>
+                            <span class="badge bg-success" th:text="${matriculaActiva.estado}">-</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong><i class="fas fa-layer-group me-1"></i> Grado:</strong></p>
+                            <p th:text="${matriculaActiva.idGrado} + '°'">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong><i class="fas fa-users me-1"></i> Sección:</strong></p>
+                            <p th:text="${matriculaActiva.seccion}">-</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong><i class="fas fa-clock me-1"></i> Turno:</strong></p>
+                            <p th:text="${matriculaActiva.turno}">-</p>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <p><strong><i class="fas fa-calendar-plus me-1"></i> Fecha de Matrícula:</strong></p>
+                            <p th:text="${#dates.format(matriculaActiva.fechaMatricula, 'dd/MM/yyyy')}">-</p>
+                        </div>
+                    </div>
+                    <div th:if="${matriculaActiva.observaciones != null}" class="row mt-2">
+                        <div class="col-md-12">
+                            <p><strong><i class="fas fa-comment me-1"></i> Observaciones:</strong></p>
+                            <p class="text-muted" th:text="${matriculaActiva.observaciones}">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Matrículas -->
             <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2 text-warning"></i> Historial de Matrículas</h5>
+                    <span class="badge bg-primary" th:text="${matriculas != null ? matriculas.size() : 0} + ' registros'">0 registros</span>
+                </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered">
+                        <table class="table table-hover">
                             <thead class="table-light">
                             <tr>
-                                <th>Curso</th>
                                 <th>Código</th>
-                                <th>Horas</th>
+                                <th>Año</th>
+                                <th>Grado</th>
+                                <th>Sección</th>
+                                <th>Turno</th>
+                                <th>Fecha</th>
                                 <th>Estado</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="matricula : ${matriculas}">
-                                <td th:text="${matricula.curso.nombreCurso}">-</td>
-                                <td th:text="${matricula.curso.codigoCurso}">-</td>
-                                <td th:text="${matricula.curso.horasSemanales}">-</td>
                                 <td>
-                                        <span class="badge"
-                                              th:class="${matricula.estado == 'ACTIVO'} ? 'bg-success' : 'bg-warning'"
-                                              th:text="${matricula.estado}">ACTIVO</span>
+                                    <strong th:text="${matricula.codigoMatricula}">-</strong>
+                                </td>
+                                <td th:text="${matricula.anioAcademico}">-</td>
+                                <td th:text="${matricula.idGrado} + '°'">-</td>
+                                <td>
+                                    <span class="badge bg-secondary" th:text="${matricula.seccion}">-</span>
+                                </td>
+                                <td>
+                                    <span class="badge" th:classappend="${matricula.turno == 'MAÑANA' ? 'bg-warning' : 'bg-dark'}"
+                                          th:text="${matricula.turno}">-</span>
+                                </td>
+                                <td th:text="${#dates.format(matricula.fechaMatricula, 'dd/MM/yyyy')}">-</td>
+                                <td>
+                                    <span class="badge"
+                                          th:class="${matricula.estado == 'ACTIVA'} ? 'bg-success' :
+                                                    ${matricula.estado == 'ANULADA'} ? 'bg-danger' : 'bg-secondary'"
+                                          th:text="${matricula.estado}">-</span>
                                 </td>
                             </tr>
                             <tr th:if="${matriculas == null or matriculas.empty}">
-                                <td colspan="4" class="text-center py-4">
+                                <td colspan="7" class="text-center py-4">
                                     <i class="fas fa-file-signature fa-3x text-muted d-block mb-2"></i>
-                                    No tienes cursos matriculados
+                                    <p class="text-muted">No tienes historial de matrículas</p>
+                                    <small class="text-muted">Tu historial aparecerá aquí cuando te matricules</small>
                                 </td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
 
-                    <div class="mt-3 text-end">
-                        <a href="/estudiante/cursos-disponibles" class="btn btn-success">
-                            <i class="fas fa-plus me-1"></i> Agregar cursos
-                        </a>
-                    </div>
+            <!-- Acciones rápidas -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <a href="/estudiante/cursos-disponibles" class="btn btn-success w-100">
+                        <i class="fas fa-plus me-2"></i> Matricularme en nuevos cursos
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <a href="/estudiante/cursos" class="btn btn-primary w-100">
+                        <i class="fas fa-book me-2"></i> Ver mis cursos
+                    </a>
                 </div>
             </div>
         </div>
@@ -123,5 +165,14 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const dateElement = document.getElementById('currentDate');
+        if (dateElement) {
+            dateElement.textContent = new Date().toLocaleDateString('es-PE', options);
+        }
+    });
+</script>
 </body>
 </html>
