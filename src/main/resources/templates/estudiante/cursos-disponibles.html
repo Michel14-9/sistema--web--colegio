@@ -11,58 +11,13 @@
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/estudiante/dashboard">
-            <i class="fas fa-user-graduate me-2"></i>
-            Sistema Académico - Estudiante
-        </a>
-        <div class="dropdown">
-            <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user-circle me-1"></i>
-                <span th:text="${#authentication.name}"></span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <form th:action="@{/logout}" method="post" style="display: inline;">
-                        <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left; cursor: pointer;">
-                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
-                        </button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+<nav th:replace="~{fragments/estudiante-navbar :: navbar}"></nav>
 
 <div class="container-fluid">
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-2 sidebar p-0 bg-light">
-            <ul class="nav flex-column pt-3">
-                <li class="nav-item">
-                    <a class="nav-link" href="/estudiante/dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/estudiante/cursos">
-                        <i class="fas fa-book me-2"></i> Mis Cursos
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="/estudiante/cursos-disponibles">
-                        <i class="fas fa-list me-2"></i> Cursos Disponibles
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/estudiante/matricula">
-                        <i class="fas fa-file-signature me-2"></i> Mi Matrícula
-                    </a>
-                </li>
-            </ul>
-        </div>
+        <div th:replace="~{fragments/estudiante-sidebar :: sidebar}"></div>
 
         <!-- CONTENIDO -->
         <div class="col-md-10 p-4">
@@ -73,7 +28,53 @@
                 </h1>
             </div>
 
-            <div class="card">
+            <!-- Filtros -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form th:action="@{/estudiante/cursos-disponibles}" method="get" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="grado" class="form-label">Grado</label>
+                            <select id="grado" name="grado" class="form-select">
+                                <option value="">Todos los grados</option>
+                                <option value="1">1° Primaria</option>
+                                <option value="2">2° Primaria</option>
+                                <option value="3">3° Primaria</option>
+                                <option value="4">4° Primaria</option>
+                                <option value="5">5° Primaria</option>
+                                <option value="6">6° Primaria</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="area" class="form-label">Área</label>
+                            <input type="text" id="area" name="area" class="form-control" placeholder="Buscar por área">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-1"></i> Filtrar
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="/estudiante/cursos-disponibles" class="btn btn-secondary w-100">
+                                <i class="fas fa-undo me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Mensaje si no tiene matrícula activa -->
+            <div th:if="${!tieneMatriculaActiva}" class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                No tienes una matrícula activa. Para ver los cursos disponibles, primero debes matricularte.
+            </div>
+
+            <!-- Mensaje si no hay cursos para su grado -->
+            <div th:if="${tieneMatriculaActiva and (cursosDisponibles == null or cursosDisponibles.empty)}" class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay cursos disponibles para tu grado <span th:text="${gradoActual}"></span>°.
+            </div>
+
+            <div class="card" th:if="${tieneMatriculaActiva and cursosDisponibles != null and !cursosDisponibles.empty}">
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
@@ -82,33 +83,113 @@
                                 <th>Código</th>
                                 <th>Curso</th>
                                 <th>Área</th>
-                                <th>Horas</th>
+                                <th>Grado</th>
+                                <th>Sección</th>
+                                <th>Turno</th>
+                                <th>Horario</th>
+                                <th>Docente</th>
+                                <th>Cupos</th>
                                 <th>Acción</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="curso : ${cursosDisponibles}">
                                 <td th:text="${curso.codigoCurso}">-</td>
-                                <td th:text="${curso.nombreCurso}">-</td>
-                                <td th:text="${curso.area}">-</td>
-                                <td th:text="${curso.horasSemanales}">-</td>
+                                <td>
+                                    <strong th:text="${curso.nombreCurso}">-</strong>
+                                    <br>
+                                    <small class="text-muted" th:text="${curso.descripcion}">-</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info" th:text="${curso.area}">-</span>
+                                </td>
+                                <td th:text="${curso.idGrado} + '°'">-</td>
+                                <td>
+                                    <span class="badge bg-secondary" th:text="${curso.seccion}">-</span>
+                                </td>
+                                <td>
+                                    <span class="badge" th:classappend="${curso.turno == 'MAÑANA' ? 'bg-warning' : 'bg-dark'}"
+                                          th:text="${curso.turno}">-</span>
+                                </td>
+                                <td th:text="${curso.horario}">-</td>
+                                <td th:text="${curso.docenteNombre}">-</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <small>
+                                            <span th:text="${curso.alumnosActuales}">0</span>
+                                            /
+                                            <span th:text="${curso.capacidadMaxima}">36</span>
+                                        </small>
+                                        <div class="progress" style="height: 5px; width: 80px;">
+                                            <div class="progress-bar"
+                                                 th:style="'width: ' + ${curso.porcentajeOcupacion} + '%'"
+                                                 th:classappend="${curso.porcentajeOcupacion >= 90 ? 'bg-danger' :
+                                                                curso.porcentajeOcupacion >= 75 ? 'bg-warning' : 'bg-success'}">
+                                            </div>
+                                        </div>
+                                        <small th:text="${curso.cuposDisponibles} + ' cupos disponibles'"></small>
+                                    </div>
+                                </td>
                                 <td>
                                     <form th:action="@{/estudiante/matricular}" method="post" class="d-inline">
                                         <input type="hidden" name="cursoId" th:value="${curso.idCurso}">
-                                        <button type="submit" class="btn btn-success btn-sm">
-                                            <i class="fas fa-plus me-1"></i> Matricular
+                                        <button type="submit" class="btn btn-sm"
+                                                th:classappend="${curso.hayCupo and !curso.inscrito} ? 'btn-success' : 'btn-secondary'"
+                                                th:disabled="${!curso.hayCupo or curso.inscrito}"
+                                                th:title="${curso.inscrito} ? 'Ya estás inscrito en este curso' : ${!curso.hayCupo} ? 'No hay cupos disponibles' : 'Matricularse'">
+                                            <i class="fas"
+                                               th:classappend="${curso.inscrito} ? 'fa-check' :
+                                                               ${!curso.hayCupo} ? 'fa-times' : 'fa-plus'">
+                                            </i>
+                                            <span th:text="${curso.inscrito} ? 'Inscrito' :
+                                                          ${!curso.hayCupo} ? 'Sin cupo' : 'Matricular'">
+                                            </span>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
-                            <tr th:if="${cursosDisponibles == null or cursosDisponibles.empty}">
-                                <td colspan="5" class="text-center py-4">
-                                    <i class="fas fa-book-open fa-3x text-muted d-block mb-2"></i>
-                                    No hay cursos disponibles
-                                </td>
-                            </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen -->
+            <div class="row mt-3" th:if="${tieneMatriculaActiva}">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-primary">
+                                <i class="fas fa-book me-2"></i>
+                                Total Cursos
+                            </h5>
+                            <h2 class="display-6" th:text="${cursosDisponibles != null ? cursosDisponibles.size() : 0}">0</h2>
+                            <small class="text-muted" th:if="${gradoActual != null}">Para el grado ${gradoActual}°</small>
+                            <small class="text-muted" th:unless="${gradoActual != null}">Sin grado asignado</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Cursos con Cupo
+                            </h5>
+                            <h2 class="display-6" th:text="${cursosConCupo != null ? cursosConCupo : 0}">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-info">
+                                <i class="fas fa-file-signature me-2"></i>
+                                Mi Matrícula
+                            </h5>
+                            <h5 th:text="${tieneMatriculaActiva ? '✅ Activa' : '❌ Inactiva'}">-</h5>
+                            <small th:if="${gradoActual != null}" th:text="'Grado: ' + ${gradoActual} + '°'">-</small>
+                        </div>
                     </div>
                 </div>
             </div>

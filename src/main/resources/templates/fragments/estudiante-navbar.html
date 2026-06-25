@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<nav class="navbar" th:fragment="navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/estudiante/dashboard">
+            <div class="brand-icon">
+                <img th:src="@{/img/logo.png}" alt="Logo" class="nav-logo">
+            </div>
+            <div class="brand-text">
+                <h3>I.E. SAN CARLOS</h3>
+                <p th:text="${tituloPagina} ?: 'Panel del Estudiante'">Panel del Estudiante</p>
+            </div>
+        </a>
+
+        <div class="dropdown">
+            <button class="dropdown-toggle-btn" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user-graduate"></i>
+                <span class="user-name" th:text="${estudiante.nombres}"></span>
+                <span class="user-lastname" th:text="${estudiante.apellidoPaterno}"></span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="dropdown-item logout-btn">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+</body>
+</html>
