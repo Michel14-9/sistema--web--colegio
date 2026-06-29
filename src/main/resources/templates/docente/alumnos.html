@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I.E. San Carlos - Mis Alumnos</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/docente.css}" rel="stylesheet">
+</head>
+<body>
+
+<div th:replace="~{fragments/docente-navbar :: navbar}">
+    <div th:with="tituloPagina='Mis Alumnos'"></div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/docente-sidebar :: sidebar}">
+            <div th:with="modulo='alumnos'"></div>
+        </div>
+
+        <div class="col-md-10 col-lg-10 main-content">
+            <div class="page-header">
+                <h1><i class="fas fa-users"></i> Mis Alumnos</h1>
+                <p>Lista de todos los estudiantes matriculados en tus cursos.</p>
+            </div>
+
+            <!-- Filtro por Curso -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Filtrar por Curso</label>
+                            <select class="form-select" id="filtroCurso" onchange="filtrarPorCurso()">
+                                <option value="">Todos los cursos</option>
+                                <option th:each="curso : ${cursos}"
+                                        th:value="${curso.idCurso}"
+                                        th:selected="${cursoSeleccionado != null and cursoSeleccionado.idCurso == curso.idCurso}"
+                                        th:text="${curso.nombreCurso} + ' (' + ${curso.codigoCurso} + ')'">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-primary" onclick="aplicarFiltro()">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <button class="btn btn-outline-secondary ms-2" onclick="limpiarFiltro()">
+                                <i class="fas fa-times"></i> Limpiar
+                            </button>
+                        </div>
+                        <div class="col-md-4 text-end d-flex align-items-end justify-content-end">
+                            <span class="badge bg-info fs-6 p-2">
+                                <i class="fas fa-users"></i> Total: <span th:text="${#lists.size(estudiantes)}">0</span> alumnos
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <div class="header-title">
+                        <i class="fas fa-list"></i>
+                        <h4 th:text="${nombreGradoActual != null ? 'Alumnos - ' + nombreGradoActual : 'Todos los Alumnos'}"></h4>
+                    </div>
+                    <div class="header-count">
+                        <span class="total-count" th:text="${#lists.size(estudiantes)}">0</span> alumnos registrados
+                    </div>
+                </div>
+                <div class="card-body-custom p-0">
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>DNI</th>
+                                <th>Nombres</th>
+                                <th>Apellidos</th>
+                                <th>Email</th>
+                                <th>Grado</th>
+                                <th>Estado</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="estudiante, iterStat : ${estudiantes}">
+                                <td th:text="${iterStat.count}">1</td>
+                                <td th:text="${estudiante.dni}">-</td>
+                                <td th:text="${estudiante.nombres}">-</td>
+                                <td th:text="${estudiante.apellidoPaterno} + ' ' + ${estudiante.apellidoMaterno}">-</td>
+                                <td th:text="${estudiante.emailInstitucional}">-</td>
+                                <!-- ====== CAMBIO AQUÍ ====== -->
+                                <td th:text="${nombresGrados != null ? nombresGrados.get(estudiante.idEstudiante) : estudiante.idGrado}">-</td>
+                                <!-- ====== FIN CAMBIO ====== -->
+                                <td>
+                                    <span class="badge" th:class="${estudiante.estado == 'ACTIVO'} ? 'bg-success' : 'bg-danger'"
+                                          th:text="${estudiante.estado}">-</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${estudiantes == null or estudiantes.empty}">
+                                <td colspan="7" class="text-center py-5">
+                                    <i class="fas fa-users fa-3x text-muted mb-2 d-block"></i>
+                                    No hay alumnos registrados en tus cursos.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function filtrarPorCurso() {
+        var cursoId = document.getElementById('filtroCurso').value;
+        if (cursoId) {
+            window.location.href = '/docente/alumnos?idCurso=' + cursoId;
+        } else {
+            window.location.href = '/docente/alumnos';
+        }
+    }
+
+    function aplicarFiltro() {
+        filtrarPorCurso();
+    }
+
+    function limpiarFiltro() {
+        window.location.href = '/docente/alumnos';
+    }
+</script>
+</body>
+</html>

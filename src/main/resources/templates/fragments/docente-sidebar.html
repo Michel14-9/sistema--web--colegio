@@ -13,16 +13,50 @@
             <h5 th:text="${docente.nombres} + ' ' + ${docente.apellidoPaterno}"></h5>
             <p><i class="fas fa-id-card"></i> <span th:text="${docente.dni}">-</span></p>
             <p><i class="fas fa-envelope"></i> <span th:text="${docente.email}">-</span></p>
+            <p><i class="fas fa-graduation-cap"></i> <span th:text="${docente.especialidad}">-</span></p>
         </div>
         <ul class="nav flex-column">
+            <!-- Dashboard -->
             <li class="nav-item">
                 <a class="nav-link" th:classappend="${modulo == 'dashboard'} ? 'active' : ''" href="/docente/dashboard">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
             </li>
+
+            <!-- Mis Cursos -->
             <li class="nav-item">
                 <a class="nav-link" th:classappend="${modulo == 'cursos'} ? 'active' : ''" href="/docente/mis-cursos">
                     <i class="fas fa-book-open"></i> Mis Cursos
+                    <span class="badge bg-success ms-1" th:text="${totalCursos}">0</span>
+                </a>
+            </li>
+
+            <!-- Mi Horario -->
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'horario'} ? 'active' : ''" href="/docente/horario">
+                    <i class="fas fa-calendar-alt"></i> Mi Horario
+                </a>
+            </li>
+
+            <!-- Mis Alumnos -->
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'alumnos'} ? 'active' : ''" href="/docente/alumnos">
+                    <i class="fas fa-users"></i> Mis Alumnos
+                    <span class="badge bg-info ms-1" th:text="${totalAlumnos}">0</span>
+                </a>
+            </li>
+
+            <!-- Gestionar Notas -->
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'notas'} ? 'active' : ''" href="/docente/gestionar-notas">
+                    <i class="fas fa-edit"></i> Gestionar Notas
+                </a>
+            </li>
+
+            <!-- Registrar Asistencia -->
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'asistencia'} ? 'active' : ''" href="/docente/registrar-asistencia">
+                    <i class="fas fa-clipboard-check"></i> Registrar Asistencia
                 </a>
             </li>
         </ul>

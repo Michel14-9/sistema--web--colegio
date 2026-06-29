@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I.E. San Carlos - Gestionar Notas</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/docente.css}" rel="stylesheet">
+    <style>
+        .nota-input {
+            width: 70px;
+            text-align: center;
+        }
+        .nota-input:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .promedio-cell {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .nota-aprobado { color: #198754; }
+        .nota-recuperacion { color: #ffc107; }
+        .nota-desaprobado { color: #dc3545; }
+        .nota-sin-notas { color: #6c757d; }
+        .tabla-notas th {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+        }
+        .tabla-notas td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .tabla-notas .estudiante-cell {
+            text-align: left;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/docente-navbar :: navbar}">
+    <div th:with="tituloPagina='Gestionar Notas'"></div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/docente-sidebar :: sidebar}">
+            <div th:with="modulo='notas'"></div>
+        </div>
+
+        <div class="col-md-10 col-lg-10 main-content">
+            <div class="page-header">
+                <h1><i class="fas fa-edit"></i> Gestionar Notas</h1>
+                <p>Registra y edita las notas de tus estudiantes por curso.</p>
+            </div>
+
+            <!-- ALERTAS -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="me-3"><i class="fas fa-check-circle fa-2x"></i></div>
+                    <div><strong>¡Éxito!</strong><br><span th:text="${success}"></span></div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="me-3"><i class="fas fa-exclamation-circle fa-2x"></i></div>
+                    <div><strong>¡Error!</strong><br><span th:text="${error}"></span></div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+
+            <!-- Seleccionar Curso -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Seleccionar Curso</label>
+                            <select class="form-select" id="selectCurso" onchange="cargarNotas()">
+                                <option value="">Seleccionar un curso...</option>
+                                <option th:each="curso : ${cursos}"
+                                        th:value="${curso.idCurso}"
+                                        th:selected="${cursoSeleccionado != null and cursoSeleccionado.idCurso == curso.idCurso}"
+                                        th:text="${curso.nombreCurso} + ' (' + ${curso.codigoCurso} + ')'">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Periodo Académico</label>
+                            <input type="text" class="form-control" th:value="${periodoActual}" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Bimestre</label>
+                            <select class="form-select" id="bimestre" onchange="cargarNotas()">
+                                <option value="1">Bimestre 1</option>
+                                <option value="2">Bimestre 2</option>
+                                <option value="3">Bimestre 3</option>
+                                <option value="4">Bimestre 4</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <span class="badge bg-info fs-6 p-2" th:if="${cursoSeleccionado != null}">
+                                <i class="fas fa-users"></i> <span th:text="${#lists.size(notasAlumnos)}"></span> alumnos
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Notas -->
+            <div th:if="${cursoSeleccionado != null}">
+                <form id="formNotas" method="post" th:action="@{/docente/notas/guardar}">
+                    <input type="hidden" name="idCurso" th:value="${cursoSeleccionado.idCurso}">
+                    <input type="hidden" name="periodoAcademico" th:value="${periodoActual}">
+                    <input type="hidden" name="bimestre" id="bimestreHidden" value="1">
+
+                    <div class="content-card">
+                        <div class="card-header-custom">
+                            <div class="header-title">
+                                <i class="fas fa-star"></i>
+                                <h4>Notas del Curso: <span th:text="${cursoSeleccionado.nombreCurso}"></span></h4>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-save"></i> Guardar Notas
+                            </button>
+                        </div>
+                        <div class="card-body-custom p-0">
+                            <div class="table-responsive">
+                                <table class="table table-modern tabla-notas">
+                                    <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th style="text-align:left;">Estudiante</th>
+                                        <th>Bim. 1</th>
+                                        <th>Bim. 2</th>
+                                        <th>Bim. 3</th>
+                                        <th>Bim. 4</th>
+                                        <th>Promedio</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="alumno, iterStat : ${notasAlumnos}">
+                                        <td th:text="${iterStat.count}">1</td>
+                                        <td class="estudiante-cell" th:text="${alumno.nombreCompleto}">-</td>
+                                        <td>
+                                            <input type="number" class="form-control nota-input"
+                                                   th:name="'b1_' + ${alumno.idEstudiante}"
+                                                   th:value="${alumno.bimestre1 != null ? alumno.bimestre1 : ''}"
+                                                   min="0" max="20" step="0.5"
+                                                   onchange="calcularPromedio(this)">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control nota-input"
+                                                   th:name="'b2_' + ${alumno.idEstudiante}"
+                                                   th:value="${alumno.bimestre2 != null ? alumno.bimestre2 : ''}"
+                                                   min="0" max="20" step="0.5"
+                                                   onchange="calcularPromedio(this)">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control nota-input"
+                                                   th:name="'b3_' + ${alumno.idEstudiante}"
+                                                   th:value="${alumno.bimestre3 != null ? alumno.bimestre3 : ''}"
+                                                   min="0" max="20" step="0.5"
+                                                   onchange="calcularPromedio(this)">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control nota-input"
+                                                   th:name="'b4_' + ${alumno.idEstudiante}"
+                                                   th:value="${alumno.bimestre4 != null ? alumno.bimestre4 : ''}"
+                                                   min="0" max="20" step="0.5"
+                                                   onchange="calcularPromedio(this)">
+                                        </td>
+                                        <td class="promedio-cell" id="promedio_${alumno.idEstudiante}">
+                                            <span th:text="${alumno.promedioFinal != null ? alumno.promedioFinal : '-'}">-</span>
+                                        </td>
+                                        <td>
+                                            <!-- CORREGIDO: Usando th:switch en lugar de operador ternario -->
+                                            <span th:switch="${alumno.estado}">
+                                                    <span th:case="'APROBADO'" class="badge bg-success" th:text="${alumno.estado}">APROBADO</span>
+                                                    <span th:case="'RECUPERACION'" class="badge bg-warning" th:text="${alumno.estado}">RECUPERACION</span>
+                                                    <span th:case="'DESAPROBADO'" class="badge bg-danger" th:text="${alumno.estado}">DESAPROBADO</span>
+                                                    <span th:case="'SIN NOTAS'" class="badge bg-secondary" th:text="${alumno.estado}">SIN NOTAS</span>
+                                                    <span th:case="*" class="badge bg-secondary" th:text="${alumno.estado}">-</span>
+                                                </span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${notasAlumnos == null or notasAlumnos.empty}">
+                                        <td colspan="8" class="text-center py-4">
+                                            <i class="fas fa-users fa-2x text-muted mb-2 d-block"></i>
+                                            No hay alumnos matriculados en este curso.
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div th:unless="${cursoSeleccionado != null}" class="empty-state">
+                <i class="fas fa-hand-pointer"></i>
+                <h4>Selecciona un curso</h4>
+                <p>Elige un curso para gestionar las notas de los estudiantes.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function cargarNotas() {
+        var cursoId = document.getElementById('selectCurso').value;
+        if (cursoId) {
+            var bimestre = document.getElementById('bimestre').value;
+            window.location.href = '/docente/gestionar-notas?idCurso=' + cursoId + '&bimestre=' + bimestre;
+        } else {
+            window.location.href = '/docente/gestionar-notas';
+        }
+    }
+
+    function calcularPromedio(input) {
+        var row = input.closest('tr');
+        var inputs = row.querySelectorAll('input[type="number"]');
+        var suma = 0;
+        var count = 0;
+
+        inputs.forEach(function(inp) {
+            var val = parseFloat(inp.value);
+            if (!isNaN(val) && val !== '') {
+                suma += val;
+                count++;
+            }
+        });
+
+        var promedioCell = row.querySelector('.promedio-cell');
+        var estadoSpan = row.querySelector('td:last-child .badge');
+
+        if (count === 0) {
+            promedioCell.textContent = '-';
+            estadoSpan.textContent = 'SIN NOTAS';
+            estadoSpan.className = 'badge bg-secondary';
+            return;
+        }
+
+        var promedio = suma / count;
+        var promedioRedondeado = Math.round(promedio * 10) / 10;
+        promedioCell.textContent = promedioRedondeado.toFixed(1);
+
+        if (promedioRedondeado >= 11) {
+            estadoSpan.textContent = 'APROBADO';
+            estadoSpan.className = 'badge bg-success';
+        } else if (promedioRedondeado >= 7) {
+            estadoSpan.textContent = 'RECUPERACION';
+            estadoSpan.className = 'badge bg-warning';
+        } else {
+            estadoSpan.textContent = 'DESAPROBADO';
+            estadoSpan.className = 'badge bg-danger';
+        }
+    }
+
+    // Inicializar el cálculo al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        var inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(function(input) {
+            calcularPromedio(input);
+        });
+
+        // Establecer el bimestre actual
+        var bimestreSelect = document.getElementById('bimestre');
+        if (bimestreSelect) {
+            document.getElementById('bimestreHidden').value = bimestreSelect.value;
+        }
+    });
+</script>
+</body>
+</html>
