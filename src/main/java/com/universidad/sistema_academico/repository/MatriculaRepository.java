@@ -27,6 +27,12 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     Optional<Matricula> findMatriculaActivaByEstudianteAndAnio(@Param("estudianteId") Long estudianteId, @Param("anio") Integer anio);
 
     /**
+     * Obtener la matrícula activa completa del estudiante
+     */
+    @Query("SELECT m FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.estado = 'ACTIVA'")
+    Optional<Matricula> findMatriculaActivaByEstudianteId(@Param("estudianteId") Long estudianteId);
+
+    /**
      * Obtener el grado actual del estudiante (su matrícula activa)
      */
     @Query("SELECT m.idGrado FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.estado = 'ACTIVA'")
@@ -43,6 +49,17 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
      */
     @Query("SELECT COUNT(m) FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.estado = 'ACTIVA'")
     int countMatriculasActivasByEstudianteId(@Param("estudianteId") Long estudianteId);
+
+    // ========== NUEVO MÉTODO: CONTAR ESTUDIANTES POR GRADO Y TURNO ==========
+
+    /**
+     * Contar estudiantes con matrícula activa en un grado y turno específico
+     * Utilizado para actualizar alumnos_actuales en los cursos
+     */
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.estado = :estado AND m.idGrado = :idGrado AND m.turno = :turno")
+    long countByEstadoAndIdGradoAndTurno(@Param("estado") String estado,
+                                         @Param("idGrado") Integer idGrado,
+                                         @Param("turno") String turno);
 
     // ========== BÚSQUEDAS POR FILTROS ==========
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle del Curso - Estudiante</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link th:href="@{/css/estudiante.css}" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav th:replace="~{fragments/estudiante-navbar :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- SIDEBAR -->
+        <div th:replace="~{fragments/estudiante-sidebar :: sidebar}"></div>
+
+        <!-- CONTENIDO -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    Detalle del Curso
+                </h1>
+                <a th:href="@{/estudiante/cursos}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver
+                </a>
+            </div>
+
+            <!-- Detalle del Curso -->
+            <div class="card mb-4" th:if="${curso}">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0" th:text="${curso.nombreCurso}">Nombre del Curso</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Código:</strong> <span th:text="${curso.codigoCurso}">-</span></p>
+                            <p><strong>Área:</strong> <span th:text="${curso.area}">-</span></p>
+                            <p><strong>Horas Semanales:</strong> <span th:text="${curso.horasSemanales}">-</span></p>
+                            <p><strong>Horario:</strong> <span th:text="${curso.horario}">-</span></p>
+                            <p><strong>Sección:</strong> <span th:text="${curso.seccion}">-</span></p>
+                            <p><strong>Turno:</strong> <span th:text="${curso.turno}">-</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Docente:</strong> <span th:text="${docenteNombre}">-</span></p>
+                            <p><strong>Capacidad Máxima:</strong> <span th:text="${curso.capacidadMaxima}">-</span></p>
+                            <p><strong>Alumnos Actuales:</strong> <span th:text="${curso.alumnosActuales}">-</span></p>
+                            <p><strong>Cupos Disponibles:</strong>
+                                <span class="badge"
+                                      th:class="${hayCupo ? 'bg-success' : 'bg-danger'}"
+                                      th:text="${cuposDisponibles}">-</span>
+                            </p>
+                            <p><strong>Ocupación:</strong></p>
+                            <div class="progress mt-1" style="height: 25px;">
+                                <div class="progress-bar d-flex align-items-center justify-content-center"
+                                     th:classappend="${porcentajeOcupacion >= 90 ? 'bg-danger' :
+                                                    porcentajeOcupacion >= 70 ? 'bg-warning' : 'bg-success'}"
+                                     th:style="'width: ' + ${porcentajeOcupacion} + '%'"
+                                     th:text="${#numbers.formatDecimal(porcentajeOcupacion, 1, 1)} + '%'">
+                                </div>
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                <span th:text="${curso.alumnosActuales}"></span> de <span th:text="${curso.capacidadMaxima}"></span> alumnos
+                            </small>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p><strong>Descripción:</strong></p>
+                        <p th:text="${curso.descripcion}">Descripción del curso</p>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <span class="badge bg-info">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Curso asignado por matrícula anual
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mensaje de error si no se encuentra el curso -->
+            <div class="alert alert-danger" th:if="${error}">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span th:text="${error}">Error al cargar el curso</span>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

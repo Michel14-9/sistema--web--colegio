@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Notas - Estudiante</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link th:href="@{/css/estudiante.css}" rel="stylesheet">
+</head>
+<body>
+
+<nav th:replace="~{fragments/estudiante-navbar :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/estudiante-sidebar :: sidebar}"></div>
+
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-star me-2 text-warning"></i>
+                    Mis Notas
+                </h1>
+                <span class="text-muted" th:if="${nombreGradoActual != null}">
+                    <i class="fas fa-graduation-cap me-1"></i>
+                    Grado: <strong th:text="${nombreGradoActual}"></strong>
+                </span>
+                <span class="text-muted" th:unless="${nombreGradoActual != null}">
+                    <i class="fas fa-graduation-cap me-1"></i>
+                    Sin grado asignado
+                </span>
+            </div>
+
+            <!-- Mensaje sin matrícula -->
+            <div th:if="${!tieneMatriculaActiva}" class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>No tienes una matrícula activa.</strong>
+                <p class="mb-0 mt-1">Para ver tus notas, primero debes matricularte.</p>
+                <a href="/estudiante/matricula" class="btn btn-success mt-2">
+                    <i class="fas fa-file-signature me-1"></i> Ver mi matrícula
+                </a>
+            </div>
+
+            <!-- Resumen de notas -->
+            <div th:if="${tieneMatriculaActiva and notas != null and !notas.empty}">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h6>Total Cursos</h6>
+                                <h2 th:text="${notas.size()}">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h6>Aprobados</h6>
+                                <h2 th:text="${totalAprobados}">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <h6>Recuperación</h6>
+                                <h2 th:text="${totalRecuperacion}">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h6>Desaprobados</h6>
+                                <h2 th:text="${totalDesaprobados}">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de notas -->
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-table me-2"></i> Boletín de Notas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Curso</th>
+                                    <th>Bim. 1</th>
+                                    <th>Bim. 2</th>
+                                    <th>Bim. 3</th>
+                                    <th>Bim. 4</th>
+                                    <th>Promedio</th>
+                                    <th>Estado</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="nota : ${notas}">
+                                    <td th:text="${nota.codigoCurso}">-</td>
+                                    <td th:text="${nota.nombreCurso}">-</td>
+                                    <td th:text="${nota.bimestre1 != null ? nota.bimestre1 : '-'}">-</td>
+                                    <td th:text="${nota.bimestre2 != null ? nota.bimestre2 : '-'}">-</td>
+                                    <td th:text="${nota.bimestre3 != null ? nota.bimestre3 : '-'}">-</td>
+                                    <td th:text="${nota.bimestre4 != null ? nota.bimestre4 : '-'}">-</td>
+                                    <td>
+                                        <strong th:text="${nota.promedioFinal != null ? nota.promedioFinal : '-'}">-</strong>
+                                    </td>
+                                    <td>
+                                        <span th:if="${nota.estado == 'APROBADO'}" class="badge bg-success" th:text="${nota.estado}">-</span>
+                                        <span th:if="${nota.estado == 'RECUPERACIÓN'}" class="badge bg-warning text-dark" th:text="${nota.estado}">-</span>
+                                        <span th:if="${nota.estado == 'SIN NOTAS'}" class="badge bg-secondary" th:text="${nota.estado}">-</span>
+                                        <span th:if="${nota.estado != 'APROBADO' and nota.estado != 'RECUPERACIÓN' and nota.estado != 'SIN NOTAS'}" class="badge bg-danger" th:text="${nota.estado}">-</span>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensaje sin cursos -->
+            <div th:if="${tieneMatriculaActiva and (notas == null or notas.empty)}" class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No hay notas disponibles para tu grado.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

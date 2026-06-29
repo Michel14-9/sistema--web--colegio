@@ -36,10 +36,7 @@
             <div th:if="${!tieneMatriculaActiva}" class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <strong>No tienes una matrícula activa.</strong>
-                <p class="mb-0 mt-1">Para acceder a los cursos, primero debes matricularte.</p>
-                <a href="/estudiante/cursos-disponibles" class="btn btn-success mt-2">
-                    <i class="fas fa-file-signature me-1"></i> Ver cursos disponibles y matricularme
-                </a>
+                <p class="mb-0 mt-1">Contacta con la administración para realizar tu matrícula anual.</p>
             </div>
 
             <!-- Detalle de matrícula activa -->
@@ -66,7 +63,7 @@
                     <div class="row">
                         <div class="col-md-4">
                             <p><strong><i class="fas fa-layer-group me-1"></i> Grado:</strong></p>
-                            <p th:text="${matriculaActiva.idGrado} + '°'">-</p>
+                            <p th:text="${nombreGradoActual}">-</p>
                         </div>
                         <div class="col-md-4">
                             <p><strong><i class="fas fa-users me-1"></i> Sección:</strong></p>
@@ -80,7 +77,7 @@
                     <div class="row mt-2">
                         <div class="col-md-12">
                             <p><strong><i class="fas fa-calendar-plus me-1"></i> Fecha de Matrícula:</strong></p>
-                            <p th:text="${#dates.format(matriculaActiva.fechaMatricula, 'dd/MM/yyyy')}">-</p>
+                            <p th:text="${#temporals.format(matriculaActiva.fechaMatricula, 'dd/MM/yyyy')}">-</p>
                         </div>
                     </div>
                     <div th:if="${matriculaActiva.observaciones != null}" class="row mt-2">
@@ -118,7 +115,7 @@
                                     <strong th:text="${matricula.codigoMatricula}">-</strong>
                                 </td>
                                 <td th:text="${matricula.anioAcademico}">-</td>
-                                <td th:text="${matricula.idGrado} + '°'">-</td>
+                                <td th:text="${nombresGrados.get(matricula.idMatricula)}">-</td>
                                 <td>
                                     <span class="badge bg-secondary" th:text="${matricula.seccion}">-</span>
                                 </td>
@@ -126,11 +123,10 @@
                                     <span class="badge" th:classappend="${matricula.turno == 'MAÑANA' ? 'bg-warning' : 'bg-dark'}"
                                           th:text="${matricula.turno}">-</span>
                                 </td>
-                                <td th:text="${#dates.format(matricula.fechaMatricula, 'dd/MM/yyyy')}">-</td>
+                                <td th:text="${#temporals.format(matricula.fechaMatricula, 'dd/MM/yyyy')}">-</td>
                                 <td>
                                     <span class="badge"
-                                          th:class="${matricula.estado == 'ACTIVA'} ? 'bg-success' :
-                                                    ${matricula.estado == 'ANULADA'} ? 'bg-danger' : 'bg-secondary'"
+                                          th:class="${matricula.estado == 'ACTIVA' ? 'bg-success' : matricula.estado == 'ANULADA' ? 'bg-danger' : 'bg-secondary'}"
                                           th:text="${matricula.estado}">-</span>
                                 </td>
                             </tr>
@@ -149,12 +145,7 @@
 
             <!-- Acciones rápidas -->
             <div class="row mt-4">
-                <div class="col-md-6">
-                    <a href="/estudiante/cursos-disponibles" class="btn btn-success w-100">
-                        <i class="fas fa-plus me-2"></i> Matricularme en nuevos cursos
-                    </a>
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <a href="/estudiante/cursos" class="btn btn-primary w-100">
                         <i class="fas fa-book me-2"></i> Ver mis cursos
                     </a>

@@ -69,9 +69,10 @@ public class SolicitudMatriculaService {
 
     /**
      * Aprueba una solicitud, crea el usuario, estudiante y la MATRÍCULA ANUAL
+     * AHORA RETORNA LA SOLICITUD APROBADA
      */
     @Transactional
-    public void aprobarSolicitud(Long idSolicitud, Long administradorId) {
+    public SolicitudMatricula aprobarSolicitud(Long idSolicitud, Long administradorId) {
         SolicitudMatricula solicitud = solicitudRepository.findById(idSolicitud)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
@@ -79,7 +80,6 @@ public class SolicitudMatriculaService {
         if (!"PENDIENTE".equals(solicitud.getEstado())) {
             throw new RuntimeException("La solicitud ya fue procesada");
         }
-
 
         Usuario administrador = usuarioRepository.findById(administradorId)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado con ID: " + administradorId));
@@ -125,7 +125,7 @@ public class SolicitudMatriculaService {
         // ========== CREAR LA MATRÍCULA ANUAL ==========
         Matricula matricula = new Matricula();
         matricula.setEstudiante(estudiante);
-        matricula.setAnioAcademico(LocalDate.now().getYear());  // Año actual
+        matricula.setAnioAcademico(LocalDate.now().getYear());
         matricula.setIdGrado(solicitud.getIdGrado());
         matricula.setSeccion(solicitud.getSeccion());
         matricula.setTurno(solicitud.getTurno());
@@ -135,16 +135,14 @@ public class SolicitudMatriculaService {
         matricula.setFechaAprobacion(LocalDateTime.now());
         matricula.setObservaciones("Matrícula generada desde solicitud #" + idSolicitud);
 
-        // El código se genera automáticamente en @PrePersist
         matricula = matriculaRepository.save(matricula);
-        // =============================================
 
         // Actualizar solicitud
         solicitud.setEstado("APROBADO");
         solicitud.setFechaProcesamiento(LocalDateTime.now());
         solicitud.setAdministradorId(administradorId);
         solicitud.setEstudiante(estudiante);
-        solicitudRepository.save(solicitud);
+        SolicitudMatricula solicitudActualizada = solicitudRepository.save(solicitud);
 
         // Enviar email con credenciales y datos de matrícula
         emailService.enviarCredencialesConMatricula(
@@ -154,6 +152,9 @@ public class SolicitudMatriculaService {
                 passwordTemporal,
                 matricula
         );
+
+        // RETORNAR LA SOLICITUD ACTUALIZADA
+        return solicitudActualizada;
     }
 
     /**

@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import java.text.Normalizer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -57,6 +59,9 @@ public class AdminController {
     @Autowired
     private ActividadRepository actividadRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Value("${voucher.upload.directory:uploads/vouchers}")
     private String uploadDirectory;
 
@@ -70,6 +75,35 @@ public class AdminController {
         actividad.setDetalle(detalle);
         actividad.setFecha(LocalDateTime.now());
         actividadRepository.save(actividad);
+    }
+
+    // ==================== MÉTODO PARA ACTUALIZAR CUPOS ====================
+
+    private void actualizarAlumnosActualesPorGradoYTurno(Integer idGrado, String turno) {
+        System.out.println("=== ACTUALIZANDO ALUMNOS ACTUALES ===");
+        System.out.println("Grado: " + idGrado);
+        System.out.println("Turno: " + turno);
+
+        long cantidadEstudiantes = matriculaRepository.countByEstadoAndIdGradoAndTurno("ACTIVA", idGrado, turno);
+        System.out.println("Estudiantes activos en este grado/turno: " + cantidadEstudiantes);
+
+        List<Curso> cursos = cursoRepository.findAll().stream()
+                .filter(curso -> curso.getIdGrado() != null &&
+                        curso.getIdGrado().equals(idGrado) &&
+                        curso.getTurno() != null &&
+                        curso.getTurno().equalsIgnoreCase(turno) &&
+                        !curso.isEliminado())
+                .collect(Collectors.toList());
+
+        System.out.println("Cursos a actualizar: " + cursos.size());
+
+        for (Curso curso : cursos) {
+            curso.setAlumnosActuales((int) cantidadEstudiantes);
+            cursoRepository.save(curso);
+            System.out.println("  - Curso: " + curso.getNombreCurso() +
+                    " | Alumnos actuales: " + cantidadEstudiantes);
+        }
+        System.out.println("=== FIN ACTUALIZACIÓN ===\n");
     }
 
     // ==================== DASHBOARD ====================
@@ -101,7 +135,6 @@ public class AdminController {
             @RequestParam(required = false) String filtroGrado,
             Model model) {
 
-        // Limpiar filtros vacíos
         if (filtroNombre != null && filtroNombre.isEmpty()) filtroNombre = null;
         if (filtroEstado != null && filtroEstado.isEmpty()) filtroEstado = null;
         if (filtroGrado != null && filtroGrado.isEmpty()) filtroGrado = null;
@@ -148,8 +181,6 @@ public class AdminController {
         return "redirect:/admin/estudiantes";
     }
 
-
-
     @GetMapping("/estudiante/eliminar/{id}")
     public String eliminarEstudiante(@PathVariable Long id, Authentication auth) {
         String usuario = auth != null ? auth.getName() : "sistema";
@@ -162,6 +193,8 @@ public class AdminController {
         }
         return "redirect:/admin/estudiantes";
     }
+
+    // ==================== CRUD DOCENTES ====================
 
     @GetMapping("/docentes")
     public String listarDocentes(
@@ -177,7 +210,6 @@ public class AdminController {
         System.out.println("filtroEspecialidad: " + filtroEspecialidad);
         System.out.println("filtroEstado: " + filtroEstado);
 
-        // Limpiar filtros vacíos
         if (filtroNombre != null && filtroNombre.isEmpty()) filtroNombre = null;
         if (filtroEspecialidad != null && filtroEspecialidad.isEmpty()) filtroEspecialidad = null;
         if (filtroEstado != null && filtroEstado.isEmpty()) filtroEstado = null;
@@ -191,47 +223,16 @@ public class AdminController {
         System.out.println("Total elementos: " + docentesPage.getTotalElements());
         System.out.println("Total páginas: " + docentesPage.getTotalPages());
 
-        // ========== DEPURACIÓN DETALLADA ==========
-        System.out.println("\n=== INICIO DEPURACIÓN DOCENTES ===");
-        System.out.println("Tamaño del contenido: " + docentesPage.getContent().size());
-
-        List<Docente> listaDocentes = docentesPage.getContent();
-
-        for (int i = 0; i < listaDocentes.size(); i++) {
-            Docente d = listaDocentes.get(i);
-            if (d == null) {
-                System.err.println(" DOCENTE NULL en índice: " + i + " ");
-            } else {
-                System.out.println(" Docente [" + i + "]: ID=" + d.getIdDocente() +
-                        ", Código=" + d.getCodigoDocente() +
-                        ", Nombre=" + d.getNombres() + " " + d.getApellidoPaterno() +
-                        ", DNI=" + d.getDni() +
-                        ", Estado=" + d.getEstado() +
-                        ", Usuario=" + (d.getUsuario() != null ? d.getUsuario().getId() : "NULL"));
-            }
-        }
-
-        // Contar cuántos nulos hay
-        long nulosCount = listaDocentes.stream().filter(d -> d == null).count();
-        System.out.println("\nTOTAL DE NULOS ENCONTRADOS: " + nulosCount);
-        System.out.println("=== FIN DEPURACIÓN DOCENTES ===\n");
-
-        // Filtrar nulos para la vista (solución temporal)
-        List<Docente> docentesFiltrados = listaDocentes.stream()
+        List<Docente> docentesFiltrados = docentesPage.getContent().stream()
                 .filter(d -> d != null)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
-        if (nulosCount > 0) {
-            System.err.println("ADVERTENCIA: Se encontraron " + nulosCount + " docente(s) nulo(s). Se han filtrado para la vista.");
-        }
-
-        // ========== ESPECIALIDADES PREDEFINIDAS ==========
         List<String> especialidades = getEspecialidadesList();
 
-        model.addAttribute("docentes", docentesFiltrados); // Usar lista filtrada
+        model.addAttribute("docentes", docentesFiltrados);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", docentesPage.getTotalPages());
-        model.addAttribute("totalItems", docentesFiltrados.size()); // Usar tamaño filtrado
+        model.addAttribute("totalItems", docentesFiltrados.size());
         model.addAttribute("hasPrevious", docentesPage.hasPrevious());
         model.addAttribute("hasNext", docentesPage.hasNext());
         model.addAttribute("filtroNombre", filtroNombre);
@@ -262,19 +263,41 @@ public class AdminController {
                 return "redirect:/admin/docentes";
             }
 
-            // 2. Validar Email único
-            if (docente.getEmail() != null && !docente.getEmail().isEmpty() &&
-                    docenteRepository.existsByEmail(docente.getEmail())) {
-                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + docente.getEmail());
+            // 2. Guardar el email personal ANTES de sobrescribirlo
+            String emailPersonal = docente.getEmail(); // <-- Este es el email que el admin ingresó en el formulario
+
+            // 3. Validar que el email personal no esté vacío
+            if (emailPersonal == null || emailPersonal.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "✗ El email del docente es obligatorio");
                 return "redirect:/admin/docentes";
             }
 
-            // 3. Validar celular (9 dígitos)
+            // 4. Validar que el email personal no exista ya en la base de datos
+            if (docenteRepository.existsByEmail(emailPersonal)) {
+                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + emailPersonal);
+                return "redirect:/admin/docentes";
+            }
+
+            // 5. Generar email institucional automáticamente
+            String emailInstitucional = generarEmailDocente(docente.getNombres(),
+                    docente.getApellidoPaterno(),
+                    docente.getApellidoMaterno());
+
+            // 6. Validar que el email institucional no exista
+            if (docenteRepository.existsByEmail(emailInstitucional)) {
+                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email institucional: " + emailInstitucional);
+                return "redirect:/admin/docentes";
+            }
+
+            // 7. Validar celular (9 dígitos)
             if (docente.getCelular() != null && !docente.getCelular().isEmpty() &&
                     docente.getCelular().length() != 9) {
                 redirectAttributes.addFlashAttribute("error", "✗ El número de celular debe tener 9 dígitos");
                 return "redirect:/admin/docentes";
             }
+
+            // 8. ASIGNAR EMAIL INSTITUCIONAL (sobrescribe el email personal)
+            docente.setEmail(emailInstitucional);
 
             // Generar código automático si está vacío
             if (docente.getCodigoDocente() == null || docente.getCodigoDocente().isEmpty()) {
@@ -283,18 +306,18 @@ public class AdminController {
 
             if (docente.getEstado() == null) docente.setEstado("ACTIVO");
 
-            // Guardar docente primero
+            // Guardar docente
             docenteRepository.save(docente);
 
             // ========== CREAR USUARIO PARA EL DOCENTE ==========
             String passwordTemporal = generarPasswordTemporal();
 
             Usuario usuarioDocente = new Usuario();
-            usuarioDocente.setUsername(docente.getEmail()); // Usar email como username
-            usuarioDocente.setPassword(passwordTemporal);
+            usuarioDocente.setUsername(emailInstitucional);  // Username = email institucional
+            usuarioDocente.setPassword(passwordEncoder.encode(passwordTemporal));
             usuarioDocente.setNombre(docente.getNombres());
             usuarioDocente.setApellido(docente.getApellidoPaterno() + " " + docente.getApellidoMaterno());
-            usuarioDocente.setEmail(docente.getEmail());
+            usuarioDocente.setEmail(emailInstitucional);      // Email = email institucional
             usuarioDocente.setRol("DOCENTE");
             usuarioDocente.setActivo(true);
             usuarioDocente.setFechaRegistro(LocalDateTime.now());
@@ -306,28 +329,54 @@ public class AdminController {
             docenteRepository.save(docente);
 
             // ========== ENVIAR CREDENCIALES POR EMAIL ==========
-            if (docente.getEmail() != null && !docente.getEmail().isEmpty()) {
-                emailService.enviarCredencialesDocente(
-                        docente.getEmail(),
-                        docente.getEmail(), // username = email
-                        passwordTemporal,
-                        docente.getNombres()
-                );
-            }
+            // Enviar al EMAIL PERSONAL del docente (el que el admin ingresó)
+            emailService.enviarCredencialesDocente(
+                    emailPersonal,              // Email personal (destino)
+                    emailInstitucional,         // Username (email institucional)
+                    passwordTemporal,           // Contraseña temporal
+                    docente.getNombres()        // Nombre del docente
+            );
 
-            registrarActividad(usuario, "CREAR", "Docente", "Se registró docente: " + docente.getNombres() + " " + docente.getApellidoPaterno());
-            redirectAttributes.addFlashAttribute("success", " Docente '" + docente.getNombres() + "' creado correctamente. Se enviaron credenciales a su correo.");
+            registrarActividad(usuario, "CREAR", "Docente", "Se registró docente: " + docente.getNombres() +
+                    " - Email institucional: " + emailInstitucional +
+                    " - Email personal: " + emailPersonal);
+
+            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() +
+                    "' creado correctamente. Email institucional: " + emailInstitucional +
+                    ". Se enviaron credenciales a su correo personal.");
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return "redirect:/admin/docentes";
-
     }
+
     /**
-     * Generar contraseña temporal aleatoria
+     * Generar email institucional para docente
      */
+    private String generarEmailDocente(String nombres, String apellidoPaterno, String apellidoMaterno) {
+        String base = (nombres.substring(0, 1) + apellidoPaterno + apellidoMaterno)
+                .toLowerCase()
+                .replaceAll("á", "a")
+                .replaceAll("é", "e")
+                .replaceAll("í", "i")
+                .replaceAll("ó", "o")
+                .replaceAll("ú", "u")
+                .replaceAll("ñ", "n")
+                .replaceAll("[^a-z0-9]", "");
+
+        // Si el email base ya existe, agregar un número
+        String email = base + "@docente.iesancarlos.edu.pe";
+        int contador = 1;
+        while (usuarioService.existsByUsername(email) || docenteRepository.existsByEmail(email)) {
+            email = base + contador + "@docente.iesancarlos.edu.pe";
+            contador++;
+        }
+        return email;
+    }
+
     private String generarPasswordTemporal() {
         String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         StringBuilder password = new StringBuilder();
@@ -337,6 +386,7 @@ public class AdminController {
         }
         return password.toString();
     }
+
     @GetMapping("/docente/editar/{id}")
     public String mostrarFormularioEditarDocente(@PathVariable Long id, Model model) {
         Optional<Docente> docente = docenteRepository.findById(id);
@@ -380,6 +430,28 @@ public class AdminController {
                 return "redirect:/admin/docentes";
             }
 
+            // 3. Si se actualizó el usuario asociado al docente
+            if (docente.getUsuario() != null && docente.getUsuario().getId() != null) {
+                Optional<Usuario> usuarioOpt = usuarioService.findById(docente.getUsuario().getId());
+                if (usuarioOpt.isPresent()) {
+                    Usuario usuarioDocente = usuarioOpt.get();
+                    usuarioDocente.setNombre(docente.getNombres());
+                    usuarioDocente.setApellido(docente.getApellidoPaterno() + " " + docente.getApellidoMaterno());
+                    usuarioDocente.setEmail(docente.getEmail());
+                    usuarioDocente.setUsername(docente.getEmail());
+
+                    // Si se envió una nueva contraseña, hashearla
+                    if (docente.getUsuario().getPassword() != null &&
+                            !docente.getUsuario().getPassword().isEmpty() &&
+                            !docente.getUsuario().getPassword().startsWith("$2a$")) {
+                        usuarioDocente.setPassword(passwordEncoder.encode(docente.getUsuario().getPassword()));
+                    }
+
+                    usuarioService.save(usuarioDocente);
+                    docente.setUsuario(usuarioDocente);
+                }
+            }
+
             docenteRepository.save(docente);
             registrarActividad(usuario, "EDITAR", "Docente", "Se actualizó docente: " + docente.getNombres());
             redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() + "' actualizado correctamente");
@@ -401,7 +473,6 @@ public class AdminController {
         if (docente.isPresent()) {
             String nombreDocente = docente.get().getNombres();
 
-            // Validar que no tenga cursos asignados activos
             List<Curso> cursosAsignados = cursoRepository.findByIdDocenteAndEstado(id, "ACTIVO");
             if (!cursosAsignados.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error",
@@ -410,7 +481,6 @@ public class AdminController {
                 return "redirect:/admin/docentes";
             }
 
-            // Soft Delete
             Docente docenteParaEliminar = docente.get();
             docenteParaEliminar.setEliminado(true);
             docenteParaEliminar.setEstado("INACTIVO");
@@ -425,7 +495,6 @@ public class AdminController {
         return "redirect:/admin/docentes";
     }
 
-    // Método auxiliar para obtener lista de especialidades
     private List<String> getEspecialidadesList() {
         return java.util.Arrays.asList(
                 "MATEMÁTICAS",
@@ -452,34 +521,15 @@ public class AdminController {
             @RequestParam(required = false) String filtroNombre,
             Model model) {
 
-        // ========== DEPURACIÓN: Mostrar parámetros recibidos ==========
-        System.out.println("=== PAGINACIÓN DEBUG ===");
-        System.out.println("Página solicitada: " + page);
-        System.out.println("filtroGrado recibido: " + filtroGrado);
-        System.out.println("filtroTurno recibido: " + filtroTurno);
-        System.out.println("filtroArea recibido: " + filtroArea);
-        System.out.println("filtroEstado recibido: " + filtroEstado);
-        System.out.println("filtroNombre recibido: " + filtroNombre);
-
-        // Limpiar filtros vacíos
         if (filtroGrado != null && filtroGrado == 0) filtroGrado = null;
         if (filtroTurno != null && filtroTurno.isEmpty()) filtroTurno = null;
         if (filtroArea != null && filtroArea.isEmpty()) filtroArea = null;
         if (filtroEstado != null && filtroEstado.isEmpty()) filtroEstado = null;
         if (filtroNombre != null && filtroNombre.isEmpty()) filtroNombre = null;
 
-        System.out.println("=== FILTROS DESPUÉS DE LIMPIAR ===");
-        System.out.println("filtroGrado: " + filtroGrado);
-        System.out.println("filtroTurno: " + filtroTurno);
-        System.out.println("filtroArea: " + filtroArea);
-        System.out.println("filtroEstado: " + filtroEstado);
-        System.out.println("filtroNombre: " + filtroNombre);
-
-        // Configurar paginación (10 cursos por página)
         org.springframework.data.domain.Pageable pageable =
                 org.springframework.data.domain.PageRequest.of(page, 10);
 
-        // Aplicar filtros con paginación
         org.springframework.data.domain.Page<Curso> cursosPage = cursoRepository.findWithFilters(
                 filtroGrado,
                 filtroTurno,
@@ -489,17 +539,6 @@ public class AdminController {
                 pageable
         );
 
-        // ========== DEPURACIÓN: Mostrar resultados ==========
-        System.out.println("=== RESULTADOS DE LA CONSULTA ===");
-        System.out.println("Total de elementos en BD: " + cursosPage.getTotalElements());
-        System.out.println("Total de páginas: " + cursosPage.getTotalPages());
-        System.out.println("Elementos en página actual: " + cursosPage.getNumberOfElements());
-        System.out.println("Contenido size: " + cursosPage.getContent().size());
-        System.out.println("¿Tiene página anterior? " + cursosPage.hasPrevious());
-        System.out.println("¿Tiene página siguiente? " + cursosPage.hasNext());
-        System.out.println("=====================================");
-
-        // Estadísticas para el dashboard de cursos
         List<Curso> todosCursos = cursoRepository.findAllWithDocente();
         long totalCursos = todosCursos.size();
         long cursosActivos = todosCursos.stream().filter(c -> "ACTIVO".equals(c.getEstado())).count();
@@ -507,22 +546,17 @@ public class AdminController {
         long cursosSinDocente = todosCursos.stream().filter(c -> c.getIdDocente() == null || c.getIdDocente() == 0).count();
         int totalCupos = todosCursos.stream().mapToInt(c -> c.getCapacidadMaxima() != null ? c.getCapacidadMaxima() : 36).sum();
 
-        // Agregar atributos al modelo
         model.addAttribute("cursos", cursosPage.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", cursosPage.getTotalPages());
         model.addAttribute("totalItems", cursosPage.getTotalElements());
         model.addAttribute("hasPrevious", cursosPage.hasPrevious());
         model.addAttribute("hasNext", cursosPage.hasNext());
-
-        // Mantener filtros en la vista
         model.addAttribute("filtroGrado", filtroGrado);
         model.addAttribute("filtroTurno", filtroTurno);
         model.addAttribute("filtroArea", filtroArea);
         model.addAttribute("filtroEstado", filtroEstado);
         model.addAttribute("filtroNombre", filtroNombre);
-
-        // Estadísticas
         model.addAttribute("totalCursos", totalCursos);
         model.addAttribute("cursosActivos", cursosActivos);
         model.addAttribute("cursosInactivos", cursosInactivos);
@@ -547,9 +581,6 @@ public class AdminController {
         String usuario = auth != null ? auth.getName() : "sistema";
 
         try {
-            // ========== VALIDACIONES ==========
-
-            // 1. Validar curso duplicado (mismo nombre, grado, sección, turno)
             boolean duplicado = cursoRepository.existsByNombreCursoAndIdGradoAndSeccionAndTurno(
                     curso.getNombreCurso(),
                     curso.getIdGrado(),
@@ -563,7 +594,6 @@ public class AdminController {
                 return "redirect:/admin/cursos";
             }
 
-            // 2. Validar límite de 4 cursos por grado/área/turno
             int cantidadCursos = cursoRepository.countByIdGradoAndAreaAndTurno(
                     curso.getIdGrado(),
                     curso.getArea(),
@@ -576,7 +606,6 @@ public class AdminController {
                 return "redirect:/admin/cursos";
             }
 
-            // 3. Validar horas del docente (no exceder 30 semanales)
             if (curso.getIdDocente() != null && curso.getIdDocente() > 0) {
                 Integer horasActuales = cursoRepository.sumHorasSemanalesByDocente(curso.getIdDocente());
                 if (horasActuales == null) horasActuales = 0;
@@ -592,7 +621,6 @@ public class AdminController {
                 }
             }
 
-            // 4. Validar cruce de horarios del docente
             if (curso.getIdDocente() != null && curso.getIdDocente() > 0 && curso.getHorario() != null && !curso.getHorario().isEmpty()) {
                 boolean tieneConflicto = cursoRepository.existsByDocenteAndHorarioAndIdCursoNot(
                         curso.getIdDocente(),
@@ -607,12 +635,10 @@ public class AdminController {
                 }
             }
 
-            // Generar código si está vacío
             if (curso.getCodigoCurso() == null || curso.getCodigoCurso().isEmpty()) {
                 curso.generarCodigoAutomatico();
             }
 
-            // Establecer valores por defecto
             if (curso.getCapacidadMaxima() == null) curso.setCapacidadMaxima(36);
             if (curso.getAlumnosActuales() == null) curso.setAlumnosActuales(0);
 
@@ -655,9 +681,6 @@ public class AdminController {
             Curso cursoOriginal = cursoExistenteOpt.get();
             curso.setIdCurso(id);
 
-            // ========== VALIDACIONES ==========
-
-            // 1. Validar curso duplicado (excluyendo el curso actual)
             boolean duplicado = cursoRepository.existsByNombreCursoAndIdGradoAndSeccionAndTurno(
                     curso.getNombreCurso(),
                     curso.getIdGrado(),
@@ -665,19 +688,16 @@ public class AdminController {
                     curso.getTurno()
             );
 
-            // Si hay duplicado y no es el mismo curso
             if (duplicado && !cursoOriginal.getNombreCurso().equals(curso.getNombreCurso())) {
                 redirectAttributes.addFlashAttribute("error",
                         "✗ Ya existe un curso con el mismo nombre, grado, sección y turno");
                 return "redirect:/admin/cursos";
             }
 
-            // 2. Validar horas del docente
             if (curso.getIdDocente() != null && curso.getIdDocente() > 0) {
                 Integer horasActuales = cursoRepository.sumHorasSemanalesByDocente(curso.getIdDocente());
                 if (horasActuales == null) horasActuales = 0;
 
-                // Restar horas del curso original si es el mismo docente
                 if (cursoOriginal.getIdDocente() != null && cursoOriginal.getIdDocente().equals(curso.getIdDocente())) {
                     horasActuales -= (cursoOriginal.getHorasSemanales() != null ? cursoOriginal.getHorasSemanales() : 0);
                 }
@@ -693,7 +713,6 @@ public class AdminController {
                 }
             }
 
-            // 3. Validar cruce de horarios del docente (excluyendo el curso actual)
             if (curso.getIdDocente() != null && curso.getIdDocente() > 0 && curso.getHorario() != null && !curso.getHorario().isEmpty()) {
                 boolean tieneConflicto = cursoRepository.existsByDocenteAndHorarioAndIdCursoNot(
                         curso.getIdDocente(),
@@ -729,7 +748,6 @@ public class AdminController {
         if (curso.isPresent()) {
             String nombreCurso = curso.get().getNombreCurso();
 
-            // Soft Delete: solo marcar como eliminado
             Curso cursoParaEliminar = curso.get();
             cursoParaEliminar.setEliminado(true);
             cursoRepository.save(cursoParaEliminar);
@@ -745,9 +763,6 @@ public class AdminController {
 
     // ==================== VALIDACIÓN EN TIEMPO REAL ====================
 
-    /**
-     * Validar si hay cruce de horario en tiempo real (AJAX)
-     */
     @GetMapping("/curso/validar-horario")
     @ResponseBody
     public ResponseEntity<Map<String, Boolean>> validarHorario(
@@ -767,11 +782,9 @@ public class AdminController {
         response.put("conflicto", tieneConflicto);
         return ResponseEntity.ok(response);
     }
+
     // ==================== FILTRAR DOCENTES POR ESPECIALIDAD ====================
 
-    /**
-     * Obtener docentes por especialidad (para filtro en tiempo real en el formulario de cursos)
-     */
     @GetMapping("/docentes/por-especialidad")
     @ResponseBody
     public ResponseEntity<List<Map<String, Object>>> getDocentesByEspecialidad(
@@ -792,10 +805,11 @@ public class AdminController {
                     map.put("nombre", d.getNombres() + " " + d.getApellidoPaterno() + " " + d.getApellidoMaterno());
                     return map;
                 })
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
     }
+
     // ==================== CRUD MATRÍCULAS ====================
 
     @GetMapping("/matriculas")
@@ -817,9 +831,15 @@ public class AdminController {
     @PostMapping("/matricula/guardar")
     public String guardarMatricula(@ModelAttribute Matricula matricula, Authentication auth) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se registró nueva matrícula para estudiante ID: " + matricula.getEstudiante().getIdEstudiante();
 
         matriculaRepository.save(matricula);
+        actualizarAlumnosActualesPorGradoYTurno(matricula.getIdGrado(), matricula.getTurno());
+
+        String detalles = "Se registró nueva matrícula para estudiante ID: " +
+                matricula.getEstudiante().getIdEstudiante() +
+                " - Grado: " + matricula.getIdGrado() +
+                " - Turno: " + matricula.getTurno();
+
         registrarActividad(usuario, "CREAR", "Matrícula", detalles);
         return "redirect:/admin/matriculas";
     }
@@ -839,10 +859,15 @@ public class AdminController {
     @PostMapping("/matricula/actualizar/{id}")
     public String actualizarMatricula(@PathVariable Long id, @ModelAttribute Matricula matricula, Authentication auth) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se actualizó matrícula ID: " + id;
 
         matricula.setIdMatricula(id);
         matriculaRepository.save(matricula);
+        actualizarAlumnosActualesPorGradoYTurno(matricula.getIdGrado(), matricula.getTurno());
+
+        String detalles = "Se actualizó matrícula ID: " + id +
+                " - Grado: " + matricula.getIdGrado() +
+                " - Turno: " + matricula.getTurno();
+
         registrarActividad(usuario, "EDITAR", "Matrícula", detalles);
         return "redirect:/admin/matriculas";
     }
@@ -850,10 +875,20 @@ public class AdminController {
     @GetMapping("/matricula/eliminar/{id}")
     public String eliminarMatricula(@PathVariable Long id, Authentication auth) {
         String usuario = auth != null ? auth.getName() : "sistema";
-        String detalles = "Se eliminó matrícula ID: " + id;
 
-        matriculaRepository.deleteById(id);
-        registrarActividad(usuario, "ELIMINAR", "Matrícula", detalles);
+        Optional<Matricula> matriculaOpt = matriculaRepository.findById(id);
+        if (matriculaOpt.isPresent()) {
+            Matricula matricula = matriculaOpt.get();
+            Integer idGrado = matricula.getIdGrado();
+            String turno = matricula.getTurno();
+
+            matriculaRepository.deleteById(id);
+            actualizarAlumnosActualesPorGradoYTurno(idGrado, turno);
+
+            String detalles = "Se eliminó matrícula ID: " + id;
+            registrarActividad(usuario, "ELIMINAR", "Matrícula", detalles);
+        }
+
         return "redirect:/admin/matriculas";
     }
 
@@ -874,18 +909,11 @@ public class AdminController {
     public String verDetalleSolicitud(@PathVariable Long id, Model model) {
         SolicitudMatricula solicitud = solicitudMatriculaService.buscarPorId(id);
 
-        // Extraer solo el nombre del archivo del voucher
         String voucherFilename = "";
         if (solicitud.getVoucherPath() != null && !solicitud.getVoucherPath().isEmpty()) {
             String fullPath = solicitud.getVoucherPath();
-            // Limpiar la ruta: reemplazar \ por / y luego extraer el nombre
             String cleanPath = fullPath.replace("\\", "/");
             voucherFilename = cleanPath.substring(cleanPath.lastIndexOf("/") + 1);
-
-            System.out.println("=== VOUCHER DEBUG ===");
-            System.out.println("Path original: " + fullPath);
-            System.out.println("Path limpio: " + cleanPath);
-            System.out.println("Nombre archivo: " + voucherFilename);
         }
 
         model.addAttribute("solicitud", solicitud);
@@ -897,11 +925,18 @@ public class AdminController {
     public String aprobarSolicitud(@PathVariable Long id, Authentication auth) {
         String email = auth != null ? auth.getName() : "admin";
 
-        // Buscar por EMAIL, no por username
         Usuario admin = usuarioService.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado con email: " + email));
 
-        solicitudMatriculaService.aprobarSolicitud(id, admin.getId());
+        SolicitudMatricula solicitud = solicitudMatriculaService.aprobarSolicitud(id, admin.getId());
+
+        Optional<Matricula> matriculaOpt = matriculaRepository
+                .findMatriculaActivaByEstudianteId(solicitud.getEstudiante().getIdEstudiante());
+
+        if (matriculaOpt.isPresent()) {
+            Matricula matricula = matriculaOpt.get();
+            actualizarAlumnosActualesPorGradoYTurno(matricula.getIdGrado(), matricula.getTurno());
+        }
 
         registrarActividad(email, "APROBAR", "SolicitudMatricula",
                 "Se aprobó la solicitud de matrícula ID: " + id);
@@ -915,7 +950,6 @@ public class AdminController {
                                     Authentication auth) {
         String email = auth != null ? auth.getName() : "admin";
 
-        // Buscar por EMAIL
         Usuario admin = usuarioService.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Administrador no encontrado con email: " + email));
 
@@ -959,23 +993,16 @@ public class AdminController {
         return "application/octet-stream";
     }
 
-
     // ==================== FILTRAR DOCENTES POR ESPECIALIDAD SEGÚN NOMBRE DEL CURSO ====================
 
-    /**
-     * Obtener docentes por especialidad basada en el nombre del curso
-     * Este método detecta la especialidad del nombre del curso y devuelve los docentes de esa especialidad
-     */
     @GetMapping("/docentes/por-nombre-curso")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getDocentesByNombreCurso(@RequestParam String nombreCurso) {
         Map<String, Object> response = new HashMap<>();
 
-        // Detectar especialidad desde el nombre del curso
         String especialidad = detectarEspecialidadDesdeNombreCurso(nombreCurso);
         response.put("especialidadDetectada", especialidad);
 
-        // Obtener docentes según la especialidad detectada
         List<Docente> docentes;
         if (especialidad != null && !especialidad.isEmpty()) {
             docentes = docenteRepository.findByEspecialidadAndEstadoAndEliminadoFalse(especialidad);
@@ -983,7 +1010,6 @@ public class AdminController {
             docentes = docenteRepository.findAllActive();
         }
 
-        // Filtrar solo docentes ACTIVOS
         List<Map<String, Object>> docentesList = docentes.stream()
                 .filter(d -> "ACTIVO".equals(d.getEstado()))
                 .map(d -> {
@@ -993,7 +1019,7 @@ public class AdminController {
                     map.put("especialidad", d.getEspecialidad());
                     return map;
                 })
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
 
         response.put("docentes", docentesList);
         response.put("total", docentesList.size());
@@ -1001,9 +1027,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Detectar especialidad desde el nombre del curso
-     */
     private String detectarEspecialidadDesdeNombreCurso(String nombreCurso) {
         if (nombreCurso == null || nombreCurso.trim().isEmpty()) {
             return null;
@@ -1011,7 +1034,6 @@ public class AdminController {
 
         String nombreNorm = normalizarTexto(nombreCurso);
 
-        // Mapeo de palabras clave a especialidades
         Map<String, String> mapaEspecialidades = new HashMap<>();
         mapaEspecialidades.put("MATEMATICA", "MATEMÁTICAS");
         mapaEspecialidades.put("MATEMATICAS", "MATEMÁTICAS");
@@ -1091,7 +1113,6 @@ public class AdminController {
         mapaEspecialidades.put("ORIENTACION", "TUTORÍA");
         mapaEspecialidades.put("CONVIVENCIA", "TUTORÍA");
 
-        // Buscar coincidencia
         for (Map.Entry<String, String> entry : mapaEspecialidades.entrySet()) {
             if (nombreNorm.contains(entry.getKey())) {
                 return entry.getValue();
@@ -1107,11 +1128,9 @@ public class AdminController {
                 .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
                 .replaceAll("[^A-Z0-9\\s]", "");
     }
+
     // ==================== GESTIÓN DE ESTUDIANTES (NUEVOS MÉTODOS) ====================
 
-    /**
-     * Ver detalle completo de un estudiante con su historial de matrículas
-     */
     @GetMapping("/estudiante/ver/{id}")
     public String verDetalleEstudiante(@PathVariable Long id, Model model) {
         Optional<Estudiante> estudianteOpt = estudianteRepository.findById(id);
@@ -1119,11 +1138,8 @@ public class AdminController {
             Estudiante estudiante = estudianteOpt.get();
             model.addAttribute("estudiante", estudiante);
 
-            // Obtener matrículas del estudiante
             List<Matricula> matriculas = matriculaRepository.findHistorialByEstudianteId(id);
-
             model.addAttribute("matriculas", matriculas);
-
 
             long matriculasActivas = matriculas.stream()
                     .filter(m -> "ACTIVA".equals(m.getEstado()))
@@ -1135,9 +1151,6 @@ public class AdminController {
         return "redirect:/admin/estudiantes";
     }
 
-    /**
-     * Cambiar estado del estudiante (ACTIVO/INACTIVO) - Soft Delete
-     */
     @GetMapping("/estudiante/cambiar-estado/{id}")
     public String cambiarEstadoEstudiante(@PathVariable Long id,
                                           @RequestParam String estado,
@@ -1145,9 +1158,17 @@ public class AdminController {
         Optional<Estudiante> estudianteOpt = estudianteRepository.findById(id);
         if (estudianteOpt.isPresent()) {
             Estudiante estudiante = estudianteOpt.get();
-            String estadoAnterior = estudiante.getEstado();
+
+            Optional<Matricula> matriculaOpt = matriculaRepository
+                    .findMatriculaActivaByEstudianteId(estudiante.getIdEstudiante());
+
             estudiante.setEstado(estado);
             estudianteRepository.save(estudiante);
+
+            if ("INACTIVO".equals(estado) && matriculaOpt.isPresent()) {
+                Matricula matricula = matriculaOpt.get();
+                actualizarAlumnosActualesPorGradoYTurno(matricula.getIdGrado(), matricula.getTurno());
+            }
 
             String mensaje = "Estudiante '" + estudiante.getNombres() + "' " +
                     (estado.equals("ACTIVO") ? "habilitado" : "deshabilitado") +
@@ -1159,9 +1180,6 @@ public class AdminController {
         return "redirect:/admin/estudiantes";
     }
 
-    /**
-     * Actualizar datos del estudiante (manteniendo el flujo de solicitudes)
-     */
     @PostMapping("/estudiante/actualizar/{id}")
     public String actualizarEstudiante(@PathVariable Long id,
                                        @ModelAttribute Estudiante estudiante,

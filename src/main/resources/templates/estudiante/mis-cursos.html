@@ -28,9 +28,13 @@
                 </h1>
                 <div>
                     <span class="badge bg-primary me-2" th:text="${totalCursosInscritos != null ? totalCursosInscritos : 0} + ' cursos'">0 cursos</span>
-                    <span class="text-muted" th:if="${gradoActual != null}">
+                    <span class="text-muted" th:if="${nombreGradoActual != null}">
                         <i class="fas fa-graduation-cap me-1"></i>
-                        Grado: <strong th:text="${gradoActual} + '°'"></strong>
+                        Grado: <strong th:text="${nombreGradoActual}"></strong>
+                    </span>
+                    <span class="text-muted" th:unless="${nombreGradoActual != null}">
+                        <i class="fas fa-graduation-cap me-1"></i>
+                        Sin grado asignado
                     </span>
                 </div>
             </div>
@@ -40,8 +44,8 @@
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <strong>No tienes una matrícula activa.</strong>
                 <p class="mb-0 mt-1">Para ver tus cursos, primero debes matricularte.</p>
-                <a href="/estudiante/cursos-disponibles" class="btn btn-success mt-2">
-                    <i class="fas fa-file-signature me-1"></i> Ver cursos disponibles y matricularme
+                <a href="/estudiante/matricula" class="btn btn-success mt-2">
+                    <i class="fas fa-file-signature me-1"></i> Ver mi matrícula
                 </a>
             </div>
 
@@ -130,10 +134,10 @@
                         <div class="alert alert-info text-center py-5">
                             <i class="fas fa-book-open fa-4x mb-3 d-block text-muted"></i>
                             <h5>No tienes cursos asignados</h5>
-                            <p th:if="${gradoActual == null}">No tienes un grado asignado. Contacta con el administrador.</p>
-                            <p th:if="${gradoActual != null}">No hay cursos disponibles para tu grado (${gradoActual}°).</p>
-                            <a href="/estudiante/cursos-disponibles" class="btn btn-success mt-2">
-                                <i class="fas fa-list me-1"></i> Ver cursos disponibles
+                            <p th:if="${nombreGradoActual == null}">No tienes un grado asignado. Contacta con el administrador.</p>
+                            <p th:if="${nombreGradoActual != null}">No hay cursos disponibles para tu grado: <strong th:text="${nombreGradoActual}"></strong>.</p>
+                            <a href="/estudiante/matricula" class="btn btn-success mt-2">
+                                <i class="fas fa-file-signature me-1"></i> Ver mi matrícula
                             </a>
                         </div>
                     </div>
@@ -160,8 +164,7 @@
                                 <i class="fas fa-check-circle me-2"></i>
                                 Cursos Activos
                             </h5>
-                            <h2 class="display-6"
-                                th:text="${cursos != null ? cursos.stream().filter(c -> 'ACTIVO'.equals(c.estado) || 'ACTIVA'.equals(c.estado)).count() : 0}">0</h2>
+                            <h2 class="display-6" th:text="${cursosActivos}">0</h2>
                         </div>
                     </div>
                 </div>
@@ -172,7 +175,7 @@
                                 <i class="fas fa-graduation-cap me-2"></i>
                                 Mi Grado
                             </h5>
-                            <h2 class="display-6" th:text="${gradoActual != null ? gradoActual + '°' : 'Sin grado'}">-</h2>
+                            <h2 class="display-6" th:text="${nombreGradoActual != null ? nombreGradoActual : 'Sin grado'}">-</h2>
                         </div>
                     </div>
                 </div>
