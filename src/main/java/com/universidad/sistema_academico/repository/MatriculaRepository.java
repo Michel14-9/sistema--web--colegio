@@ -52,17 +52,11 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
 
     // ========== NUEVOS MÉTODOS PARA DOCENTE ==========
 
-    /**
-     * Contar alumnos totales de un docente (estudiantes en sus cursos)
-     */
     @Query("SELECT COUNT(DISTINCT m.estudiante.idEstudiante) FROM Matricula m " +
             "WHERE m.idGrado IN (SELECT c.idGrado FROM Curso c WHERE c.idDocente = :docenteId AND c.estado = 'ACTIVO') " +
             "AND m.estado = 'ACTIVA'")
     int countAlumnosByDocenteId(@Param("docenteId") Long docenteId);
 
-    /**
-     * Contar alumnos por grado y turno (para un curso específico)
-     */
     @Query("SELECT COUNT(m) FROM Matricula m WHERE m.idGrado = :idGrado AND m.turno = :turno AND m.estado = 'ACTIVA'")
     int countByGradoAndTurno(@Param("idGrado") Integer idGrado, @Param("turno") String turno);
 
@@ -76,6 +70,20 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     List<Matricula> findByEstado(String estado);
 
     List<Matricula> findByEstudianteIdEstudianteAndEstado(Long estudianteId, String estado);
+
+    // ========== NUEVOS MÉTODOS PARA FILTROS Y ACTUALIZACIÓN ==========
+
+    /**
+     * Buscar matrículas por estado y grado
+     */
+    @Query("SELECT m FROM Matricula m WHERE m.estado = :estado AND m.idGrado = :grado")
+    List<Matricula> findByEstadoAndIdGrado(@Param("estado") String estado, @Param("grado") Integer grado);
+
+    /**
+     * Buscar matrículas por año académico y estado
+     */
+    @Query("SELECT m FROM Matricula m WHERE m.anioAcademico = :anioAcademico AND m.estado = :estado")
+    List<Matricula> findByAnioAcademicoAndEstado(@Param("anioAcademico") Integer anioAcademico, @Param("estado") String estado);
 
     // ========== ESTADÍSTICAS ==========
 

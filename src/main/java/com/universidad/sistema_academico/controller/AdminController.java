@@ -8,6 +8,7 @@ import com.universidad.sistema_academico.repository.EstudianteRepository;
 import com.universidad.sistema_academico.repository.MatriculaRepository;
 import com.universidad.sistema_academico.service.SolicitudMatriculaService;
 import com.universidad.sistema_academico.service.UsuarioService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -64,6 +65,32 @@ public class AdminController {
 
     @Value("${voucher.upload.directory:uploads/vouchers}")
     private String uploadDirectory;
+
+    // ==================== ACTUALIZAR MATRÍCULAS VENCIDAS AL INICIO ====================
+
+    @PostConstruct
+    public void actualizarMatriculasVencidas() {
+        int anioActual = java.time.Year.now().getValue();
+        int anioAnterior = anioActual - 1;
+
+        try {
+            List<Matricula> matriculasVencidas = matriculaRepository.findByAnioAcademicoAndEstado(anioAnterior, "ACTIVO");
+
+            for (Matricula m : matriculasVencidas) {
+                m.setEstado("INACTIVO");
+                matriculaRepository.save(m);
+                System.out.println("✅ Matrícula ID " + m.getIdMatricula() +
+                        " (Estudiante: " + m.getEstudiante().getNombres() +
+                        ") cambiada a INACTIVO (año " + anioAnterior + ")");
+            }
+
+            if (!matriculasVencidas.isEmpty()) {
+                System.out.println("✅ Matrículas vencidas actualizadas: " + matriculasVencidas.size());
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error al actualizar matrículas vencidas: " + e.getMessage());
+        }
+    }
 
     // ==================== MÉTODO PARA REGISTRAR ACTIVIDADES ====================
 
@@ -257,60 +284,49 @@ public class AdminController {
         String usuario = auth != null ? auth.getName() : "sistema";
 
         try {
-            // ========== LOG PARA VER QUÉ DATOS LLEGAN ==========
             System.out.println("=== DATOS RECIBIDOS DEL FORMULARIO ===");
             System.out.println("DNI: " + docente.getDni());
             System.out.println("Nombres: " + docente.getNombres());
             System.out.println("Apellido Paterno: " + docente.getApellidoPaterno());
             System.out.println("Apellido Materno: " + docente.getApellidoMaterno());
-            System.out.println("Email Personal: " + docente.getEmail());  // <-- ESTE ES EL EMAIL PERSONAL
+            System.out.println("Email Personal: " + docente.getEmail());
             System.out.println("Especialidad: " + docente.getEspecialidad());
             System.out.println("Celular: " + docente.getCelular());
 
-            // ========== GUARDAR EMAIL PERSONAL ANTES DE MODIFICAR ==========
-            String emailPersonal = docente.getEmail();  // <-- GUARDAR EL EMAIL PERSONAL
+            String emailPersonal = docente.getEmail();
 
-            // ========== VALIDACIONES ==========
-
-            // 1. Validar DNI
+            // Validaciones...
             if (docente.getDni() == null || docente.getDni().trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "✗ El DNI es obligatorio");
                 return "redirect:/admin/docentes";
             }
 
-            // 2. Validar nombres
             if (docente.getNombres() == null || docente.getNombres().trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "✗ Los nombres son obligatorios");
                 return "redirect:/admin/docentes";
             }
 
-            // 3. Validar apellido paterno
             if (docente.getApellidoPaterno() == null || docente.getApellidoPaterno().trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "✗ El apellido paterno es obligatorio");
                 return "redirect:/admin/docentes";
             }
 
-            // 4. Validar apellido materno
             if (docente.getApellidoMaterno() == null || docente.getApellidoMaterno().trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "✗ El apellido materno es obligatorio");
                 return "redirect:/admin/docentes";
             }
 
-            // 5. Validar especialidad
             if (docente.getEspecialidad() == null || docente.getEspecialidad().trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "✗ La especialidad es obligatoria");
                 return "redirect:/admin/docentes";
             }
 
-            // 6. Validar DNI único
             if (docenteRepository.existsByDni(docente.getDni())) {
                 redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el DNI: " + docente.getDni());
                 return "redirect:/admin/docentes";
             }
 
-            // 7. Validar email personal (si existe)
             if (emailPersonal != null && !emailPersonal.trim().isEmpty()) {
-                // Validar que el email personal no exista en la base de datos
                 if (docenteRepository.existsByEmail(emailPersonal)) {
                     redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + emailPersonal);
                     return "redirect:/admin/docentes";
@@ -320,7 +336,6 @@ public class AdminController {
                 return "redirect:/admin/docentes";
             }
 
-            // 8. Validar celular (si existe)
             if (docente.getCelular() != null && !docente.getCelular().trim().isEmpty()) {
                 if (docente.getCelular().length() != 9 || !docente.getCelular().matches("\\d+")) {
                     redirectAttributes.addFlashAttribute("error", "✗ El celular debe tener 9 dígitos numéricos");
@@ -328,7 +343,6 @@ public class AdminController {
                 }
             }
 
-            // ========== GENERAR EMAIL INSTITUCIONAL ==========
             String emailInstitucional = generarEmailDocente(
                     docente.getNombres().trim(),
                     docente.getApellidoPaterno().trim(),
@@ -336,25 +350,20 @@ public class AdminController {
             );
             System.out.println("Email institucional generado: " + emailInstitucional);
 
-            // Validar que el email institucional no exista
             if (docenteRepository.existsByEmail(emailInstitucional)) {
                 redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email institucional: " + emailInstitucional);
                 return "redirect:/admin/docentes";
             }
 
-            // ========== ASIGNAR CAMPOS ==========
-            // El email del docente será el institucional (para login)
             docente.setEmail(emailInstitucional);
             docente.setEspecialidad(docente.getEspecialidad().toUpperCase().trim());
             docente.setEstado("ACTIVO");
 
-            // Generar código automático
             if (docente.getCodigoDocente() == null || docente.getCodigoDocente().trim().isEmpty()) {
                 docente.generarCodigoAutomatico();
                 System.out.println("Código generado: " + docente.getCodigoDocente());
             }
 
-            // ========== CREAR USUARIO ==========
             String passwordTemporal = generarPasswordTemporal();
             System.out.println("Contraseña temporal: " + passwordTemporal);
 
@@ -370,35 +379,26 @@ public class AdminController {
             usuarioDocente.setActivo(true);
             usuarioDocente.setFechaRegistro(LocalDateTime.now());
 
-            // Guardar usuario
             Usuario usuarioGuardado = usuarioService.save(usuarioDocente);
             System.out.println("✅ Usuario creado con ID: " + usuarioGuardado.getId());
 
-            // ========== ASOCIAR USUARIO AL DOCENTE ==========
             docente.setUsuario(usuarioGuardado);
 
-            // ========== GUARDAR DOCENTE ==========
             Docente docenteGuardado = docenteRepository.save(docente);
             System.out.println("✅ Docente guardado con ID: " + docenteGuardado.getIdDocente());
-            System.out.println("✅ Email institucional: " + docenteGuardado.getEmail());
-            System.out.println("✅ Email personal: " + emailPersonal);
 
-            // ========== ENVIAR CREDENCIALES AL EMAIL PERSONAL ==========
             try {
-                // IMPORTANTE: Enviar al email personal, NO al institucional
                 emailService.enviarCredencialesDocente(
-                        emailPersonal,           // <-- EMAIL PERSONAL (donde recibe el profesor)
-                        emailInstitucional,      // <-- EMAIL INSTITUCIONAL (para login)
+                        emailPersonal,
+                        emailInstitucional,
                         passwordTemporal,
                         docente.getNombres()
                 );
                 System.out.println("✅ Credenciales enviadas al email personal: " + emailPersonal);
             } catch (Exception e) {
                 System.err.println("⚠️ Error al enviar email a " + emailPersonal + ": " + e.getMessage());
-                // No detenemos el proceso si falla el email
             }
 
-            // ========== REGISTRAR ACTIVIDAD ==========
             registrarActividad(usuario, "CREAR", "Docente",
                     "Se registró docente: " + docente.getNombres() +
                             " - DNI: " + docente.getDni() +
@@ -406,7 +406,6 @@ public class AdminController {
                             " - Email institucional: " + emailInstitucional +
                             " - Especialidad: " + docente.getEspecialidad());
 
-            // ========== MENSAJE DE ÉXITO ==========
             redirectAttributes.addFlashAttribute("success",
                     "✅ Docente '" + docente.getNombres() + " " + docente.getApellidoPaterno() +
                             "' creado correctamente.\n" +
@@ -423,9 +422,6 @@ public class AdminController {
         return "redirect:/admin/docentes";
     }
 
-    /**
-     * Generar email institucional para docente
-     */
     private String generarEmailDocente(String nombres, String apellidoPaterno, String apellidoMaterno) {
         String base = (nombres.substring(0, 1) + apellidoPaterno + apellidoMaterno)
                 .toLowerCase()
@@ -437,7 +433,6 @@ public class AdminController {
                 .replaceAll("ñ", "n")
                 .replaceAll("[^a-z0-9]", "");
 
-        // Si el email base ya existe, agregar un número
         String email = base + "@docente.iesancarlos.edu.pe";
         int contador = 1;
         while (usuarioService.existsByUsername(email) || docenteRepository.existsByEmail(email)) {
@@ -468,8 +463,6 @@ public class AdminController {
         return "redirect:/admin/docentes";
     }
 
-    // ==================== ACTUALIZAR DOCENTE (CORREGIDO) ====================
-
     @PostMapping("/docente/actualizar/{id}")
     public String actualizarDocente(@PathVariable Long id,
                                     @ModelAttribute Docente docente,
@@ -486,17 +479,14 @@ public class AdminController {
 
             Docente docenteOriginal = docenteExistenteOpt.get();
 
-            // ========== 1. VALIDAR DNI (si cambió) ==========
             String nuevoDni = docente.getDni();
             String dniActual = docenteOriginal.getDni();
 
             if (nuevoDni != null && !nuevoDni.equals(dniActual)) {
-                // Validar formato del DNI (8 dígitos)
                 if (nuevoDni.length() != 8 || !nuevoDni.matches("\\d+")) {
                     redirectAttributes.addFlashAttribute("error", "✗ El DNI debe tener 8 dígitos numéricos");
                     return "redirect:/admin/docentes";
                 }
-                // Validar que el nuevo DNI no exista en otro docente
                 if (docenteRepository.existsByDniAndIdDocenteNot(nuevoDni, id)) {
                     redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el DNI: " + nuevoDni);
                     return "redirect:/admin/docentes";
@@ -504,7 +494,6 @@ public class AdminController {
                 docenteOriginal.setDni(nuevoDni);
             }
 
-            // ========== 2. VALIDAR EMAIL (si cambió) ==========
             String nuevoEmail = docente.getEmail();
             String emailActual = docenteOriginal.getEmail();
 
@@ -516,7 +505,6 @@ public class AdminController {
                 docenteOriginal.setEmail(nuevoEmail);
             }
 
-            // ========== 3. VALIDAR CELULAR ==========
             String nuevoCelular = docente.getCelular();
             if (nuevoCelular != null && !nuevoCelular.isEmpty()) {
                 if (nuevoCelular.length() != 9 || !nuevoCelular.matches("\\d+")) {
@@ -528,36 +516,29 @@ public class AdminController {
                 docenteOriginal.setCelular(null);
             }
 
-            // ========== 4. VALIDAR ESPECIALIDAD ==========
             if (docente.getEspecialidad() == null || docente.getEspecialidad().trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "✗ La especialidad es obligatoria");
                 return "redirect:/admin/docentes";
             }
             docenteOriginal.setEspecialidad(docente.getEspecialidad().toUpperCase().trim());
 
-            // ========== 5. ACTUALIZAR OTROS CAMPOS ==========
             docenteOriginal.setNombres(docente.getNombres());
             docenteOriginal.setApellidoPaterno(docente.getApellidoPaterno());
             docenteOriginal.setApellidoMaterno(docente.getApellidoMaterno());
             docenteOriginal.setEstado(docente.getEstado());
 
-            // ========== 6. ACTUALIZAR USUARIO ASOCIADO ==========
             if (docenteOriginal.getUsuario() != null) {
                 Usuario usuarioDocente = docenteOriginal.getUsuario();
-
-                // Actualizar datos del usuario
                 usuarioDocente.setNombre(docenteOriginal.getNombres());
                 usuarioDocente.setApellido(docenteOriginal.getApellidoPaterno() + " " + docenteOriginal.getApellidoMaterno());
-                usuarioDocente.setDocumento(docenteOriginal.getDni());  // <-- ACTUALIZAR DNI
-                usuarioDocente.setTelefono(docenteOriginal.getCelular()); // <-- ACTUALIZAR TELÉFONO
+                usuarioDocente.setDocumento(docenteOriginal.getDni());
+                usuarioDocente.setTelefono(docenteOriginal.getCelular());
 
-                // Si el email cambió, actualizar username y email
                 if (nuevoEmail != null && !nuevoEmail.isEmpty() && !nuevoEmail.equals(usuarioDocente.getEmail())) {
                     usuarioDocente.setEmail(nuevoEmail);
                     usuarioDocente.setUsername(nuevoEmail);
                 }
 
-                // Si se envió una nueva contraseña, hashearla
                 if (docente.getUsuario() != null &&
                         docente.getUsuario().getPassword() != null &&
                         !docente.getUsuario().getPassword().isEmpty() &&
@@ -565,17 +546,11 @@ public class AdminController {
                     usuarioDocente.setPassword(passwordEncoder.encode(docente.getUsuario().getPassword()));
                 }
 
-                // Guardar usuario actualizado
                 usuarioService.save(usuarioDocente);
-                System.out.println("✅ Usuario actualizado - DNI: " + usuarioDocente.getDocumento() +
-                        ", Teléfono: " + usuarioDocente.getTelefono());
             }
 
-            // ========== 7. GUARDAR DOCENTE ACTUALIZADO ==========
             docenteRepository.save(docenteOriginal);
-            System.out.println("✅ Docente actualizado - ID: " + docenteOriginal.getIdDocente());
 
-            // ========== 8. REGISTRAR ACTIVIDAD ==========
             registrarActividad(usuario, "EDITAR", "Docente",
                     "Se actualizó docente: " + docenteOriginal.getNombres() +
                             " - DNI: " + docenteOriginal.getDni() +
@@ -771,7 +746,6 @@ public class AdminController {
                 curso.generarCodigoAutomatico();
             }
 
-            // ========== CALCULAR ALUMNOS ACTUALES ==========
             long cantidadEstudiantes = matriculaRepository.countByEstadoAndIdGradoAndTurno(
                     "ACTIVA",
                     curso.getIdGrado(),
@@ -874,7 +848,6 @@ public class AdminController {
                 }
             }
 
-            // ========== CALCULAR ALUMNOS ACTUALES ==========
             long cantidadEstudiantes = matriculaRepository.countByEstadoAndIdGradoAndTurno(
                     "ACTIVA",
                     curso.getIdGrado(),
@@ -976,80 +949,75 @@ public class AdminController {
     // ==================== CRUD MATRÍCULAS ====================
 
     @GetMapping("/matriculas")
-    public String listarMatriculas(Model model) {
-        model.addAttribute("matriculas", matriculaRepository.findAll());
+    public String listarMatriculas(
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) Integer grado,
+            Model model) {
+
+        List<Matricula> matriculas;
+
+        // Aplicar filtros
+        if (estado != null && !estado.isEmpty() && grado != null) {
+            matriculas = matriculaRepository.findByEstadoAndIdGrado(estado, grado);
+        } else if (estado != null && !estado.isEmpty()) {
+            matriculas = matriculaRepository.findByEstado(estado);
+        } else if (grado != null) {
+            matriculas = matriculaRepository.findByIdGrado(grado);
+        } else {
+            matriculas = matriculaRepository.findAll();
+        }
+
+        // Agregar nombres de grado
+        Map<Long, String> nombresGrados = new HashMap<>();
+        for (Matricula m : matriculas) {
+            if (m.getIdGrado() != null) {
+                nombresGrados.put(m.getIdMatricula(), obtenerNombreGrado(m.getIdGrado()));
+            }
+        }
+
+        // Calcular estadísticas
+        long totalPendientes = matriculaRepository.findByEstado("PENDIENTE").size();
+        long totalActivas = matriculaRepository.findByEstado("ACTIVA").size();
+        long totalInactivas = matriculaRepository.findByEstado("INACTIVA").size();
+
+        model.addAttribute("matriculas", matriculas);
+        model.addAttribute("nombresGrados", nombresGrados);
+        model.addAttribute("totalPendientes", totalPendientes);
+        model.addAttribute("totalActivas", totalActivas);
+        model.addAttribute("totalInactivas", totalInactivas);
+        model.addAttribute("estadoFiltro", estado);
+        model.addAttribute("gradoFiltro", grado);
         model.addAttribute("estudiantes", estudianteRepository.findAll());
         model.addAttribute("cursos", cursoRepository.findAll());
+
         return "admin/matriculas";
     }
 
-    @GetMapping("/matricula/nuevo")
-    public String mostrarFormularioNuevaMatricula(Model model) {
-        model.addAttribute("matricula", new Matricula());
-        model.addAttribute("estudiantes", estudianteRepository.findAll());
-        model.addAttribute("cursos", cursoRepository.findAll());
-        return "admin/matricula-form";
-    }
+    // ==================== ACTUALIZAR MATRÍCULAS VENCIDAS MANUAL ====================
 
-    @PostMapping("/matricula/guardar")
-    public String guardarMatricula(@ModelAttribute Matricula matricula, Authentication auth) {
-        String usuario = auth != null ? auth.getName() : "sistema";
+    @GetMapping("/actualizar-matriculas")
+    public String actualizarMatriculasVencidasManual(RedirectAttributes redirectAttributes) {
+        int anioActual = java.time.Year.now().getValue();
+        int anioAnterior = anioActual - 1;
 
-        matriculaRepository.save(matricula);
-        actualizarAlumnosActualesPorGradoYTurno(matricula.getIdGrado(), matricula.getTurno());
+        try {
+            List<Matricula> matriculasVencidas = matriculaRepository.findByAnioAcademicoAndEstado(anioAnterior, "ACTIVO");
 
-        String detalles = "Se registró nueva matrícula para estudiante ID: " +
-                matricula.getEstudiante().getIdEstudiante() +
-                " - Grado: " + matricula.getIdGrado() +
-                " - Turno: " + matricula.getTurno();
+            for (Matricula m : matriculasVencidas) {
+                m.setEstado("INACTIVO");
+                matriculaRepository.save(m);
+            }
 
-        registrarActividad(usuario, "CREAR", "Matrícula", detalles);
-        return "redirect:/admin/matriculas";
-    }
+            if (!matriculasVencidas.isEmpty()) {
+                redirectAttributes.addFlashAttribute("success",
+                        "✅ " + matriculasVencidas.size() + " matrículas del año " + anioAnterior + " fueron desactivadas");
+            } else {
+                redirectAttributes.addFlashAttribute("info",
+                        "ℹ️ No hay matrículas activas del año " + anioAnterior);
+            }
 
-    @GetMapping("/matricula/editar/{id}")
-    public String mostrarFormularioEditarMatricula(@PathVariable Long id, Model model) {
-        Optional<Matricula> matricula = matriculaRepository.findById(id);
-        if (matricula.isPresent()) {
-            model.addAttribute("matricula", matricula.get());
-            model.addAttribute("estudiantes", estudianteRepository.findAll());
-            model.addAttribute("cursos", cursoRepository.findAll());
-            return "admin/matricula-form";
-        }
-        return "redirect:/admin/matriculas";
-    }
-
-    @PostMapping("/matricula/actualizar/{id}")
-    public String actualizarMatricula(@PathVariable Long id, @ModelAttribute Matricula matricula, Authentication auth) {
-        String usuario = auth != null ? auth.getName() : "sistema";
-
-        matricula.setIdMatricula(id);
-        matriculaRepository.save(matricula);
-        actualizarAlumnosActualesPorGradoYTurno(matricula.getIdGrado(), matricula.getTurno());
-
-        String detalles = "Se actualizó matrícula ID: " + id +
-                " - Grado: " + matricula.getIdGrado() +
-                " - Turno: " + matricula.getTurno();
-
-        registrarActividad(usuario, "EDITAR", "Matrícula", detalles);
-        return "redirect:/admin/matriculas";
-    }
-
-    @GetMapping("/matricula/eliminar/{id}")
-    public String eliminarMatricula(@PathVariable Long id, Authentication auth) {
-        String usuario = auth != null ? auth.getName() : "sistema";
-
-        Optional<Matricula> matriculaOpt = matriculaRepository.findById(id);
-        if (matriculaOpt.isPresent()) {
-            Matricula matricula = matriculaOpt.get();
-            Integer idGrado = matricula.getIdGrado();
-            String turno = matricula.getTurno();
-
-            matriculaRepository.deleteById(id);
-            actualizarAlumnosActualesPorGradoYTurno(idGrado, turno);
-
-            String detalles = "Se eliminó matrícula ID: " + id;
-            registrarActividad(usuario, "ELIMINAR", "Matrícula", detalles);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "❌ Error al actualizar: " + e.getMessage());
         }
 
         return "redirect:/admin/matriculas";
@@ -1341,6 +1309,25 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", "Estudiante no encontrado");
         }
         return "redirect:/admin/estudiantes";
+    }
+
+    private String obtenerNombreGrado(Integer idGrado) {
+        if (idGrado == null) return "Sin asignar";
+
+        return switch (idGrado) {
+            case 1 -> "Primero de Primaria";
+            case 2 -> "Segundo de Primaria";
+            case 3 -> "Tercero de Primaria";
+            case 4 -> "Cuarto de Primaria";
+            case 5 -> "Quinto de Primaria";
+            case 6 -> "Sexto de Primaria";
+            case 7 -> "Primero de Secundaria";
+            case 8 -> "Segundo de Secundaria";
+            case 9 -> "Tercero de Secundaria";
+            case 10 -> "Cuarto de Secundaria";
+            case 11 -> "Quinto de Secundaria";
+            default -> "Grado " + idGrado;
+        };
     }
 
     @PostMapping("/estudiante/actualizar/{id}")
