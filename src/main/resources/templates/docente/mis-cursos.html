@@ -45,7 +45,7 @@
                                     <span class="badge" th:class="${curso.estado == 'ACTIVO'} ? 'badge-success' : 'badge-secondary'"
                                           th:text="${curso.estado}">-</span>
                                 </p>
-                                <a th:href="@{/docente/curso/{id}/estudiantes(id=${curso.idCurso})}" class="btn-view-students">
+                                <a th:href="@{/docente/alumnos(idCurso=${curso.idCurso})}" class="btn-view-students">
                                     <i class="fas fa-users"></i> Ver Estudiantes
                                 </a>
                             </div>

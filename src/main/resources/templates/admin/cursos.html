@@ -40,7 +40,7 @@
                 <div class="card-body">
                     <div class="row g-3">
 
-                        <!-- Grado: usa th:field para pre-seleccionar correctamente -->
+                        <!-- Grado -->
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">Grado</label>
                             <select class="form-select form-select-sm" id="filtroGrado">
@@ -59,23 +59,22 @@
                             </select>
                         </div>
 
-                        <!-- Turno -->
+                        <!-- Turno - CORREGIDO: usa MAÑANA y TARDE en mayúsculas -->
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">Turno</label>
                             <select class="form-select form-select-sm" id="filtroTurno">
-                                <option value=""       th:selected="${filtroTurno == null or filtroTurno == ''}">Todos</option>
+                                <option value="" th:selected="${filtroTurno == null or filtroTurno == ''}">Todos</option>
                                 <option value="MAÑANA" th:selected="${filtroTurno == 'MAÑANA'}">Mañana</option>
-                                <option value="TARDE"  th:selected="${filtroTurno == 'TARDE'}">Tarde</option>
+                                <option value="TARDE" th:selected="${filtroTurno == 'TARDE'}">Tarde</option>
                             </select>
                         </div>
 
-                        <!-- Área: se detecta automáticamente pero se puede editar -->
+                        <!-- Área -->
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">Área</label>
                             <input type="text" class="form-control form-control-sm" id="filtroArea"
                                    th:value="${filtroArea}" placeholder="Se detecta al escribir"
-                                   readonly
-                                   style="background-color: #e9ecef; cursor: default;">
+                                   readonly style="background-color: #e9ecef; cursor: default;">
                             <small class="text-muted">Se detecta automáticamente</small>
                         </div>
 
@@ -83,8 +82,8 @@
                         <div class="col-md-2">
                             <label class="form-label fw-semibold">Estado</label>
                             <select class="form-select form-select-sm" id="filtroEstado">
-                                <option value=""         th:selected="${filtroEstado == null or filtroEstado == ''}">Todos</option>
-                                <option value="ACTIVO"   th:selected="${filtroEstado == 'ACTIVO'}">Activo</option>
+                                <option value="" th:selected="${filtroEstado == null or filtroEstado == ''}">Todos</option>
+                                <option value="ACTIVO" th:selected="${filtroEstado == 'ACTIVO'}">Activo</option>
                                 <option value="INACTIVO" th:selected="${filtroEstado == 'INACTIVO'}">Inactivo</option>
                             </select>
                         </div>
@@ -214,7 +213,7 @@
                 </div>
             </div>
 
-            <!-- PAGINACIÓN CORREGIDA: los enlaces incluyen todos los filtros activos -->
+            <!-- PAGINACIÓN -->
             <div th:if="${totalPages > 0}" class="d-flex justify-content-between align-items-center mt-4">
                 <div>
                     <small class="text-muted">
@@ -248,7 +247,7 @@
                             </span>
                         </li>
 
-                        <!-- Números de página (ventana de 5 alrededor de la actual) -->
+                        <!-- Números de página -->
                         <th:block th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
                                   th:if="${i >= currentPage - 2 and i <= currentPage + 2}">
                             <li class="page-item" th:classappend="${i == currentPage} ? 'active'">
@@ -317,7 +316,8 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nombre del Curso *</label>
-                            <input type="text" class="form-control" id="nombreCurso" name="nombreCurso" required>
+                            <input type="text" class="form-control" id="nombreCurso" name="nombreCurso" required
+                                   oninput="detectarArea()">
                         </div>
                     </div>
 
@@ -347,7 +347,7 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Grado</label>
-                            <select class="form-select" id="idGrado" name="idGrado">
+                            <select class="form-select" id="idGrado" name="idGrado" required>
                                 <option value="">Seleccionar grado...</option>
                                 <option value="1">1° Primaria</option>
                                 <option value="2">2° Primaria</option>
@@ -386,7 +386,7 @@
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Sección</label>
-                            <select class="form-select" id="seccion" name="seccion">
+                            <select class="form-select" id="seccion" name="seccion" required>
                                 <option value="">Seleccionar sección...</option>
                                 <option value="A">A</option>
                                 <option value="B">B</option>
@@ -396,7 +396,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Turno</label>
-                            <select class="form-select" id="turno" name="turno">
+                            <select class="form-select" id="turno" name="turno" required>
                                 <option value="">Seleccionar turno...</option>
                                 <option value="MAÑANA">MAÑANA</option>
                                 <option value="TARDE">TARDE</option>
@@ -409,7 +409,7 @@
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Alumnos Actuales</label>
                             <input type="number" class="form-control" id="alumnosActuales" name="alumnosActuales" value="0" min="0" readonly>
-                            <small class="text-muted">Solo lectura</small>
+                            <small class="text-muted">Se calcula automáticamente</small>
                         </div>
                     </div>
 
@@ -417,7 +417,7 @@
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Horario del Curso</label>
                             <select class="form-select" id="horario" name="horario">
-                                <option value="">Se generará automáticamente</option>
+                                <option value="">Seleccionar horario...</option>
                                 <option value="LUNES 7-9">LUNES 7:00 - 9:00</option>
                                 <option value="LUNES 9-11">LUNES 9:00 - 11:00</option>
                                 <option value="LUNES 11-13">LUNES 11:00 - 13:00</option>
@@ -444,7 +444,7 @@
                                 <option value="VIERNES 13-15">VIERNES 13:00 - 15:00</option>
                                 <option value="VIERNES 15-17">VIERNES 15:00 - 17:00</option>
                             </select>
-                            <small class="text-muted">Se genera automáticamente según Grado, Sección y Turno</small>
+                            <small class="text-muted">Seleccione el horario del curso</small>
                         </div>
                     </div>
                 </div>

@@ -115,7 +115,6 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <!-- USAR th:block con verificación de null -->
                             <th:block th:each="docente : ${docentes}">
                                 <tr th:if="${docente != null}">
                                     <td th:text="${docente?.idDocente}">-</td>
@@ -177,7 +176,6 @@
                 </div>
                 <nav>
                     <ul class="pagination pagination-sm mb-0">
-                        <!-- Anterior -->
                         <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
                             <a class="page-link" th:if="${currentPage > 0}"
                                th:href="@{/admin/docentes(page=${currentPage - 1}, filtroNombre=${filtroNombre}, filtroEspecialidad=${filtroEspecialidad}, filtroEstado=${filtroEstado})}">
@@ -187,16 +185,12 @@
                                 <i class="fas fa-chevron-left"></i> Anterior
                             </span>
                         </li>
-
-                        <!-- Números de página -->
                         <li th:each="i: ${#numbers.sequence(0, totalPages - 1)}"
                             th:if="${i >= currentPage - 2 and i <= currentPage + 2}"
                             class="page-item" th:classappend="${i == currentPage} ? 'active'">
                             <a class="page-link" th:href="@{/admin/docentes(page=${i}, filtroNombre=${filtroNombre}, filtroEspecialidad=${filtroEspecialidad}, filtroEstado=${filtroEstado})}"
                                th:text="${i + 1}"></a>
                         </li>
-
-                        <!-- Siguiente -->
                         <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
                             <a class="page-link" th:if="${currentPage < totalPages - 1}"
                                th:href="@{/admin/docentes(page=${currentPage + 1}, filtroNombre=${filtroNombre}, filtroEspecialidad=${filtroEspecialidad}, filtroEstado=${filtroEstado})}">
@@ -237,38 +231,50 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">DNI *</label>
-                            <input type="text" class="form-control" id="dni" name="dni"
-                                   maxlength="8" placeholder="Ingrese 8 dígitos" required
-                                   pattern="\d{8}" title="Debe ingresar 8 dígitos numéricos"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="dni"
+                                       maxlength="8" placeholder="Ingrese 8 dígitos" required
+                                       pattern="\d{8}" title="Debe ingresar 8 dígitos numéricos"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <button type="button" class="btn btn-outline-success" onclick="buscarDocentePorDni()">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                            </div>
+                            <input type="hidden" id="dniHidden" name="dni">
+                            <small class="text-muted">Ingrese DNI y presione buscar para autocompletar</small>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Nombres *</label>
-                            <input type="text" class="form-control" id="nombres" name="nombres"
+                            <input type="text" class="form-control" id="nombres"
                                    readonly style="background-color: #e9ecef; cursor: default;" required>
+                            <input type="hidden" id="nombresHidden" name="nombres">
                             <small class="text-muted">Se autocompleta desde RENIEC</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Apellido Paterno *</label>
-                            <input type="text" class="form-control" id="apellidoPaterno" name="apellidoPaterno"
+                            <input type="text" class="form-control" id="apellidoPaterno"
                                    readonly style="background-color: #e9ecef; cursor: default;" required>
+                            <input type="hidden" id="apellidoPaternoHidden" name="apellidoPaterno">
                             <small class="text-muted">Se autocompleta desde RENIEC</small>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Apellido Materno *</label>
-                            <input type="text" class="form-control" id="apellidoMaterno" name="apellidoMaterno"
+                            <input type="text" class="form-control" id="apellidoMaterno"
                                    readonly style="background-color: #e9ecef; cursor: default;" required>
+                            <input type="hidden" id="apellidoMaternoHidden" name="apellidoMaterno">
                             <small class="text-muted">Se autocompleta desde RENIEC</small>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com">
+                            <label class="form-label">Email Personal *</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   placeholder="correo@ejemplo.com" required>
+                            <small class="text-muted">A este correo se enviarán las credenciales de acceso</small>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Teléfono/Celular</label>

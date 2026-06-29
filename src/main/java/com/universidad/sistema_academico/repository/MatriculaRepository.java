@@ -26,40 +26,45 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     @Query("SELECT m FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.anioAcademico = :anio AND m.estado = 'ACTIVA'")
     Optional<Matricula> findMatriculaActivaByEstudianteAndAnio(@Param("estudianteId") Long estudianteId, @Param("anio") Integer anio);
 
-    /**
-     * Obtener la matrícula activa completa del estudiante
-     */
     @Query("SELECT m FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.estado = 'ACTIVA'")
     Optional<Matricula> findMatriculaActivaByEstudianteId(@Param("estudianteId") Long estudianteId);
 
-    /**
-     * Obtener el grado actual del estudiante (su matrícula activa)
-     */
     @Query("SELECT m.idGrado FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.estado = 'ACTIVA'")
     Optional<Integer> findGradoActualByEstudianteId(@Param("estudianteId") Long estudianteId);
 
-    /**
-     * Verificar si un estudiante tiene matrícula activa
-     */
     @Query("SELECT COUNT(m) > 0 FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.estado = 'ACTIVA'")
     boolean hasMatriculaActiva(@Param("estudianteId") Long estudianteId);
 
-    /**
-     * Contar matrículas activas de un estudiante
-     */
     @Query("SELECT COUNT(m) FROM Matricula m WHERE m.estudiante.idEstudiante = :estudianteId AND m.estado = 'ACTIVA'")
     int countMatriculasActivasByEstudianteId(@Param("estudianteId") Long estudianteId);
 
-    // ========== NUEVO MÉTODO: CONTAR ESTUDIANTES POR GRADO Y TURNO ==========
+    // ========== CONTAR ESTUDIANTES POR GRADO Y TURNO ==========
 
-    /**
-     * Contar estudiantes con matrícula activa en un grado y turno específico
-     * Utilizado para actualizar alumnos_actuales en los cursos
-     */
-    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.estado = :estado AND m.idGrado = :idGrado AND m.turno = :turno")
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.estado = :estado AND m.idGrado = :idGrado AND UPPER(m.turno) = UPPER(:turno)")
     long countByEstadoAndIdGradoAndTurno(@Param("estado") String estado,
                                          @Param("idGrado") Integer idGrado,
                                          @Param("turno") String turno);
+
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.estado = :estado AND m.idGrado = :idGrado AND LOWER(m.turno) LIKE LOWER(CONCAT('%', :turno, '%'))")
+    long countByEstadoAndIdGradoAndTurnoLike(@Param("estado") String estado,
+                                             @Param("idGrado") Integer idGrado,
+                                             @Param("turno") String turno);
+
+    // ========== NUEVOS MÉTODOS PARA DOCENTE ==========
+
+    /**
+     * Contar alumnos totales de un docente (estudiantes en sus cursos)
+     */
+    @Query("SELECT COUNT(DISTINCT m.estudiante.idEstudiante) FROM Matricula m " +
+            "WHERE m.idGrado IN (SELECT c.idGrado FROM Curso c WHERE c.idDocente = :docenteId AND c.estado = 'ACTIVO') " +
+            "AND m.estado = 'ACTIVA'")
+    int countAlumnosByDocenteId(@Param("docenteId") Long docenteId);
+
+    /**
+     * Contar alumnos por grado y turno (para un curso específico)
+     */
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.idGrado = :idGrado AND m.turno = :turno AND m.estado = 'ACTIVA'")
+    int countByGradoAndTurno(@Param("idGrado") Integer idGrado, @Param("turno") String turno);
 
     // ========== BÚSQUEDAS POR FILTROS ==========
 

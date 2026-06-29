@@ -257,97 +257,167 @@ public class AdminController {
         String usuario = auth != null ? auth.getName() : "sistema";
 
         try {
-            // 1. Validar DNI único
+            // ========== LOG PARA VER QUÉ DATOS LLEGAN ==========
+            System.out.println("=== DATOS RECIBIDOS DEL FORMULARIO ===");
+            System.out.println("DNI: " + docente.getDni());
+            System.out.println("Nombres: " + docente.getNombres());
+            System.out.println("Apellido Paterno: " + docente.getApellidoPaterno());
+            System.out.println("Apellido Materno: " + docente.getApellidoMaterno());
+            System.out.println("Email Personal: " + docente.getEmail());  // <-- ESTE ES EL EMAIL PERSONAL
+            System.out.println("Especialidad: " + docente.getEspecialidad());
+            System.out.println("Celular: " + docente.getCelular());
+
+            // ========== GUARDAR EMAIL PERSONAL ANTES DE MODIFICAR ==========
+            String emailPersonal = docente.getEmail();  // <-- GUARDAR EL EMAIL PERSONAL
+
+            // ========== VALIDACIONES ==========
+
+            // 1. Validar DNI
+            if (docente.getDni() == null || docente.getDni().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "✗ El DNI es obligatorio");
+                return "redirect:/admin/docentes";
+            }
+
+            // 2. Validar nombres
+            if (docente.getNombres() == null || docente.getNombres().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "✗ Los nombres son obligatorios");
+                return "redirect:/admin/docentes";
+            }
+
+            // 3. Validar apellido paterno
+            if (docente.getApellidoPaterno() == null || docente.getApellidoPaterno().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "✗ El apellido paterno es obligatorio");
+                return "redirect:/admin/docentes";
+            }
+
+            // 4. Validar apellido materno
+            if (docente.getApellidoMaterno() == null || docente.getApellidoMaterno().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "✗ El apellido materno es obligatorio");
+                return "redirect:/admin/docentes";
+            }
+
+            // 5. Validar especialidad
+            if (docente.getEspecialidad() == null || docente.getEspecialidad().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "✗ La especialidad es obligatoria");
+                return "redirect:/admin/docentes";
+            }
+
+            // 6. Validar DNI único
             if (docenteRepository.existsByDni(docente.getDni())) {
                 redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el DNI: " + docente.getDni());
                 return "redirect:/admin/docentes";
             }
 
-            // 2. Guardar el email personal ANTES de sobrescribirlo
-            String emailPersonal = docente.getEmail(); // <-- Este es el email que el admin ingresó en el formulario
-
-            // 3. Validar que el email personal no esté vacío
-            if (emailPersonal == null || emailPersonal.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "✗ El email del docente es obligatorio");
+            // 7. Validar email personal (si existe)
+            if (emailPersonal != null && !emailPersonal.trim().isEmpty()) {
+                // Validar que el email personal no exista en la base de datos
+                if (docenteRepository.existsByEmail(emailPersonal)) {
+                    redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + emailPersonal);
+                    return "redirect:/admin/docentes";
+                }
+            } else {
+                redirectAttributes.addFlashAttribute("error", "✗ El email personal es obligatorio");
                 return "redirect:/admin/docentes";
             }
 
-            // 4. Validar que el email personal no exista ya en la base de datos
-            if (docenteRepository.existsByEmail(emailPersonal)) {
-                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + emailPersonal);
-                return "redirect:/admin/docentes";
+            // 8. Validar celular (si existe)
+            if (docente.getCelular() != null && !docente.getCelular().trim().isEmpty()) {
+                if (docente.getCelular().length() != 9 || !docente.getCelular().matches("\\d+")) {
+                    redirectAttributes.addFlashAttribute("error", "✗ El celular debe tener 9 dígitos numéricos");
+                    return "redirect:/admin/docentes";
+                }
             }
 
-            // 5. Generar email institucional automáticamente
-            String emailInstitucional = generarEmailDocente(docente.getNombres(),
-                    docente.getApellidoPaterno(),
-                    docente.getApellidoMaterno());
+            // ========== GENERAR EMAIL INSTITUCIONAL ==========
+            String emailInstitucional = generarEmailDocente(
+                    docente.getNombres().trim(),
+                    docente.getApellidoPaterno().trim(),
+                    docente.getApellidoMaterno().trim()
+            );
+            System.out.println("Email institucional generado: " + emailInstitucional);
 
-            // 6. Validar que el email institucional no exista
+            // Validar que el email institucional no exista
             if (docenteRepository.existsByEmail(emailInstitucional)) {
                 redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email institucional: " + emailInstitucional);
                 return "redirect:/admin/docentes";
             }
 
-            // 7. Validar celular (9 dígitos)
-            if (docente.getCelular() != null && !docente.getCelular().isEmpty() &&
-                    docente.getCelular().length() != 9) {
-                redirectAttributes.addFlashAttribute("error", "✗ El número de celular debe tener 9 dígitos");
-                return "redirect:/admin/docentes";
-            }
-
-            // 8. ASIGNAR EMAIL INSTITUCIONAL (sobrescribe el email personal)
+            // ========== ASIGNAR CAMPOS ==========
+            // El email del docente será el institucional (para login)
             docente.setEmail(emailInstitucional);
+            docente.setEspecialidad(docente.getEspecialidad().toUpperCase().trim());
+            docente.setEstado("ACTIVO");
 
-            // Generar código automático si está vacío
-            if (docente.getCodigoDocente() == null || docente.getCodigoDocente().isEmpty()) {
+            // Generar código automático
+            if (docente.getCodigoDocente() == null || docente.getCodigoDocente().trim().isEmpty()) {
                 docente.generarCodigoAutomatico();
+                System.out.println("Código generado: " + docente.getCodigoDocente());
             }
 
-            if (docente.getEstado() == null) docente.setEstado("ACTIVO");
-
-            // Guardar docente
-            docenteRepository.save(docente);
-
-            // ========== CREAR USUARIO PARA EL DOCENTE ==========
+            // ========== CREAR USUARIO ==========
             String passwordTemporal = generarPasswordTemporal();
+            System.out.println("Contraseña temporal: " + passwordTemporal);
 
             Usuario usuarioDocente = new Usuario();
-            usuarioDocente.setUsername(emailInstitucional);  // Username = email institucional
+            usuarioDocente.setUsername(emailInstitucional);
             usuarioDocente.setPassword(passwordEncoder.encode(passwordTemporal));
-            usuarioDocente.setNombre(docente.getNombres());
-            usuarioDocente.setApellido(docente.getApellidoPaterno() + " " + docente.getApellidoMaterno());
-            usuarioDocente.setEmail(emailInstitucional);      // Email = email institucional
+            usuarioDocente.setNombre(docente.getNombres().trim());
+            usuarioDocente.setApellido(docente.getApellidoPaterno().trim() + " " + docente.getApellidoMaterno().trim());
+            usuarioDocente.setEmail(emailInstitucional);
+            usuarioDocente.setDocumento(docente.getDni());
+            usuarioDocente.setTelefono(docente.getCelular());
             usuarioDocente.setRol("DOCENTE");
             usuarioDocente.setActivo(true);
             usuarioDocente.setFechaRegistro(LocalDateTime.now());
 
-            usuarioService.save(usuarioDocente);
+            // Guardar usuario
+            Usuario usuarioGuardado = usuarioService.save(usuarioDocente);
+            System.out.println("✅ Usuario creado con ID: " + usuarioGuardado.getId());
 
-            // Asociar el usuario al docente
-            docente.setUsuario(usuarioDocente);
-            docenteRepository.save(docente);
+            // ========== ASOCIAR USUARIO AL DOCENTE ==========
+            docente.setUsuario(usuarioGuardado);
 
-            // ========== ENVIAR CREDENCIALES POR EMAIL ==========
-            // Enviar al EMAIL PERSONAL del docente (el que el admin ingresó)
-            emailService.enviarCredencialesDocente(
-                    emailPersonal,              // Email personal (destino)
-                    emailInstitucional,         // Username (email institucional)
-                    passwordTemporal,           // Contraseña temporal
-                    docente.getNombres()        // Nombre del docente
-            );
+            // ========== GUARDAR DOCENTE ==========
+            Docente docenteGuardado = docenteRepository.save(docente);
+            System.out.println("✅ Docente guardado con ID: " + docenteGuardado.getIdDocente());
+            System.out.println("✅ Email institucional: " + docenteGuardado.getEmail());
+            System.out.println("✅ Email personal: " + emailPersonal);
 
-            registrarActividad(usuario, "CREAR", "Docente", "Se registró docente: " + docente.getNombres() +
-                    " - Email institucional: " + emailInstitucional +
-                    " - Email personal: " + emailPersonal);
+            // ========== ENVIAR CREDENCIALES AL EMAIL PERSONAL ==========
+            try {
+                // IMPORTANTE: Enviar al email personal, NO al institucional
+                emailService.enviarCredencialesDocente(
+                        emailPersonal,           // <-- EMAIL PERSONAL (donde recibe el profesor)
+                        emailInstitucional,      // <-- EMAIL INSTITUCIONAL (para login)
+                        passwordTemporal,
+                        docente.getNombres()
+                );
+                System.out.println("✅ Credenciales enviadas al email personal: " + emailPersonal);
+            } catch (Exception e) {
+                System.err.println("⚠️ Error al enviar email a " + emailPersonal + ": " + e.getMessage());
+                // No detenemos el proceso si falla el email
+            }
 
-            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() +
-                    "' creado correctamente. Email institucional: " + emailInstitucional +
-                    ". Se enviaron credenciales a su correo personal.");
+            // ========== REGISTRAR ACTIVIDAD ==========
+            registrarActividad(usuario, "CREAR", "Docente",
+                    "Se registró docente: " + docente.getNombres() +
+                            " - DNI: " + docente.getDni() +
+                            " - Email personal: " + emailPersonal +
+                            " - Email institucional: " + emailInstitucional +
+                            " - Especialidad: " + docente.getEspecialidad());
+
+            // ========== MENSAJE DE ÉXITO ==========
+            redirectAttributes.addFlashAttribute("success",
+                    "✅ Docente '" + docente.getNombres() + " " + docente.getApellidoPaterno() +
+                            "' creado correctamente.\n" +
+                            "📧 Email institucional: " + emailInstitucional + "\n" +
+                            "📨 Se enviaron las credenciales a su correo personal: " + emailPersonal + "\n" +
+                            "🔑 Contraseña temporal: " + passwordTemporal);
 
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
+            System.err.println("=== ERROR AL GUARDAR DOCENTE ===");
             e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
         }
 
         return "redirect:/admin/docentes";
@@ -398,6 +468,8 @@ public class AdminController {
         return "redirect:/admin/docentes";
     }
 
+    // ==================== ACTUALIZAR DOCENTE (CORREGIDO) ====================
+
     @PostMapping("/docente/actualizar/{id}")
     public String actualizarDocente(@PathVariable Long id,
                                     @ModelAttribute Docente docente,
@@ -413,50 +485,110 @@ public class AdminController {
             }
 
             Docente docenteOriginal = docenteExistenteOpt.get();
-            docente.setIdDocente(id);
 
-            // 1. Validar DNI único (excluyendo el actual)
-            if (!docente.getDni().equals(docenteOriginal.getDni()) &&
-                    docenteRepository.existsByDni(docente.getDni())) {
-                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el DNI: " + docente.getDni());
-                return "redirect:/admin/docentes";
-            }
+            // ========== 1. VALIDAR DNI (si cambió) ==========
+            String nuevoDni = docente.getDni();
+            String dniActual = docenteOriginal.getDni();
 
-            // 2. Validar Email único (excluyendo el actual)
-            if (docente.getEmail() != null && !docente.getEmail().isEmpty() &&
-                    !docente.getEmail().equals(docenteOriginal.getEmail()) &&
-                    docenteRepository.existsByEmail(docente.getEmail())) {
-                redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + docente.getEmail());
-                return "redirect:/admin/docentes";
-            }
-
-            // 3. Si se actualizó el usuario asociado al docente
-            if (docente.getUsuario() != null && docente.getUsuario().getId() != null) {
-                Optional<Usuario> usuarioOpt = usuarioService.findById(docente.getUsuario().getId());
-                if (usuarioOpt.isPresent()) {
-                    Usuario usuarioDocente = usuarioOpt.get();
-                    usuarioDocente.setNombre(docente.getNombres());
-                    usuarioDocente.setApellido(docente.getApellidoPaterno() + " " + docente.getApellidoMaterno());
-                    usuarioDocente.setEmail(docente.getEmail());
-                    usuarioDocente.setUsername(docente.getEmail());
-
-                    // Si se envió una nueva contraseña, hashearla
-                    if (docente.getUsuario().getPassword() != null &&
-                            !docente.getUsuario().getPassword().isEmpty() &&
-                            !docente.getUsuario().getPassword().startsWith("$2a$")) {
-                        usuarioDocente.setPassword(passwordEncoder.encode(docente.getUsuario().getPassword()));
-                    }
-
-                    usuarioService.save(usuarioDocente);
-                    docente.setUsuario(usuarioDocente);
+            if (nuevoDni != null && !nuevoDni.equals(dniActual)) {
+                // Validar formato del DNI (8 dígitos)
+                if (nuevoDni.length() != 8 || !nuevoDni.matches("\\d+")) {
+                    redirectAttributes.addFlashAttribute("error", "✗ El DNI debe tener 8 dígitos numéricos");
+                    return "redirect:/admin/docentes";
                 }
+                // Validar que el nuevo DNI no exista en otro docente
+                if (docenteRepository.existsByDniAndIdDocenteNot(nuevoDni, id)) {
+                    redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el DNI: " + nuevoDni);
+                    return "redirect:/admin/docentes";
+                }
+                docenteOriginal.setDni(nuevoDni);
             }
 
-            docenteRepository.save(docente);
-            registrarActividad(usuario, "EDITAR", "Docente", "Se actualizó docente: " + docente.getNombres());
-            redirectAttributes.addFlashAttribute("success", "✅ Docente '" + docente.getNombres() + "' actualizado correctamente");
+            // ========== 2. VALIDAR EMAIL (si cambió) ==========
+            String nuevoEmail = docente.getEmail();
+            String emailActual = docenteOriginal.getEmail();
+
+            if (nuevoEmail != null && !nuevoEmail.isEmpty() && !nuevoEmail.equals(emailActual)) {
+                if (docenteRepository.existsByEmailAndIdDocenteNot(nuevoEmail, id)) {
+                    redirectAttributes.addFlashAttribute("error", "✗ Ya existe un docente con el email: " + nuevoEmail);
+                    return "redirect:/admin/docentes";
+                }
+                docenteOriginal.setEmail(nuevoEmail);
+            }
+
+            // ========== 3. VALIDAR CELULAR ==========
+            String nuevoCelular = docente.getCelular();
+            if (nuevoCelular != null && !nuevoCelular.isEmpty()) {
+                if (nuevoCelular.length() != 9 || !nuevoCelular.matches("\\d+")) {
+                    redirectAttributes.addFlashAttribute("error", "✗ El celular debe tener 9 dígitos numéricos");
+                    return "redirect:/admin/docentes";
+                }
+                docenteOriginal.setCelular(nuevoCelular);
+            } else {
+                docenteOriginal.setCelular(null);
+            }
+
+            // ========== 4. VALIDAR ESPECIALIDAD ==========
+            if (docente.getEspecialidad() == null || docente.getEspecialidad().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "✗ La especialidad es obligatoria");
+                return "redirect:/admin/docentes";
+            }
+            docenteOriginal.setEspecialidad(docente.getEspecialidad().toUpperCase().trim());
+
+            // ========== 5. ACTUALIZAR OTROS CAMPOS ==========
+            docenteOriginal.setNombres(docente.getNombres());
+            docenteOriginal.setApellidoPaterno(docente.getApellidoPaterno());
+            docenteOriginal.setApellidoMaterno(docente.getApellidoMaterno());
+            docenteOriginal.setEstado(docente.getEstado());
+
+            // ========== 6. ACTUALIZAR USUARIO ASOCIADO ==========
+            if (docenteOriginal.getUsuario() != null) {
+                Usuario usuarioDocente = docenteOriginal.getUsuario();
+
+                // Actualizar datos del usuario
+                usuarioDocente.setNombre(docenteOriginal.getNombres());
+                usuarioDocente.setApellido(docenteOriginal.getApellidoPaterno() + " " + docenteOriginal.getApellidoMaterno());
+                usuarioDocente.setDocumento(docenteOriginal.getDni());  // <-- ACTUALIZAR DNI
+                usuarioDocente.setTelefono(docenteOriginal.getCelular()); // <-- ACTUALIZAR TELÉFONO
+
+                // Si el email cambió, actualizar username y email
+                if (nuevoEmail != null && !nuevoEmail.isEmpty() && !nuevoEmail.equals(usuarioDocente.getEmail())) {
+                    usuarioDocente.setEmail(nuevoEmail);
+                    usuarioDocente.setUsername(nuevoEmail);
+                }
+
+                // Si se envió una nueva contraseña, hashearla
+                if (docente.getUsuario() != null &&
+                        docente.getUsuario().getPassword() != null &&
+                        !docente.getUsuario().getPassword().isEmpty() &&
+                        !docente.getUsuario().getPassword().startsWith("$2a$")) {
+                    usuarioDocente.setPassword(passwordEncoder.encode(docente.getUsuario().getPassword()));
+                }
+
+                // Guardar usuario actualizado
+                usuarioService.save(usuarioDocente);
+                System.out.println("✅ Usuario actualizado - DNI: " + usuarioDocente.getDocumento() +
+                        ", Teléfono: " + usuarioDocente.getTelefono());
+            }
+
+            // ========== 7. GUARDAR DOCENTE ACTUALIZADO ==========
+            docenteRepository.save(docenteOriginal);
+            System.out.println("✅ Docente actualizado - ID: " + docenteOriginal.getIdDocente());
+
+            // ========== 8. REGISTRAR ACTIVIDAD ==========
+            registrarActividad(usuario, "EDITAR", "Docente",
+                    "Se actualizó docente: " + docenteOriginal.getNombres() +
+                            " - DNI: " + docenteOriginal.getDni() +
+                            " - Teléfono: " + docenteOriginal.getCelular() +
+                            " - Especialidad: " + docenteOriginal.getEspecialidad());
+
+            redirectAttributes.addFlashAttribute("success",
+                    "✅ Docente '" + docenteOriginal.getNombres() + " " + docenteOriginal.getApellidoPaterno() +
+                            "' actualizado correctamente");
 
         } catch (Exception e) {
+            System.err.println("=== ERROR AL ACTUALIZAR DOCENTE ===");
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "✗ Error al actualizar: " + e.getMessage());
         }
 
@@ -639,15 +771,30 @@ public class AdminController {
                 curso.generarCodigoAutomatico();
             }
 
-            if (curso.getCapacidadMaxima() == null) curso.setCapacidadMaxima(36);
-            if (curso.getAlumnosActuales() == null) curso.setAlumnosActuales(0);
+            // ========== CALCULAR ALUMNOS ACTUALES ==========
+            long cantidadEstudiantes = matriculaRepository.countByEstadoAndIdGradoAndTurno(
+                    "ACTIVA",
+                    curso.getIdGrado(),
+                    curso.getTurno()
+            );
+            curso.setAlumnosActuales((int) cantidadEstudiantes);
+            System.out.println("✅ Alumnos actuales calculados para el curso: " + cantidadEstudiantes);
+
+            if (curso.getCapacidadMaxima() == null) {
+                curso.setCapacidadMaxima(36);
+            }
 
             cursoRepository.save(curso);
-            registrarActividad(usuario, "CREAR", "Curso", "Se registró curso: " + curso.getNombreCurso());
-            redirectAttributes.addFlashAttribute("success", "✅ Curso '" + curso.getNombreCurso() + "' creado correctamente");
+            registrarActividad(usuario, "CREAR", "Curso", "Se registró curso: " + curso.getNombreCurso() +
+                    " - Grado: " + curso.getIdGrado() +
+                    " - Turno: " + curso.getTurno() +
+                    " - Alumnos actuales: " + curso.getAlumnosActuales());
+            redirectAttributes.addFlashAttribute("success", "✅ Curso '" + curso.getNombreCurso() +
+                    "' creado correctamente con " + curso.getAlumnosActuales() + " alumnos matriculados.");
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "✗ Error al guardar: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return "redirect:/admin/cursos";
@@ -727,12 +874,28 @@ public class AdminController {
                 }
             }
 
+            // ========== CALCULAR ALUMNOS ACTUALES ==========
+            long cantidadEstudiantes = matriculaRepository.countByEstadoAndIdGradoAndTurno(
+                    "ACTIVA",
+                    curso.getIdGrado(),
+                    curso.getTurno()
+            );
+            curso.setAlumnosActuales((int) cantidadEstudiantes);
+            System.out.println("✅ Alumnos actuales actualizados: " + cantidadEstudiantes);
+
+            if (curso.getCapacidadMaxima() == null) {
+                curso.setCapacidadMaxima(36);
+            }
+
             cursoRepository.save(curso);
-            registrarActividad(usuario, "EDITAR", "Curso", "Se actualizó curso: " + curso.getNombreCurso());
-            redirectAttributes.addFlashAttribute("success", "✅ Curso '" + curso.getNombreCurso() + "' actualizado correctamente");
+            registrarActividad(usuario, "EDITAR", "Curso", "Se actualizó curso: " + curso.getNombreCurso() +
+                    " - Alumnos actuales: " + curso.getAlumnosActuales());
+            redirectAttributes.addFlashAttribute("success", "✅ Curso '" + curso.getNombreCurso() +
+                    "' actualizado correctamente con " + curso.getAlumnosActuales() + " alumnos matriculados.");
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "✗ Error al actualizar: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return "redirect:/admin/cursos";
