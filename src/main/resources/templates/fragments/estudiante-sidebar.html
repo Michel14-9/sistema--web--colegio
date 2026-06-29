@@ -13,7 +13,7 @@
             <h5 th:text="${estudiante.nombres} + ' ' + ${estudiante.apellidoPaterno}"></h5>
             <p><i class="fas fa-id-card"></i> <span th:text="${estudiante.dni}">-</span></p>
             <p><i class="fas fa-envelope"></i> <span th:text="${estudiante.emailInstitucional}">-</span></p>
-            <p><i class="fas fa-graduation-cap"></i> Grado: <span th:text="${estudiante.idGrado}">-</span></p>
+            <p><i class="fas fa-graduation-cap"></i> Grado: <span th:text="${nombreGradoActual}">-</span></p>
         </div>
         <ul class="nav flex-column">
             <li class="nav-item">
@@ -22,25 +22,32 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" th:classappend="${modulo == 'cursos-disponibles'} ? 'active' : ''" href="/estudiante/cursos-disponibles">
-                    <i class="fas fa-book"></i> Cursos Disponibles
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:classappend="${modulo == 'docentes-disponibles'} ? 'active' : ''" href="/estudiante/docentes-disponibles">
-                    <i class="fas fa-chalkboard-user"></i> Docentes Disponibles
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" th:classappend="${modulo == 'mi-matricula'} ? 'active' : ''" href="/estudiante/matricula">
-                    <i class="fas fa-file-signature"></i> Mi Matrícula
-                </a>
-            </li>
-            <li class="nav-item">
-                <!-- ✅ CAMBIADO: href="/estudiante/cursos" en lugar de /estudiante/mis-cursos -->
                 <a class="nav-link" th:classappend="${modulo == 'mis-cursos'} ? 'active' : ''" href="/estudiante/cursos">
                     <i class="fas fa-book-open"></i> Mis Cursos
                     <span class="badge bg-success ms-1" th:text="${totalCursosInscritos}">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'mi-horario'} ? 'active' : ''" href="/estudiante/horario">
+                    <i class="fas fa-calendar-alt"></i> Mi Horario
+                </a>
+            </li>
+            <!-- Evaluación -->
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'mis-notas'} ? 'active' : ''" href="/estudiante/notas">
+                    <i class="fas fa-star"></i> Mis Notas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'mi-asistencia'} ? 'active' : ''" href="/estudiante/asistencia">
+                    <i class="fas fa-clipboard-check"></i> Asistencia
+                </a>
+            </li>
+
+
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'mi-matricula'} ? 'active' : ''" href="/estudiante/matricula">
+                    <i class="fas fa-file-signature"></i> Mi Matrícula
                 </a>
             </li>
         </ul>

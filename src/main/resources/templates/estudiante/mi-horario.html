@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Horario - Estudiante</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link th:href="@{/css/estudiante.css}" rel="stylesheet">
+</head>
+<body>
+
+<nav th:replace="~{fragments/estudiante-navbar :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/estudiante-sidebar :: sidebar}"></div>
+
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                    Mi Horario
+                </h1>
+                <div>
+                    <span class="text-muted" th:if="${nombreGradoActual != null}">
+                        <i class="fas fa-graduation-cap me-1"></i>
+                        Grado: <strong th:text="${nombreGradoActual}"></strong>
+                    </span>
+                    <span class="text-muted ms-3" th:if="${turnoActual != null}">
+                        <i class="fas fa-clock me-1"></i>
+                        Turno: <strong th:text="${turnoActual}"></strong>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mensaje si no tiene matrícula activa -->
+            <div th:if="${!tieneMatriculaActiva}" class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>No tienes una matrícula activa.</strong>
+                <p class="mb-0 mt-1">Para ver tu horario, primero debes matricularte.</p>
+                <a href="/estudiante/matricula" class="btn btn-success mt-2">
+                    <i class="fas fa-file-signature me-1"></i> Ver mi matrícula
+                </a>
+            </div>
+
+            <!-- Horario dinámico -->
+            <div th:if="${tieneMatriculaActiva}">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-clock me-2"></i> Horario de Clases</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 120px;">Hora</th>
+                                    <th th:each="dia : ${dias}" th:text="${dia}" class="text-center"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="hora : ${horasOrdenadas}">
+                                    <td>
+                                        <strong th:text="${horasFormateadas.get(hora)}"></strong>
+                                    </td>
+                                    <td th:each="dia : ${dias}">
+                                        <div th:each="curso : ${horarioPorDia.get(dia).get(hora)}">
+                                            <span class="badge bg-info d-block mb-1" th:text="${curso.nombreCurso}"></span>
+                                            <small class="text-muted" th:text="${curso.docente != null ? curso.docente.nombres + ' ' + curso.docente.apellidoPaterno : 'Sin docente'}"></small>
+                                            <small class="text-muted d-block" th:text="${curso.horario}"></small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${horasOrdenadas == null or horasOrdenadas.empty}">
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="fas fa-clock fa-3x text-muted d-block mb-2"></i>
+                                        <p class="text-muted">No hay cursos asignados para tu grado y turno.</p>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de cursos -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-primary">
+                                    <i class="fas fa-book me-2"></i>
+                                    Total Cursos
+                                </h5>
+                                <h2 class="display-6" th:text="${cursos != null ? cursos.size() : 0}">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-info">
+                                    <i class="fas fa-clock me-2"></i>
+                                    Turno
+                                </h5>
+                                <h2 class="display-6" th:text="${turnoActual != null ? turnoActual : 'Sin asignar'}">-</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
