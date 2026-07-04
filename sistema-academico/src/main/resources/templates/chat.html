@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Virtual - I.E. San Carlos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link th:href="@{/css/chat.css}" rel="stylesheet">
+</head>
+<body th:classappend="${embed} ? 'embed-mode' : ''">
+<div class="chat-container" id="chatContainer">
+
+    <div class="chat-header" th:unless="${embed}">
+        <i class="fas fa-robot"></i>
+        <div>
+            <h3>Asistente Virtual</h3>
+            <p>I.E. San Carlos</p>
+        </div>
+    </div>
+
+    <div class="chat-body" id="chatBody">
+        <div th:if="${error != null}" class="error-message" id="lastExchange">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <div th:if="${mostrarBienvenida}">
+            <div class="bienvenida" th:text="${bienvenida}"></div>
+        </div>
+
+        <div th:if="${pregunta != null}" id="lastExchange">
+            <div class="message user">
+                <strong><i class="fas fa-user"></i> Tú:</strong>
+                <div th:text="${pregunta}"></div>
+                <div class="timestamp" th:text="${#dates.format(#dates.createNow(), 'HH:mm')}"></div>
+            </div>
+
+            <!-- 🔥 id="lastResponse": aquí es donde debe aterrizar el scroll -->
+            <div th:if="${respuesta != null}" class="message bot" id="lastResponse">
+                <strong><i class="fas fa-robot"></i> Asistente:</strong>
+                <div class="respuesta-content" th:utext="${respuesta}"></div>
+                <div class="timestamp" th:text="${#dates.format(#dates.createNow(), 'HH:mm')}"></div>
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <div class="faq-section">
+        <h6><i class="fas fa-star" style="color: #f1c40f;"></i> Preguntas Frecuentes</h6>
+        <div>
+            <form method="post" th:action="@{/chat/preguntar}" style="display: inline;">
+                <input type="hidden" name="embed" th:value="${embed}">
+                <button type="submit" name="preguntaSeleccionada" value="Como me matriculo" class="faq-btn">📝 Matrícula</button>
+                <button type="submit" name="preguntaSeleccionada" value="Cual es la mensualidad" class="faq-btn">💰 Mensualidad</button>
+                <button type="submit" name="preguntaSeleccionada" value="Que documentos necesito" class="faq-btn">📋 Documentos</button>
+                <button type="submit" name="preguntaSeleccionada" value="Donde queda el colegio" class="faq-btn">📍 Ubicación</button>
+                <button type="submit" name="preguntaSeleccionada" value="Horario de clases" class="faq-btn">🕐 Horarios</button>
+                <button type="submit" name="preguntaSeleccionada" value="Que cursos hay" class="faq-btn">📚 Cursos</button>
+                <button type="submit" name="preguntaSeleccionada" value="Cuantos estudiantes hay" class="faq-btn">👨‍🎓 Estudiantes</button>
+                <button type="submit" name="preguntaSeleccionada" value="Que puedes hacer" class="faq-btn">🤖 Ayuda</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="chat-footer">
+        <form method="post" th:action="@{/chat/preguntar}" id="chatForm">
+            <input type="hidden" name="embed" th:value="${embed}">
+            <input type="text"
+                   name="pregunta"
+                   id="preguntaInput"
+                   placeholder="Escribe tu pregunta aquí..."
+                   required
+                   autocomplete="off">
+            <button type="submit" id="sendButton">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script th:src="@{/js/chat.js}"></script>
+</body>
+</html>

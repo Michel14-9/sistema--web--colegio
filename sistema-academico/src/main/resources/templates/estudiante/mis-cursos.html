@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Cursos - Estudiante</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link th:href="@{/css/estudiante.css}" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav th:replace="~{fragments/estudiante-navbar :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- SIDEBAR -->
+        <div th:replace="~{fragments/estudiante-sidebar :: sidebar}"></div>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="col-md-10 p-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-book me-2 text-primary"></i>
+                    Mis Cursos
+                </h1>
+                <div>
+                    <span class="badge bg-primary me-2" th:text="${totalCursosInscritos != null ? totalCursosInscritos : 0} + ' cursos'">0 cursos</span>
+                    <span class="text-muted" th:if="${nombreGradoActual != null}">
+                        <i class="fas fa-graduation-cap me-1"></i>
+                        Grado: <strong th:text="${nombreGradoActual}"></strong>
+                    </span>
+                    <span class="text-muted" th:unless="${nombreGradoActual != null}">
+                        <i class="fas fa-graduation-cap me-1"></i>
+                        Sin grado asignado
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mensaje si no tiene matrícula activa -->
+            <div th:if="${!tieneMatriculaActiva}" class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>No tienes una matrícula activa.</strong>
+                <p class="mb-0 mt-1">Para ver tus cursos, primero debes matricularte.</p>
+                <a href="/estudiante/matricula" class="btn btn-success mt-2">
+                    <i class="fas fa-file-signature me-1"></i> Ver mi matrícula
+                </a>
+            </div>
+
+            <!-- Mostrar cursos solo si tiene matrícula activa -->
+            <div th:if="${tieneMatriculaActiva}">
+                <!-- Filtros -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <form th:action="@{/estudiante/cursos}" method="get" class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label for="buscar" class="form-label">Buscar curso</label>
+                                <input type="text" id="buscar" name="buscar" class="form-control" placeholder="Nombre o código del curso">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="area" class="form-label">Área</label>
+                                <input type="text" id="area" name="area" class="form-control" placeholder="Filtrar por área">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-1"></i> Filtrar
+                                </button>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="/estudiante/cursos" class="btn btn-secondary w-100">
+                                    <i class="fas fa-undo me-1"></i> Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Grid de cursos -->
+                <div class="row">
+                    <div class="col-md-4 mb-4" th:each="curso : ${cursos}">
+                        <div class="card h-100 shadow-sm border-0 course-card">
+                            <div class="card-header bg-transparent border-0 pt-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge"
+                                          th:class="${curso.estado == 'ACTIVO' || curso.estado == 'ACTIVA' ? 'bg-success' : 'bg-secondary'}"
+                                          th:text="${curso.estado}">-</span>
+                                    <small class="text-muted">
+                                        <i class="fas fa-code me-1"></i>
+                                        <span th:text="${curso.codigoCurso}">-</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    <div class="course-icon-circle">
+                                        <i class="fas fa-book-open fa-3x text-primary"></i>
+                                    </div>
+                                </div>
+                                <h5 class="fw-bold text-center" th:text="${curso.nombreCurso}">-</h5>
+                                <p class="text-muted small text-center" th:text="${curso.descripcion ?: 'Sin descripción'}">-</p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="badge bg-info" th:text="${curso.area}">-</span>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        <span th:text="${curso.horasSemanales} + 'h'">-</span>
+                                    </small>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-chalkboard-user me-1"></i>
+                                        <span th:text="${curso.docente != null ? curso.docente.nombres + ' ' + curso.docente.apellidoPaterno : 'Sin asignar'}">-</span>
+                                    </small>
+                                </div>
+                                <div class="mt-2" th:if="${curso.horario != null}">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar-alt me-1"></i>
+                                        <span th:text="${curso.horario}">-</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 text-center pb-3">
+                                <a th:href="@{/estudiante/curso/{id}/detalle(id=${curso.idCurso})}"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i> Ver detalle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje cuando no hay cursos -->
+                    <div th:if="${cursos == null or cursos.empty}" class="col-12">
+                        <div class="alert alert-info text-center py-5">
+                            <i class="fas fa-book-open fa-4x mb-3 d-block text-muted"></i>
+                            <h5>No tienes cursos asignados</h5>
+                            <p th:if="${nombreGradoActual == null}">No tienes un grado asignado. Contacta con el administrador.</p>
+                            <p th:if="${nombreGradoActual != null}">No hay cursos disponibles para tu grado: <strong th:text="${nombreGradoActual}"></strong>.</p>
+                            <a href="/estudiante/matricula" class="btn btn-success mt-2">
+                                <i class="fas fa-file-signature me-1"></i> Ver mi matrícula
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de cursos -->
+            <div class="row mt-3" th:if="${tieneMatriculaActiva and cursos != null and !cursos.empty}">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-primary">
+                                <i class="fas fa-book me-2"></i>
+                                Total Cursos
+                            </h5>
+                            <h2 class="display-6" th:text="${cursos != null ? cursos.size() : 0}">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Cursos Activos
+                            </h5>
+                            <h2 class="display-6" th:text="${cursosActivos}">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-info">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                Mi Grado
+                            </h5>
+                            <h2 class="display-6" th:text="${nombreGradoActual != null ? nombreGradoActual : 'Sin grado'}">-</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    .course-card {
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+    .course-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+    }
+    .course-icon-circle {
+        width: 70px;
+        height: 70px;
+        background: rgba(44, 62, 122, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+</style>
+</body>
+</html>
