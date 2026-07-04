@@ -34,7 +34,7 @@ public class HtmlAnalyzerService {
      */
     public String analizarVista(String html, String nombreArchivo) {
         StringBuilder guia = new StringBuilder();
-        guia.append("📋 **Guía para ").append(obtenerTitulo(html, nombreArchivo)).append("**\n\n");
+        guia.append(" **Guía para ").append(obtenerTitulo(html, nombreArchivo)).append("**\n\n");
 
         List<String> pasos = new ArrayList<>();
         int pasoNumero = 1;
@@ -92,8 +92,8 @@ public class HtmlAnalyzerService {
             guia.append("🔹 ").append(paso).append("\n");
         }
 
-        guia.append("\n📌 **Recuerda:** Sigue estos pasos para completar el proceso correctamente.");
-        guia.append("\n🔗 **Volver al inicio:** [Inicio](/)");
+        guia.append("\n **Recuerda:** Sigue estos pasos para completar el proceso correctamente.");
+        guia.append("\n **Volver al inicio:** [Inicio](/)");
 
         return guia.toString();
     }

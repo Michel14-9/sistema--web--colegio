@@ -1,0 +1,69 @@
+# Secretos y variables de entorno
+.env
+.env.*
+*.env
+*.secret
+application-secret.properties
+application-secret.yml
+**/application-secret.properties
+
+# Compilación y build
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# STS (Spring Tool Suite)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+**/.idea/
+**/*.iml
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# VS Code
+.vscode/
+**/.vscode/
+
+# Logs
+*.log
+*.tmp
+*.temp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# Backup de bases de datos
+*.sql
+*.backup
+*.dump
+
+# Uploads
+uploads/
+**/uploads/
+!uploads/.gitkeep

@@ -40,7 +40,7 @@ public class ConsultaService {
         String preguntaLower = pregunta.toLowerCase().trim();
 
         // ============================================================
-        // 🔥 PRIORIDAD 1: GUÍA DE MATRÍCULA
+        //  PRIORIDAD 1: GUÍA DE MATRÍCULA
         // ============================================================
         boolean esMatricula = preguntaLower.contains("matricula") ||
                 preguntaLower.contains("matriculo") ||
@@ -59,7 +59,7 @@ public class ConsultaService {
                 preguntaLower.contains("guía");
 
         if (esMatricula && esGuia) {
-            System.out.println("✅ CONSULTA SERVICE - Capturada pregunta de matrícula!");
+            System.out.println(" CONSULTA SERVICE - Capturada pregunta de matrícula!");
             return generarGuiaMatriculaVirtual();
         }
 
@@ -76,9 +76,9 @@ public class ConsultaService {
         // 3. MENSUALIDAD
         // ============================================================
         if (preguntaLower.matches(".*(mensualidad|pension|cuota|pago mensual|costo mensual|cuanto cuesta|cual es el costo).*")) {
-            return "💰 **Mensualidad - I.E. San Carlos**\n" +
+            return " **Mensualidad - I.E. San Carlos**\n" +
                     "La mensualidad es de **S/. 200.00**\n\n" +
-                    "📌 El pago se realiza en el banco y se adjunta el voucher en el formulario de matrícula.";
+                    " El pago se realiza en el banco y se adjunta el voucher en el formulario de matrícula.";
         }
 
         // ============================================================
@@ -89,36 +89,33 @@ public class ConsultaService {
                 preguntaLower.contains("necesita")) &&
                 (preguntaLower.contains("matricula") || preguntaLower.contains("matrícula") ||
                         preguntaLower.contains("inscripcion") || preguntaLower.contains("matricular"))) {
-            return "📋 **Documentos necesarios para matrícula:**\n" +
-                    "1. DNI del estudiante (escaneado o foto)\n" +
-                    "2. Partida de nacimiento (escaneada o foto)\n" +
-                    "3. Certificado de estudios del año anterior (escaneado)\n" +
-                    "4. 2 fotos tamaño carnet (formato digital)\n" +
-                    "5. DNI del apoderado (escaneado o foto)\n" +
-                    "6. Voucher de pago de matrícula (S/. 200.00)\n\n" +
-                    "📌 Todos los documentos se adjuntan en el formulario de matrícula virtual.";
+            return " **Documentos necesarios para matrícula:**\n" +
+
+
+                    "1. Voucher de pago de matrícula (S/. 200.00)\n\n" +
+                    " Todos los documentos se adjuntan en el formulario de matrícula virtual.";
         }
 
         // ============================================================
         // 5. CONTACTO Y UBICACIÓN
         // ============================================================
         if (preguntaLower.matches(".*(contacto|telefono|correo|email|direccion|ubicacion|donde queda|donde esta|ubicado).*")) {
-            return "📞 **Contacto I.E. San Carlos**\n" +
-                    "📍 Dirección: Independencia 397-291, Ica - Perú\n" +
-                    "📞 Teléfono: (056) 123456\n" +
-                    "✉️ Email: info@iesancarlos.edu.pe\n" +
-                    "🕐 Atención: Lunes a Viernes de 8:00 AM a 5:00 PM";
+            return " **Contacto I.E. San Carlos**\n" +
+                    " Dirección: Independencia 397-291, Ica - Perú\n" +
+                    " Teléfono: (056) 123456\n" +
+                    " Email: info@iesancarlos.edu.pe\n" +
+                    " Atención: Lunes a Viernes de 8:00 AM a 5:00 PM";
         }
 
         // ============================================================
         // 6. HORARIOS
         // ============================================================
         if (preguntaLower.matches(".*(horario|clases|turno|hora|a que hora).*")) {
-            return "📅 **Horario General de Clases**\n" +
+            return " **Horario General de Clases**\n" +
                     "Turno Mañana: 8:00 AM - 1:00 PM\n" +
                     "Turno Tarde: 2:00 PM - 7:00 PM\n" +
                     "Recreo: 10:00 AM - 10:30 AM\n\n" +
-                    "📌 Los horarios específicos se asignan al momento de la matrícula.";
+                    " Los horarios específicos se asignan al momento de la matrícula.";
         }
 
         // ============================================================
@@ -126,7 +123,7 @@ public class ConsultaService {
         // ============================================================
         if (preguntaLower.matches(".*(cuantos|cantidad|total|numero|cuántos).*(estudiante|alumno).*")) {
             long total = estudianteRepository.count();
-            return "📊 Hay un total de **" + total + " estudiantes** registrados en el sistema.";
+            return " Hay un total de **" + total + " estudiantes** registrados en el sistema.";
         }
 
         // ============================================================
@@ -134,7 +131,7 @@ public class ConsultaService {
         // ============================================================
         if (preguntaLower.matches(".*(cuantos|cantidad|total|numero|cuántos).*(docente|profesor).*")) {
             long total = docenteRepository.count();
-            return "📊 Hay un total de **" + total + " docentes** registrados en el sistema.";
+            return " Hay un total de **" + total + " docentes** registrados en el sistema.";
         }
 
         // ============================================================
@@ -142,7 +139,7 @@ public class ConsultaService {
         // ============================================================
         if (preguntaLower.matches(".*(cuantos|cantidad|total|numero|cuántos).*(curso|materia|asignatura).*")) {
             long total = cursoRepository.count();
-            return "📊 Hay un total de **" + total + " cursos** disponibles en el sistema.";
+            return " Hay un total de **" + total + " cursos** disponibles en el sistema.";
         }
 
         // ============================================================
@@ -153,7 +150,7 @@ public class ConsultaService {
             if (cursos.isEmpty()) {
                 return "No hay cursos registrados en el sistema.";
             }
-            StringBuilder sb = new StringBuilder("📋 **Cursos disponibles:**\n\n");
+            StringBuilder sb = new StringBuilder(" **Cursos disponibles:**\n\n");
             int count = 0;
             for (Curso c : cursos) {
                 if (count >= 15) {
@@ -186,18 +183,18 @@ public class ConsultaService {
                 long count = todasMatriculas.stream()
                         .filter(m -> m.getAnioAcademico() != null && m.getAnioAcademico().equals(anioBuscado))
                         .count();
-                return "📊 En el año **" + anioBuscado + "** hay **" + count + " matrículas** registradas.";
+                return " En el año **" + anioBuscado + "** hay **" + count + " matrículas** registradas.";
             }
 
             long countActual = todasMatriculas.stream()
                     .filter(m -> m.getAnioAcademico() != null && m.getAnioAcademico().equals(anioActual))
                     .count();
 
-            return "📊 **Información de Matrículas**\n" +
+            return " **Información de Matrículas**\n" +
                     "• Total: **" + totalMatriculas + "**\n" +
                     "• Año " + anioActual + ": **" + countActual + "**\n" +
                     "• Las matrículas son **virtuales**\n\n" +
-                    "💡 'Como me matriculo' → Ver guía completa";
+                    " 'Como me matriculo' → Ver guía completa";
         }
 
         // ============================================================
@@ -282,7 +279,7 @@ public class ConsultaService {
     // ============================================================
     // MÉTODO PARA CONVERTIR ID DE GRADO A TEXTO (SISTEMA PERUANO)
     // ============================================================
-    // ✅ ESTE MÉTODO ESTÁ FUERA DE buscarRespuesta() - ¡CORRECTO!
+    //  ESTE MÉTODO ESTÁ FUERA DE buscarRespuesta() - ¡CORRECTO!
     // ============================================================
 
     private String convertirGrado(Integer idGrado) {
