@@ -1,0 +1,97 @@
+services:
+  # Base de datos para el chatbot
+  chatbot-db:
+    image: postgres:15-alpine
+    container_name: chatbot-postgres
+    environment:
+      - POSTGRES_DB=chatbot_colegio
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5433:5432"
+    volumes:
+      - chatbot-db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Base de datos para el sistema académico
+  academico-db:
+    image: postgres:15-alpine
+    container_name: academico-postgres
+    environment:
+      - POSTGRES_DB=sistema_academico
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5434:5432"
+    volumes:
+      - academico-db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Servicio del chatbot
+  chatbot-colegio:
+    build:
+      context: ./chatbot-colegio
+      dockerfile: Dockerfile
+    container_name: chatbot-service
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://chatbot-db:5432/chatbot_colegio
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_PROFILES_ACTIVE=docker
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    depends_on:
+      chatbot-db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    volumes:
+      - chatbot-uploads:/app/uploads
+
+  # Servicio del sistema académico
+  sistema-academico:
+    build:
+      context: ./sistema-academico
+      dockerfile: Dockerfile
+    container_name: academico-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://academico-db:5432/sistema_academico
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_MAIL_USERNAME=michelchacayanavarro@gmail.com
+      - SPRING_MAIL_PASSWORD=deygwsyjxwornjrt
+      - CHATBOT_URL=http://chatbot-service:8090/api/chat
+    depends_on:
+      academico-db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  chatbot-db-data:
+  academico-db-data:
+  chatbot-uploads:
+
+networks:
+  app-network:
+    driver: bridge
