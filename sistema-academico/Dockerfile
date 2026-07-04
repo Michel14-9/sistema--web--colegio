@@ -34,12 +34,11 @@ USER appuser
 
 EXPOSE 8080
 
-# Variables de entorno
+# Variables de entorno (sin credenciales hardcodeadas)
 ENV SPRING_DATASOURCE_URL=jdbc:postgresql://academico-db:5432/sistema_academico
 ENV SPRING_DATASOURCE_USERNAME=postgres
 ENV SPRING_DATASOURCE_PASSWORD=admin
 ENV SPRING_PROFILES_ACTIVE=docker
-ENV SPRING_MAIL_USERNAME=michelchacayanavarro@gmail.com
-ENV SPRING_MAIL_PASSWORD=deygwsyjxwornjrt
+# SPRING_MAIL_USERNAME y SPRING_MAIL_PASSWORD se pasan desde docker-compose.yml
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

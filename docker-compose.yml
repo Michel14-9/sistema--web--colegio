@@ -4,9 +4,9 @@ services:
     image: postgres:15-alpine
     container_name: chatbot-postgres
     environment:
-      - POSTGRES_DB=chatbot_colegio
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=${CHATBOT_DB_NAME}
+      - POSTGRES_USER=${SPRING_DATASOURCE_USERNAME}
+      - POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -25,9 +25,9 @@ services:
     image: postgres:15-alpine
     container_name: academico-postgres
     environment:
-      - POSTGRES_DB=sistema_academico
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=${ACADEMICO_DB_NAME}
+      - POSTGRES_USER=${SPRING_DATASOURCE_USERNAME}
+      - POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
     ports:
       - "5434:5432"
     volumes:
@@ -50,9 +50,9 @@ services:
     ports:
       - "8090:8090"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://chatbot-db:5432/chatbot_colegio
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://chatbot-db:5432/${CHATBOT_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
       - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
@@ -73,12 +73,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://academico-db:5432/sistema_academico
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://academico-db:5432/${ACADEMICO_DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_MAIL_USERNAME=michelchacayanavarro@gmail.com
-      - SPRING_MAIL_PASSWORD=deygwsyjxwornjrt
+      - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
+      - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
       - CHATBOT_URL=http://chatbot-service:8090/api/chat
     depends_on:
       academico-db:
