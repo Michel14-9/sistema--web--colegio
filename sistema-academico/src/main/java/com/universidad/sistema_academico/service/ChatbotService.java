@@ -1,6 +1,7 @@
 package com.universidad.sistema_academico.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
@@ -14,8 +15,11 @@ public class ChatbotService {
     @Autowired
     private RestTemplate restTemplate;
 
-    // URL del chatbot (puerto 8090)
-    private final String CHATBOT_URL = "http://localhost:8090/api/chat";
+
+
+
+    @Value("${chatbot.api.url:http://localhost:8090/api/chat}")
+    private String CHATBOT_URL;
 
     /**
      * Envía una pregunta al chatbot y obtiene la respuesta
@@ -24,6 +28,7 @@ public class ChatbotService {
         try {
             System.out.println("📤 MONOLITO - Enviando pregunta al chatbot: " + pregunta);
             System.out.println("👤 MONOLITO - Usuario: " + usuario);
+            System.out.println("🔗 MONOLITO - URL del chatbot: " + CHATBOT_URL);
 
             // 1. Preparar la petición
             Map<String, String> request = new HashMap<>();
