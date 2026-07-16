@@ -274,7 +274,7 @@ public class AdminController {
     public String mostrarFormularioNuevoDocente(Model model) {
         model.addAttribute("docente", new Docente());
         model.addAttribute("especialidades", getEspecialidadesList());
-        return "admin/docente-form";
+        return "redirect:/admin/docentes";
     }
 
     @PostMapping("/docente/guardar")
@@ -653,6 +653,12 @@ public class AdminController {
         long cursosSinDocente = todosCursos.stream().filter(c -> c.getIdDocente() == null || c.getIdDocente() == 0).count();
         int totalCupos = todosCursos.stream().mapToInt(c -> c.getCapacidadMaxima() != null ? c.getCapacidadMaxima() : 36).sum();
 
+        // Crear mapa de nombres de grado
+        Map<Integer, String> nombresGrados = new HashMap<>();
+        for (int i = 1; i <= 11; i++) {
+            nombresGrados.put(i, obtenerNombreGrado(i));
+        }
+
         model.addAttribute("cursos", cursosPage.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", cursosPage.getTotalPages());
@@ -670,6 +676,7 @@ public class AdminController {
         model.addAttribute("cursosSinDocente", cursosSinDocente);
         model.addAttribute("totalCupos", totalCupos);
         model.addAttribute("docentes", docenteRepository.findAll());
+        model.addAttribute("nombresGrados", nombresGrados); // Agregar esto
 
         return "admin/cursos";
     }
@@ -678,7 +685,7 @@ public class AdminController {
     public String mostrarFormularioNuevoCurso(Model model) {
         model.addAttribute("curso", new Curso());
         model.addAttribute("docentes", docenteRepository.findAll());
-        return "admin/curso-form";
+        return "admin/cursos";
     }
 
     @PostMapping("/curso/guardar")
@@ -1030,9 +1037,21 @@ public class AdminController {
 
     @GetMapping("/solicitudes")
     public String listarSolicitudes(Model model) {
-        model.addAttribute("pendientes", solicitudMatriculaService.listarPendientes());
-        model.addAttribute("aprobadas", solicitudMatriculaService.listarAprobadas());
-        model.addAttribute("rechazadas", solicitudMatriculaService.listarRechazadas());
+        List<SolicitudMatricula> pendientes = solicitudMatriculaService.listarPendientes();
+        List<SolicitudMatricula> aprobadas = solicitudMatriculaService.listarAprobadas();
+        List<SolicitudMatricula> rechazadas = solicitudMatriculaService.listarRechazadas();
+
+        // Crear mapa de nombres de grado para todas las solicitudes
+        Map<Integer, String> nombresGrados = new HashMap<>();
+        for (int i = 1; i <= 11; i++) {
+            nombresGrados.put(i, obtenerNombreGrado(i));
+        }
+
+        model.addAttribute("pendientes", pendientes);
+        model.addAttribute("aprobadas", aprobadas);
+        model.addAttribute("rechazadas", rechazadas);
+        model.addAttribute("nombresGrados", nombresGrados); // ✅ Agregar esto
+
         return "admin/solicitudes";
     }
 
@@ -1047,8 +1066,13 @@ public class AdminController {
             voucherFilename = cleanPath.substring(cleanPath.lastIndexOf("/") + 1);
         }
 
+
+        String nombreGrado = obtenerNombreGrado(solicitud.getIdGrado());
+
         model.addAttribute("solicitud", solicitud);
         model.addAttribute("voucherFilename", voucherFilename);
+        model.addAttribute("nombreGrado", nombreGrado);
+
         return "admin/solicitud-detalle";
     }
 

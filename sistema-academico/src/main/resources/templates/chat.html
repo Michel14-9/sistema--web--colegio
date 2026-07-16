@@ -3,20 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente Virtual - I.E. San Carlos</title>
+    <title>Asistente Estudiantil - I.E. San Carlos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/chat.css}" rel="stylesheet">
 </head>
 <body th:classappend="${embed} ? 'embed-mode' : ''">
 <div class="chat-container" id="chatContainer">
 
     <div class="chat-header" th:unless="${embed}">
-        <i class="fas fa-robot"></i>
-        <div>
-            <h3>Asistente Virtual</h3>
-            <p>I.E. San Carlos</p>
+        <i class="fas fa-graduation-cap header-icon"></i>
+        <div class="header-info">
+            <h3>
+                I.E. San Carlos
+                <span class="school-star">⭐</span>
+            </h3>
+            <p>
+                <i class="fas fa-robot" style="font-size: 0.7rem; opacity: 0.7;"></i>
+                Asistente Estudiantil
+            </p>
         </div>
+        <span class="badge">
+            <i class="fas fa-circle" style="color: #4ade80; font-size: 0.5rem;"></i>
+            En línea
+        </span>
     </div>
 
     <div class="chat-body" id="chatBody">
@@ -31,14 +44,19 @@
 
         <div th:if="${pregunta != null}" id="lastExchange">
             <div class="message user">
-                <strong><i class="fas fa-user"></i> Tú:</strong>
+                <div class="message-header">
+                    <span class="message-emoji">👤</span>
+                    <span>Tú</span>
+                </div>
                 <div th:text="${pregunta}"></div>
                 <div class="timestamp" th:text="${#dates.format(#dates.createNow(), 'HH:mm')}"></div>
             </div>
 
-            <!-- 🔥 id="lastResponse": aquí es donde debe aterrizar el scroll -->
             <div th:if="${respuesta != null}" class="message bot" id="lastResponse">
-                <strong><i class="fas fa-robot"></i> Asistente:</strong>
+                <div class="message-header">
+                    <span class="message-emoji">🎓</span>
+                    <span style="color: var(--primary-color);">Asistente</span>
+                </div>
                 <div class="respuesta-content" th:utext="${respuesta}"></div>
                 <div class="timestamp" th:text="${#dates.format(#dates.createNow(), 'HH:mm')}"></div>
             </div>
@@ -52,9 +70,12 @@
     </div>
 
     <div class="faq-section">
-        <h6><i class="fas fa-star" style="color: #f1c40f;"></i> Preguntas Frecuentes</h6>
-        <div>
-            <form method="post" th:action="@{/chat/preguntar}" style="display: inline;">
+        <div class="faq-header">
+            <i class="fas fa-star"></i>
+            Preguntas Rápidas
+        </div>
+        <div class="faq-grid">
+            <form method="post" th:action="@{/chat/preguntar}" style="display: contents;">
                 <input type="hidden" name="embed" th:value="${embed}">
                 <button type="submit" name="preguntaSeleccionada" value="Como me matriculo" class="faq-btn">📝 Matrícula</button>
                 <button type="submit" name="preguntaSeleccionada" value="Cual es la mensualidad" class="faq-btn">💰 Mensualidad</button>
@@ -74,11 +95,12 @@
             <input type="text"
                    name="pregunta"
                    id="preguntaInput"
-                   placeholder="Escribe tu pregunta aquí..."
+                   placeholder="Escribe tu mensaje..."
                    required
                    autocomplete="off">
             <button type="submit" id="sendButton">
                 <i class="fas fa-paper-plane"></i>
+                <span>Enviar</span>
             </button>
         </form>
     </div>

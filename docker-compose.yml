@@ -45,7 +45,7 @@ services:
   chatbot-colegio:
     build:
       context: ./chatbot-colegio
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: chatbot-service
     ports:
       - "8090:8090"
@@ -63,12 +63,15 @@ services:
     restart: unless-stopped
     volumes:
       - chatbot-uploads:/app/uploads
+      - ./chatbot-colegio:/app
+      - ~/.m2:/root/.m2
+    command: ./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
 
   # Servicio del sistema académico
   sistema-academico:
     build:
       context: ./sistema-academico
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: academico-service
     ports:
       - "8080:8080"
@@ -80,12 +83,18 @@ services:
       - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
       - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
       - CHATBOT_URL=http://chatbot-service:8090/api/chat
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+      - SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
     depends_on:
       academico-db:
         condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
+    volumes:
+      - ./sistema-academico:/app
+      - ~/.m2:/root/.m2
+    command: ./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
 
 volumes:
   chatbot-db-data:

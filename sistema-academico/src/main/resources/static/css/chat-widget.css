@@ -1,142 +1,530 @@
-.chat-toggle-btn {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #1a3a5c, #2a6a9e);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    box-shadow: 0 6px 25px rgba(42, 106, 158, 0.4);
-    z-index: 9999;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.chat-toggle-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 8px 35px rgba(42, 106, 158, 0.6);
-}
-.chat-toggle-btn i {
-    font-size: 28px;
-    color: white;
-}
-.chat-toggle-btn .chat-badge {
-    position: absolute;
-    top: 5px;
-    right: 8px;
-    width: 12px;
-    height: 12px;
-    background: #4CAF50;
-    border-radius: 50%;
-    border: 2px solid white;
-    animation: pulse 2s infinite;
-}
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.3); }
+/* ===== VARIABLES ===== */
+:root {
+    --primary-gradient: linear-gradient(135deg, #0f2b5c 0%, #1a4a8a 50%, #2b6cb0 100%);
+    --primary-color: #1a4a8a;
+    --primary-light: #2b6cb0;
+    --primary-dark: #0f2b5c;
+    --accent-color: #ecc94b;
+    --accent-gradient: linear-gradient(135deg, #f6ad55 0%, #ecc94b 100%);
+    --bg-white: #ffffff;
+    --bg-light: #f0f4f8;
+    --bg-dark: #0f2b5c;
+    --text-dark: #1a202c;
+    --text-light: #4a5568;
+    --shadow-color: rgba(15, 43, 92, 0.3);
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --shadow-lg: 0 25px 80px rgba(15, 43, 92, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
+/* ===== BOTÓN FLOTANTE - CON LOGO DE COLEGIO ===== */
+.chat-toggle-btn {
+    position: fixed !important;
+    bottom: 28px !important;
+    right: 28px !important;
+    left: auto !important;
+    width: 72px !important;
+    height: 72px !important;
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    border: 3px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    box-shadow:
+        0 8px 32px rgba(15, 43, 92, 0.4),
+        0 0 0 0 rgba(15, 43, 92, 0.2) !important;
+    z-index: 999999 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    transition: var(--transition) !important;
+    overflow: hidden !important;
+}
+
+.chat-toggle-btn::before {
+    content: '🏫' !important;
+    position: absolute !important;
+    font-size: 40px !important;
+    opacity: 0.08 !important;
+    right: -8px !important;
+    bottom: -8px !important;
+    pointer-events: none !important;
+}
+
+.chat-toggle-btn::after {
+    content: '' !important;
+    position: absolute !important;
+    inset: -6px !important;
+    border-radius: 50% !important;
+    background: rgba(15, 43, 92, 0.12) !important;
+    animation: pulse-ring 2.5s ease-in-out infinite !important;
+    z-index: 0 !important;
+}
+
+.chat-toggle-btn:hover {
+    transform: scale(1.1) !important;
+    box-shadow:
+        0 12px 40px rgba(15, 43, 92, 0.5),
+        0 0 0 0 rgba(15, 43, 92, 0.3) !important;
+}
+
+.chat-toggle-btn:active {
+    transform: scale(0.92) !important;
+}
+
+.chat-toggle-btn .chat-icon-wrapper {
+    position: relative !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.chat-toggle-btn .chat-icon-wrapper i {
+    font-size: 30px !important;
+    color: white !important;
+    transition: var(--transition) !important;
+}
+
+.chat-toggle-btn .chat-icon-wrapper .logo-small {
+    position: absolute !important;
+    font-size: 16px !important;
+    bottom: -8px !important;
+    right: -12px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    padding: 2px !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.chat-toggle-btn.open .chat-icon-wrapper i {
+    transform: rotate(180deg) !important;
+}
+
+/* ===== BADGE ===== */
+.chat-toggle-btn .chat-badge {
+    position: absolute !important;
+    top: 4px !important;
+    right: 6px !important;
+    width: 14px !important;
+    height: 14px !important;
+    background: #f56565 !important;
+    border-radius: 50% !important;
+    border: 2px solid white !important;
+    z-index: 3 !important;
+    animation: badge-pulse 2s ease-in-out infinite !important;
+    box-shadow: 0 0 16px rgba(245, 101, 101, 0.5) !important;
+}
+
+.chat-badge.has-messages {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #f56565 !important;
+    color: white !important;
+    border-radius: 50% !important;
+    animation: badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+@keyframes badge-pop {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+@keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+@keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ===== WIDGET DEL CHAT ===== */
 .chat-widget {
-    position: fixed;
-    bottom: 100px;
-    right: 30px;
-    width: 380px;
-    height: 520px;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.25);
-    z-index: 9998;
-    display: none;
-    overflow: hidden;
-    border: 1px solid #e9ecef;
-    flex-direction: column;
-    animation: slideUp 0.3s ease;
+    position: fixed !important;
+    bottom: 110px !important;
+    right: 28px !important;
+    left: auto !important;
+    width: 420px !important;
+    height: 620px !important;
+    max-height: calc(100vh - 150px) !important;
+    background: var(--bg-white) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-lg) !important;
+    z-index: 999998 !important;
+    display: none !important;
+    overflow: hidden !important;
+    flex-direction: column !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
 }
+
 .chat-widget.active {
-    display: flex;
+    display: flex !important;
+    animation: widget-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
 }
-@keyframes slideUp {
+
+@keyframes widget-slide-up {
     from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
+        opacity: 0 !important;
+        transform: scale(0.9) translateY(30px) !important;
     }
     to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+        opacity: 1 !important;
+        transform: scale(1) translateY(0) !important;
     }
 }
 
+/* ===== HEADER CON LOGO ===== */
 .chat-widget-header {
-    background: linear-gradient(135deg, #1a3a5c, #2a6a9e);
-    color: white;
-    padding: 14px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
+    background: var(--primary-gradient) !important;
+    color: white !important;
+    padding: 18px 22px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    min-height: 85px !important;
 }
+
+.chat-widget-header::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -60% !important;
+    right: -10% !important;
+    width: 200px !important;
+    height: 200px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 50% !important;
+    pointer-events: none !important;
+}
+
+.chat-widget-header::after {
+    content: '🎓' !important;
+    position: absolute !important;
+    font-size: 80px !important;
+    opacity: 0.06 !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    pointer-events: none !important;
+}
+
 .chat-widget-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    font-size: 16px;
-}
-.chat-widget-title i {
-    font-size: 20px;
-}
-.chat-widget-close {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 0 5px;
-    opacity: 0.8;
-    transition: opacity 0.3s;
-}
-.chat-widget-close:hover {
-    opacity: 1;
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    position: relative !important;
+    z-index: 1 !important;
 }
 
+/* ===== LOGO DEL COLEGIO EN EL HEADER ===== */
+.chat-widget-title .school-logo {
+    width: 52px !important;
+    height: 52px !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    backdrop-filter: blur(10px) !important;
+    flex-shrink: 0 !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    font-size: 28px !important;
+    position: relative !important;
+    transition: var(--transition) !important;
+}
+
+.chat-widget-title .school-logo:hover {
+    transform: scale(1.05) !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+}
+
+.chat-widget-title .school-logo::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: -2px !important;
+    right: -2px !important;
+    width: 14px !important;
+    height: 14px !important;
+    background: #48bb78 !important;
+    border-radius: 50% !important;
+    border: 2px solid #1a4a8a !important;
+    animation: status-blink 1.5s ease-in-out infinite !important;
+}
+
+.chat-widget-title .school-info {
+    display: flex !important;
+    flex-direction: column !important;
+    line-height: 1.3 !important;
+}
+
+.chat-widget-title .school-info .school-name {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.3px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.chat-widget-title .school-info .school-name .school-emblem {
+    font-size: 14px !important;
+}
+
+.chat-widget-title .school-info .assistant-label {
+    font-size: 11px !important;
+    opacity: 0.85 !important;
+    font-weight: 400 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.assistant-label .status-dot {
+    width: 7px !important;
+    height: 7px !important;
+    background: #48bb78 !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    animation: status-blink 1.5s ease-in-out infinite !important;
+}
+
+.assistant-label .assistant-emoji {
+    font-size: 14px !important;
+}
+
+@keyframes status-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ===== ACCIONES DEL HEADER ===== */
+.chat-widget-actions {
+    display: flex !important;
+    gap: 6px !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.chat-widget-actions button {
+    width: 34px !important;
+    height: 34px !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: white !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: var(--transition) !important;
+    backdrop-filter: blur(10px) !important;
+    font-size: 14px !important;
+}
+
+.chat-widget-actions button:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
+}
+
+.chat-widget-actions .btn-close:hover {
+    background: rgba(245, 101, 101, 0.4) !important;
+}
+
+/* ===== BODY ===== */
 .chat-widget-body {
-    flex: 1;
-    overflow: hidden;
-}
-.chat-widget-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
+    flex: 1 !important;
+    overflow: hidden !important;
+    background: var(--bg-light) !important;
+    position: relative !important;
 }
 
+.chat-widget-body::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background:
+        radial-gradient(ellipse at 20% 50%, rgba(43, 108, 176, 0.03) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 50%, rgba(236, 201, 75, 0.03) 0%, transparent 60%) !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+.chat-widget-body.loading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.chat-widget-body.loading::after {
+    content: '📚' !important;
+    font-size: 48px !important;
+    animation: loading-bounce 0.8s ease-in-out infinite !important;
+    z-index: 1 !important;
+}
+
+@keyframes loading-bounce {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.2) rotate(10deg); }
+}
+
+.chat-widget-iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    background: var(--bg-light) !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* ===== FOOTER ===== */
+.chat-widget-footer {
+    padding: 10px 22px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.04) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    flex-shrink: 0 !important;
+    font-size: 10px !important;
+    color: var(--text-light) !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px !important;
+}
+
+.chat-widget-footer span {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.chat-widget-footer i {
+    font-size: 11px !important;
+    opacity: 0.5 !important;
+}
+
+.chat-widget-footer .footer-logo {
+    font-weight: 600 !important;
+    color: var(--primary-color) !important;
+    background: rgba(15, 43, 92, 0.05) !important;
+    padding: 2px 12px !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .chat-toggle-btn {
-        width: 55px;
-        height: 55px;
-        bottom: 20px;
-        right: 20px;
+        bottom: 20px !important;
+        right: 20px !important;
+        width: 60px !important;
+        height: 60px !important;
     }
-    .chat-toggle-btn i {
-        font-size: 24px;
+    .chat-toggle-btn .chat-icon-wrapper i {
+        font-size: 24px !important;
+    }
+    .chat-toggle-btn .chat-icon-wrapper .logo-small {
+        font-size: 14px !important;
+        bottom: -6px !important;
+        right: -10px !important;
     }
     .chat-widget {
-        width: calc(100% - 20px);
-        height: calc(100% - 120px);
-        right: 10px;
-        bottom: 80px;
-        border-radius: 12px;
+        width: calc(100% - 24px) !important;
+        height: calc(100vh - 120px) !important;
+        right: 12px !important;
+        bottom: 84px !important;
+        border-radius: var(--radius-md) !important;
+    }
+    .chat-widget-header {
+        padding: 14px 16px !important;
+        min-height: 70px !important;
+    }
+    .chat-widget-title .school-logo {
+        width: 42px !important;
+        height: 42px !important;
+        font-size: 22px !important;
+    }
+    .chat-widget-title .school-info .school-name {
+        font-size: 14px !important;
+    }
+    .chat-widget-actions button {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 12px !important;
+    }
+    .chat-widget-footer {
+        display: none !important;
     }
 }
+
 @media (max-width: 480px) {
+    .chat-toggle-btn {
+        bottom: 16px !important;
+        right: 16px !important;
+        width: 54px !important;
+        height: 54px !important;
+    }
+    .chat-toggle-btn .chat-icon-wrapper i {
+        font-size: 20px !important;
+    }
+    .chat-toggle-btn .chat-icon-wrapper .logo-small {
+        font-size: 12px !important;
+        bottom: -4px !important;
+        right: -8px !important;
+    }
+    .chat-toggle-btn::before {
+        display: none !important;
+    }
     .chat-widget {
-        width: 100%;
-        height: calc(100% - 70px);
-        right: 0;
-        bottom: 70px;
-        border-radius: 0;
+        width: 100% !important;
+        height: calc(100vh - 72px) !important;
+        right: 0 !important;
+        bottom: 68px !important;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+    .chat-widget-header {
+        padding: 12px 14px !important;
+        border-radius: 0 !important;
+        min-height: 60px !important;
+    }
+    .chat-widget-title .school-logo {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 18px !important;
+    }
+    .chat-widget-title .school-info .school-name {
+        font-size: 13px !important;
+    }
+    .chat-widget-title .school-info .assistant-label {
+        font-size: 9px !important;
+    }
+    .chat-widget-actions button {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 11px !important;
+    }
+    .chat-widget-footer {
+        display: none !important;
     }
 }

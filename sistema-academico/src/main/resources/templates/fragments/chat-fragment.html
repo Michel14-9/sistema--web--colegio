@@ -2,27 +2,73 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <div th:fragment="chatWidget">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link th:href="@{/css/chat-widget.css}" rel="stylesheet">
 
-    <button class="chat-toggle-btn" id="chatToggleBtn">
-        <i class="fas fa-comment-dots" id="chatIcon"></i>
+    <!-- Botón flotante - SOLO icono de graduación -->
+    <button class="chat-toggle-btn" id="chatToggleBtn" aria-label="Abrir chat">
+        <i class="fas fa-graduation-cap" id="chatIcon"></i>
+        <span class="chat-badge" id="chatBadge"></span>
     </button>
 
+    <!-- Widget del chat -->
     <div class="chat-widget" id="chatWidget">
+        <!-- Header con Logo -->
         <div class="chat-widget-header">
             <div class="chat-widget-title">
-                <i class="fas fa-robot"></i>
-                <span>Asistente Virtual</span>
+                <div class="school-logo">
+                    🎓
+                </div>
+                <div class="school-info">
+                    <span class="school-name">
+                        I.E. San Carlos
+                        <span class="school-emblem">⭐</span>
+                    </span>
+                    <span class="assistant-label">
+                        <span class="assistant-emoji">🧑‍🏫</span>
+                        Asistente Estudiantil
+                        <span class="status-dot"></span>
+                    </span>
+                </div>
             </div>
-            <button class="chat-widget-close" id="chatWidgetClose">
-                <i class="fas fa-times"></i>
-            </button>
+            <div class="chat-widget-actions">
+                <button class="btn-minimize" id="chatWidgetMinimize" aria-label="Minimizar">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="btn-close" id="chatWidgetClose" aria-label="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
-        <div class="chat-widget-body">
-            <iframe th:src="@{/chat?embed=true}" class="chat-widget-iframe" frameborder="0"></iframe>
+
+        <!-- Cuerpo del chat -->
+        <div class="chat-widget-body" id="chatWidgetBody">
+            <iframe
+                    th:src="@{/chat?embed=true}"
+                    class="chat-widget-iframe"
+                    frameborder="0"
+                    allow="microphone"
+                    loading="lazy"
+            ></iframe>
+        </div>
+
+        <!-- Footer -->
+        <div class="chat-widget-footer">
+            <span>
+                <i class="fas fa-lock"></i>
+                Conversación segura
+            </span>
+            <span class="footer-logo">
+                🏫 I.E. San Carlos
+            </span>
+            <span>
+                <i class="fas fa-clock"></i>
+                24/7
+            </span>
         </div>
     </div>
 

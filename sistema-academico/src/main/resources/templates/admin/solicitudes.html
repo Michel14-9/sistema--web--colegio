@@ -64,7 +64,8 @@
                                     <td th:text="${#temporals.format(s.fechaSolicitud, 'dd/MM/yyyy HH:mm')}">-</td>
                                     <td th:text="${s.nombres + ' ' + s.apellidoPaterno}">-</td>
                                     <td th:text="${s.dni}">-</td>
-                                    <td th:text="${s.idGrado}">-</td>
+                                    <!-- ✅ GRADO CORREGIDO -->
+                                    <td th:text="${nombresGrados.get(s.idGrado) != null ? nombresGrados.get(s.idGrado) : s.idGrado}">-</td>
                                     <td th:text="${s.apoderadoNombres}">-</td>
                                     <td><a th:href="@{/admin/solicitud/{id}(id=${s.idSolicitud})}" class="btn-view"><i class="fas fa-eye"></i> Ver</a></td>
                                 </tr>
@@ -90,7 +91,8 @@
                                     <td th:text="${#temporals.format(s.fechaProcesamiento, 'dd/MM/yyyy HH:mm')}">-</td>
                                     <td th:text="${s.nombres + ' ' + s.apellidoPaterno}">-</td>
                                     <td th:text="${s.dni}">-</td>
-                                    <td th:text="${s.apoderadoNombres}">-</td>
+                                    <!-- ✅ GRADO CORREGIDO -->
+                                    <td th:text="${nombresGrados.get(s.idGrado) != null ? nombresGrados.get(s.idGrado) : s.idGrado}">-</td>
                                 </tr>
                                 <tr th:if="${aprobadas.empty}"><td colspan="6" class="text-center">No hay solicitudes aprobadas</td></tr>
                                 </tbody>
@@ -112,7 +114,8 @@
                                     <td th:text="${#temporals.format(s.fechaProcesamiento, 'dd/MM/yyyy HH:mm')}">-</td>
                                     <td th:text="${s.nombres + ' ' + s.apellidoPaterno}">-</td>
                                     <td th:text="${s.dni}">-</td>
-                                    <td th:text="${s.observaciones}">-</td>
+                                    <!-- ✅ GRADO CORREGIDO -->
+                                    <td th:text="${nombresGrados.get(s.idGrado) != null ? nombresGrados.get(s.idGrado) : s.idGrado}">-</td>
                                 </tr>
                                 <tr th:if="${rechazadas.empty}"><td colspan="6" class="text-center">No hay solicitudes rechazadas</td></tr>
                                 </tbody>

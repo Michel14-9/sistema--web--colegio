@@ -166,7 +166,7 @@
                                 <td th:text="${curso.nombreCurso}">-</td>
                                 <td th:text="${curso.horasSemanales}">-</td>
                                 <td th:text="${curso.area}">-</td>
-                                <td th:text="${curso.idGrado}">-</td>
+                                <td th:text="${nombresGrados.get(curso.idGrado) != null ? nombresGrados.get(curso.idGrado) : curso.idGrado}">-</td>
                                 <td th:text="${curso.seccion}">-</td>
                                 <td th:text="${curso.turno}">-</td>
                                 <td>
