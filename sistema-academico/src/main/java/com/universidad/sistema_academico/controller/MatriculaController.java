@@ -1,11 +1,15 @@
 package com.universidad.sistema_academico.controller;
 
+import com.universidad.sistema_academico.dto.DescuentoDTO;
 import com.universidad.sistema_academico.model.SolicitudMatricula;
+import com.universidad.sistema_academico.repository.EstudianteRepository;
 import com.universidad.sistema_academico.repository.SolicitudMatriculaRepository;
+import com.universidad.sistema_academico.service.DescuentoService;
 import com.universidad.sistema_academico.service.EmailService;
 import com.universidad.sistema_academico.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -26,13 +30,21 @@ public class MatriculaController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private DescuentoService descuentoService;
+
+    @Autowired
+    private EstudianteRepository estudianteRepository;
+
     @GetMapping("/matricula")
     public String mostrarMatricula() {
+        System.out.println("🔵🔵🔵 MOSTRANDO FORMULARIO DE MATRÍCULA 🔵🔵🔵");
         return "matricula";
     }
 
     @GetMapping("/nueva")
     public String mostrarFormularioMatricula() {
+        System.out.println("🔵🔵🔵 MOSTRANDO NUEVA MATRÍCULA 🔵🔵🔵");
         return "matricula";
     }
 
@@ -59,16 +71,13 @@ public class MatriculaController {
             RedirectAttributes redirectAttributes) {
 
         try {
-            // 1. Validar que no exista una solicitud previa con este DNI
             if (solicitudRepository.existsByDniAndEstado(dni, "PENDIENTE")) {
                 redirectAttributes.addFlashAttribute("error", "Ya existe una solicitud pendiente con este DNI");
                 return "redirect:/api/matricula/nueva";
             }
 
-            // 2. Guardar el voucher
             String voucherPath = voucherService.guardarVoucher(voucher, dni);
 
-            // 3. Crear SOLICITUD de matrícula (NO crear usuario aún)
             SolicitudMatricula solicitud = new SolicitudMatricula();
             solicitud.setDni(dni);
             solicitud.setNombres(nombres.toUpperCase());
@@ -93,28 +102,18 @@ public class MatriculaController {
 
             solicitudRepository.save(solicitud);
 
-            // 4. Enviar correo de confirmación al apoderado
             try {
                 emailService.enviarConfirmacionSolicitud(
                         apoderadoEmail,
                         nombres + " " + apellidoPaterno + " " + apellidoMaterno
                 );
-                System.out.println(" Correo de confirmación enviado a: " + apoderadoEmail);
+                System.out.println("Correo de confirmación enviado a: " + apoderadoEmail);
             } catch (Exception e) {
-                System.out.println(" Error al enviar correo de confirmación: " + e.getMessage());
+                System.out.println("Error al enviar correo: " + e.getMessage());
             }
 
-            System.out.println("========================================");
-            System.out.println(" NUEVA SOLICITUD DE MATRÍCULA");
-            System.out.println("DNI: " + dni);
-            System.out.println("Estudiante: " + nombres + " " + apellidoPaterno);
-            System.out.println("Apoderado email: " + apoderadoEmail);
-            System.out.println("Estado: PENDIENTE DE APROBACIÓN");
-            System.out.println("========================================");
-
             redirectAttributes.addFlashAttribute("success",
-                    " Solicitud de matrícula registrada correctamente. " +
-                            "Un administrador validará su pago y recibirá sus credenciales por correo electrónico.");
+                    "Solicitud de matrícula registrada correctamente. Un administrador validará su pago.");
 
             return "redirect:/api/matricula/matricula";
 
@@ -123,5 +122,20 @@ public class MatriculaController {
             redirectAttributes.addFlashAttribute("error", "Error al procesar la solicitud: " + e.getMessage());
             return "redirect:/api/matricula/nueva";
         }
+    }
+
+    // ==================== FORMULARIO CON DESCUENTO ====================
+    @GetMapping("/formulario")
+    public String mostrarFormulario(Model model,
+                                    @RequestParam(required = false) String apellidoPaterno) {
+        System.out.println("🟡🟡🟡 MOSTRANDO FORMULARIO CON DESCUENTO 🟡🟡🟡");
+        if (apellidoPaterno != null && !apellidoPaterno.isEmpty()) {
+            System.out.println("📝 Apellido recibido en formulario: " + apellidoPaterno);
+            DescuentoDTO descuento = descuentoService.calcularDescuento(apellidoPaterno);
+            model.addAttribute("descuento", descuento);
+            model.addAttribute("montoBase", descuentoService.getMontoBase());
+            System.out.println("📊 Descuento aplicado: " + descuento.getMensaje());
+        }
+        return "matricula";
     }
 }

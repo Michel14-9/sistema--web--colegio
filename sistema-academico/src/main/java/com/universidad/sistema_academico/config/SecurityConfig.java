@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -27,14 +28,16 @@ public class SecurityConfig {
                         )
                 )
                 .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin()) // 👈 permite iframes del mismo origen
+                        .frameOptions(frame -> frame.sameOrigin())
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/consultar/**").permitAll()
                         .requestMatchers("/", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
-                        .requestMatchers("/login").permitAll()
+                        .requestMatchers("/login", "/error", "/error/**", "/404", "/403", "/500", "/mantenimiento", "/olvide-contrasena", "/resetear-contrasena").permitAll()
+                        .requestMatchers("/api/verificar-mantenimiento").permitAll()  // 👈 NUEVO
                         .requestMatchers("/api/matricula/matricula").permitAll()
                         .requestMatchers("/api/matricula/registrar").permitAll()
+                        .requestMatchers("/api/matricula/verificar-descuento").permitAll()
                         .requestMatchers("/api/reniec/**").permitAll()
                         .requestMatchers("/chat", "/chat/**").permitAll()
 
@@ -60,8 +63,18 @@ public class SecurityConfig {
                         .clearAuthentication(true)
                         .permitAll()
                 )
+                .exceptionHandling(exception -> exception
+                        .accessDeniedHandler(accessDeniedHandler())
+                )
                 .userDetailsService(userDetailsService);
 
         return http.build();
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.sendRedirect("/403");
+        };
     }
 }

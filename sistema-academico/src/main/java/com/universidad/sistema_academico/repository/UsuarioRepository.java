@@ -35,4 +35,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Búsqueda personalizada con JPQL
     @Query("SELECT u FROM Usuario u WHERE u.activo = true AND u.rol = :rol")
     List<Usuario> findActiveUsersByRole(@Param("rol") String rol);
+
+    Optional<Usuario> findByResetToken(String resetToken);
 }

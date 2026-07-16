@@ -117,7 +117,8 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
     @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.idGrado = :idGrado AND e.genero = :genero")
     long countByGradoAndGenero(@Param("idGrado") Integer idGrado, @Param("genero") String genero);
 
-
+    // Buscar por apellido paterno para detectar hermanos
+    List<Estudiante> findByApellidoPaterno(String apellidoPaterno);
 
 
 }

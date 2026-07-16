@@ -39,9 +39,15 @@ public class Usuario {
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
 
+    // ========== RECUPERACIÓN DE CONTRASEÑA ==========
+    @Column(length = 100)
+    private String resetToken;
 
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
+
+    // ========== CONSTRUCTORES ==========
     public Usuario() {}
-
 
     public Usuario(String username, String password, String email, String nombre,
                    String apellido, String rol) {
@@ -55,7 +61,7 @@ public class Usuario {
         this.fechaRegistro = LocalDateTime.now();
     }
 
-    // Getters y Setters
+    // ========== GETTERS Y SETTERS ==========
     public Long getId() {
         return id;
     }
@@ -144,7 +150,23 @@ public class Usuario {
         this.fechaRegistro = fechaRegistro;
     }
 
-    // Método para obtener nombre completo
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
+    public LocalDateTime getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
+
+    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
+    }
+
+    // ========== MÉTODOS AUXILIARES ==========
     public String getNombreCompleto() {
         return nombre + " " + apellido;
     }

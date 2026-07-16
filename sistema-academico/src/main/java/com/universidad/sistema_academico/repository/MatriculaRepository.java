@@ -143,6 +143,6 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     /**
      * Contar matrículas por turno
      */
-    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.turno = :turno")
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE UPPER(m.turno) = UPPER(:turno)")
     long countByTurno(@Param("turno") String turno);
 }

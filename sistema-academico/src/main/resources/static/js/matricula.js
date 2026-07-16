@@ -1,6 +1,6 @@
 /**
- * Sistema de Matrícula - I.E. San Carlos
- * Validaciones profesionales y mejoras de experiencia de usuario
+ * matricula.js - Funcionalidades para el proceso de matrícula
+ * I.E. San Carlos
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const voucherPreview = document.getElementById('voucherPreview');
     const submitBtn = document.querySelector('.btn-matricular');
     const loadingOverlay = document.getElementById('loadingOverlay');
+
+    console.log('🚀 [INICIO] matricula.js cargado correctamente');
 
     // ========== 1. DETECTAR ERRORES/ÉXITO EN URL ==========
     const urlParams = new URLSearchParams(window.location.search);
@@ -526,12 +528,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function validarCelular(input, showMessage = false) {
         let celular = input.value.trim().replace(/\s/g, '');
-        const isValid = celular.length === 9 && /^\d+$/.test(celular);
+        const isValid = /^9\d{8}$/.test(celular);
 
         if (celular.length > 0 && celular.length !== 9) {
             input.classList.add('is-invalid');
             input.classList.remove('is-valid');
             mostrarError(input, 'El celular debe tener 9 dígitos');
+            return false;
+        } else if (celular.length === 9 && !celular.startsWith('9')) {
+            input.classList.add('is-invalid');
+            input.classList.remove('is-valid');
+            mostrarError(input, 'El celular debe iniciar con 9');
             return false;
         } else if (isValid) {
             input.classList.remove('is-invalid');
@@ -549,26 +556,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function validarTelefonoApoderado(input, showMessage = false) {
-        const telefono = input.value.trim();
-        const isValid = (telefono.length === 9 || telefono.length === 7) && /^\d+$/.test(telefono);
+   function validarTelefonoApoderado(input, showMessage = false) {
+       const telefono = input.value.trim();
+       const esCelularValido = /^9\d{8}$/.test(telefono);
+       const esFijoValido = telefono.length === 7 && /^\d+$/.test(telefono);
+       const isValid = esCelularValido || esFijoValido;
 
-        if (telefono.length > 0 && telefono.length !== 9 && telefono.length !== 7) {
-            input.classList.add('is-invalid');
-            input.classList.remove('is-valid');
-            mostrarError(input, 'El teléfono debe tener 7 u 9 dígitos');
-            return false;
-        } else if (isValid) {
-            input.classList.remove('is-invalid');
-            input.classList.add('is-valid');
-            limpiarError(input);
-            return true;
-        } else {
-            input.classList.remove('is-invalid', 'is-valid');
-            limpiarError(input);
-            return false;
-        }
-    }
+       if (telefono.length > 0 && telefono.length !== 9 && telefono.length !== 7) {
+           input.classList.add('is-invalid');
+           input.classList.remove('is-valid');
+           mostrarError(input, 'El teléfono debe tener 7 dígitos (fijo) o 9 dígitos (celular)');
+           return false;
+       } else if (telefono.length === 9 && !telefono.startsWith('9')) {
+           input.classList.add('is-invalid');
+           input.classList.remove('is-valid');
+           mostrarError(input, 'Los números de celular deben iniciar con 9');
+           return false;
+       } else if (isValid) {
+           input.classList.remove('is-invalid');
+           input.classList.add('is-valid');
+           limpiarError(input);
+           return true;
+       } else {
+           input.classList.remove('is-invalid', 'is-valid');
+           limpiarError(input);
+           return false;
+       }
+   }
 
     function validarDNIApoderado(input, showMessage = false) {
         const dni = input.value.trim();
@@ -743,7 +757,130 @@ document.addEventListener('DOMContentLoaded', function() {
 
     aplicarMascaras();
 
-    // ========== 8. ESTILOS ADICIONALES ==========
+    // ========== 8. DESCUENTO POR HERMANOS ==========
+    const descuentoSection = document.getElementById('descuentoSection');
+    const descuentoInfo = document.getElementById('descuentoInfo');
+    const descuentoAlert = document.getElementById('descuentoAlert');
+    const voucherInfo = document.getElementById('voucherInfo');
+    const apellidoPaternoInput = document.getElementById('apellidoPaterno');
+
+    console.log('🔍 [DESCUENTO] Elementos encontrados:', {
+        descuentoSection: !!descuentoSection,
+        descuentoInfo: !!descuentoInfo,
+        descuentoAlert: !!descuentoAlert,
+        voucherInfo: !!voucherInfo,
+        apellidoPaternoInput: !!apellidoPaternoInput
+    });
+
+    // Función para verificar descuento (expuesta globalmente)
+    window.verificarDescuento = function() {
+        console.log('🟢🟢🟢 [DESCUENTO] FUNCIÓN VERIFICAR DESCUENTO EJECUTADA 🟢🟢🟢');
+
+        const apellidoPaterno = apellidoPaternoInput ? apellidoPaternoInput.value : '';
+        console.log('📝 [DESCUENTO] Apellido paterno ingresado: "' + apellidoPaterno + '"');
+
+        if (!apellidoPaterno || apellidoPaterno.length < 2) {
+            console.log('⚠️ [DESCUENTO] Apellido muy corto o vacío');
+            if (descuentoSection) {
+                descuentoSection.style.display = 'none';
+            }
+            return;
+        }
+
+        // Mostrar loading
+        console.log('⏳ [DESCUENTO] Mostrando loading...');
+        if (descuentoSection) {
+            descuentoSection.style.display = 'block';
+        }
+        if (descuentoAlert) {
+            descuentoAlert.className = 'alert alert-info';
+        }
+        if (descuentoInfo) {
+            descuentoInfo.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando hermanos...';
+        }
+
+        // Construir URL
+        const url = '/api/matricula/verificar-descuento?apellidoPaterno=' + encodeURIComponent(apellidoPaterno);
+        console.log('🌐 [DESCUENTO] URL a llamar: ' + url);
+
+        // Llamar al API
+        fetch(url)
+            .then(response => {
+                console.log('📡 [DESCUENTO] Respuesta recibida - Status:', response.status);
+                console.log('📡 [DESCUENTO] Respuesta OK?:', response.ok);
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📊 [DESCUENTO] Datos recibidos:', data);
+
+                if (data.aplicaDescuento) {
+                    console.log('✅ [DESCUENTO] Descuento APLICADO');
+                    if (descuentoAlert) {
+                        descuentoAlert.className = 'alert alert-success';
+                    }
+                    if (descuentoInfo) {
+                        descuentoInfo.innerHTML = `
+                            <strong><i class="fas fa-users"></i> ¡Descuento por Hermanos!</strong><br>
+                            <span>${data.mensaje}</span><br>
+                            <small>
+                                <span class="text-decoration-line-through">S/ ${data.montoBase ? data.montoBase : '200.00'}</span>
+                                → <strong>S/ ${data.montoFinal}</strong>
+                                <span class="badge bg-success ms-2">-${data.porcentajeDescuento}%</span>
+                            </small>
+                            <div class="mt-2">
+                                <span class="badge bg-primary">👨‍👩‍👧‍👦 ${data.numeroHermanos} hermano(s) en la institución</span>
+                            </div>
+                        `;
+                    }
+                    if (voucherInfo) {
+                        voucherInfo.innerHTML = `
+                            <i class="fas fa-info-circle"></i>
+                            Adjunte el voucher de pago de matrícula <strong>(S/ ${data.montoFinal})</strong>
+                            <span class="badge bg-success ms-2">Con descuento de hermanos</span>
+                        `;
+                    }
+                } else {
+                    console.log('❌ [DESCUENTO] Sin descuento');
+                    if (descuentoAlert) {
+                        descuentoAlert.className = 'alert alert-secondary';
+                    }
+                    if (descuentoInfo) {
+                        descuentoInfo.innerHTML = `
+                            <strong><i class="fas fa-users"></i> Sin descuento</strong><br>
+                            <span>${data.mensaje}</span><br>
+                            <small>Monto total: <strong>S/ ${data.montoFinal}</strong></small>
+                        `;
+                    }
+                    if (voucherInfo) {
+                        voucherInfo.innerHTML = `
+                            <i class="fas fa-info-circle"></i>
+                            Adjunte el voucher de pago de matrícula (S/ 200.00)
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('❌❌❌ [DESCUENTO] ERROR:', error);
+                console.error('❌ [DESCUENTO] Mensaje de error:', error.message);
+                if (descuentoAlert) {
+                    descuentoAlert.className = 'alert alert-warning';
+                }
+                if (descuentoInfo) {
+                    descuentoInfo.innerHTML = `
+                        <strong><i class="fas fa-exclamation-triangle"></i> Error</strong><br>
+                        No se pudo verificar el descuento. Intenta nuevamente.
+                        <br><small>Error: ${error.message}</small>
+                    `;
+                }
+            });
+    };
+
+    console.log('✅ [DESCUENTO] Función verificarDescuento registrada correctamente');
+
+    // ========== 9. ESTILOS ADICIONALES ==========
     const style = document.createElement('style');
     style.textContent = `
         .spinner-border {

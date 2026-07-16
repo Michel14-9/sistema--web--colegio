@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I.E. San Carlos - Reportes Docente</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/docente.css}" rel="stylesheet">
+
+    <style>
+        /* ===== ESTILOS ADICIONALES PARA REPORTES ===== */
+        .reportes-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .reportes-header h1 {
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            font-size: 1.8rem;
+        }
+
+        .reportes-header h1 i {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .reportes-header p {
+            opacity: 0.9;
+            margin-bottom: 0;
+            font-size: 1rem;
+        }
+
+        .reportes-header .badge {
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .curso-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .curso-selector .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .curso-selector .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            transition: border-color 0.3s;
+        }
+
+        .curso-selector .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .curso-selector .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 20px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .curso-selector .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        #opcionesReportes h5 {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .report-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px 20px;
+            background: white;
+            text-align: center;
+            height: 100%;
+        }
+
+        .report-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .report-card .report-icon {
+            margin-bottom: 12px;
+        }
+
+        .report-card .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 10px 0 5px;
+        }
+
+        .report-card .card-text {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 12px;
+        }
+
+        .badge-pdf {
+            background: #dc3545;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-excel {
+            background: #28a745;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .alert-info {
+            background: #e8f4fd;
+            border: 1px solid #b8d4e8;
+            color: #0c5460;
+            border-radius: 10px;
+            padding: 15px 20px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:replace="~{fragments/docente-navbar :: navbar}" th:with="tituloPagina='Reportes'"></div>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/docente-sidebar :: sidebar}" th:with="modulo='reportes'"></div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 col-lg-10 main-content">
+            <div class="page-header">
+                <h1><i class="fas fa-file-alt"></i> Mis Reportes</h1>
+                <p>Genera reportes académicos de tus cursos asignados</p>
+            </div>
+
+            <!-- Selector de Curso -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-book me-2 text-primary"></i>Seleccionar Curso
+                            </label>
+                            <select id="cursoSelect" class="form-select" onchange="mostrarOpciones()">
+                                <option value="">-- Selecciona un curso --</option>
+                                <option th:each="curso : ${cursos}"
+                                        th:value="${curso.idCurso}"
+                                        th:text="${curso.nombreCurso} + ' (' + ${curso.codigoCurso} + ') - ' + ${curso.turno}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3" id="bimestreContainer" style="display: none;">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-layer-group me-2 text-warning"></i>Bimestre
+                            </label>
+                            <select id="bimestreSelect" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="1">Bimestre 1</option>
+                                <option value="2">Bimestre 2</option>
+                                <option value="3">Bimestre 3</option>
+                                <option value="4">Bimestre 4</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3" id="btnContainer" style="display: none;">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-primary w-100" onclick="generarReporte('notas')">
+                                <i class="fas fa-file-pdf"></i> Generar Reporte
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjetas de Reportes -->
+            <div id="opcionesReportes" style="display: none;">
+                <h5 class="mb-3"><i class="fas fa-print me-2 text-primary"></i>Tipos de Reportes</h5>
+                <div class="row g-4">
+                    <!-- Reporte de Notas -->
+                    <div class="col-md-3 col-sm-6">
+                        <div class="report-card" onclick="generarReporte('notas')">
+                            <div class="report-icon text-danger"><i class="fas fa-file-pdf fa-3x"></i></div>
+                            <h6 class="card-title">Reporte de Notas</h6>
+                            <p class="card-text">Listado completo de notas</p>
+                            <span class="badge badge-pdf">PDF</span>
+                        </div>
+                    </div>
+
+                    <!-- Reporte de Asistencia -->
+                    <div class="col-md-3 col-sm-6">
+                        <div class="report-card" onclick="generarReporte('asistencia')">
+                            <div class="report-icon text-danger"><i class="fas fa-file-pdf fa-3x"></i></div>
+                            <h6 class="card-title">Reporte de Asistencia</h6>
+                            <p class="card-text">Resumen de asistencia</p>
+                            <span class="badge badge-pdf">PDF</span>
+                        </div>
+                    </div>
+
+                    <!-- Reporte de Rendimiento -->
+                    <div class="col-md-3 col-sm-6">
+                        <div class="report-card" onclick="generarReporte('rendimiento')">
+                            <div class="report-icon text-success"><i class="fas fa-file-excel fa-3x"></i></div>
+                            <h6 class="card-title">Rendimiento Académico</h6>
+                            <p class="card-text">Análisis detallado</p>
+                            <span class="badge badge-excel">Excel</span>
+                        </div>
+                    </div>
+
+                    <!-- Boletín Individual -->
+                    <div class="col-md-3 col-sm-6">
+                        <div class="report-card" onclick="generarBoletin()">
+                            <div class="report-icon text-danger"><i class="fas fa-file-pdf fa-3x"></i></div>
+                            <h6 class="card-title">Boletín Individual</h6>
+                            <p class="card-text">Por cada estudiante</p>
+                            <span class="badge badge-pdf">PDF</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensaje de selección -->
+            <div id="mensajeSeleccion" class="alert alert-info mt-4" style="display: none;">
+                <i class="fas fa-info-circle me-2"></i> Selecciona un curso para generar reportes
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ==================== FECHA ACTUAL ====================
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const dateElement = document.getElementById('currentDate');
+    if (dateElement) {
+        dateElement.textContent = new Date().toLocaleDateString('es-PE', options);
+    }
+
+    // ==================== MOSTRAR OPCIONES ====================
+    function mostrarOpciones() {
+        const cursoId = document.getElementById('cursoSelect').value;
+        const opciones = document.getElementById('opcionesReportes');
+        const mensaje = document.getElementById('mensajeSeleccion');
+        const bimestreContainer = document.getElementById('bimestreContainer');
+        const btnContainer = document.getElementById('btnContainer');
+
+        if (cursoId) {
+            opciones.style.display = 'block';
+            mensaje.style.display = 'none';
+            bimestreContainer.style.display = 'block';
+            btnContainer.style.display = 'block';
+        } else {
+            opciones.style.display = 'none';
+            mensaje.style.display = 'block';
+            bimestreContainer.style.display = 'none';
+            btnContainer.style.display = 'none';
+        }
+    }
+
+    // ==================== GENERAR REPORTE ====================
+    function generarReporte(tipo) {
+        const idCurso = document.getElementById('cursoSelect').value;
+        if (!idCurso) {
+            alert('⚠️ Por favor, selecciona un curso primero.');
+            return;
+        }
+
+        const bimestre = document.getElementById('bimestreSelect').value;
+        let url = '';
+
+        switch(tipo) {
+            case 'notas':
+                url = '/docente/reportes/notas/pdf?idCurso=' + idCurso;
+                if (bimestre) {
+                    url += '&bimestre=' + bimestre;
+                }
+                break;
+            case 'asistencia':
+                url = '/docente/reportes/asistencia/pdf?idCurso=' + idCurso;
+                break;
+            case 'rendimiento':
+                url = '/docente/reportes/rendimiento/excel?idCurso=' + idCurso;
+                break;
+            default:
+                alert('Tipo de reporte no válido');
+                return;
+        }
+
+        window.open(url, '_blank');
+    }
+
+  // ==================== GENERAR BOLETÍN (CON SELECTOR DE ESTUDIANTE) ====================
+function generarBoletin() {
+    const idCurso = document.getElementById('cursoSelect').value;
+    if (!idCurso) {
+        alert('⚠️ Por favor, selecciona un curso primero.');
+        return;
+    }
+
+    // Redirigir a una página donde se muestre la lista de estudiantes
+    window.location.href = '/docente/reportes/boletin/seleccionar?idCurso=' + idCurso;
+}
+
+    // ==================== INICIALIZAR ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        const mensaje = document.getElementById('mensajeSeleccion');
+        if (mensaje) {
+            mensaje.style.display = 'block';
+        }
+
+        const dateElement = document.getElementById('currentDate');
+        if (dateElement) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = new Date().toLocaleDateString('es-PE', options);
+        }
+    });
+</script>
+</body>
+</html>

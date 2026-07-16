@@ -59,6 +59,13 @@
                     <i class="fas fa-clipboard-check"></i> Registrar Asistencia
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link" th:classappend="${modulo == 'reportes'} ? 'active' : ''" href="/docente/docentes-reportes">
+                    <i class="fas fa-file-alt"></i> Reportes
+                    <span class="badge bg-warning ms-1" style="color: #000;">PDF</span>
+                </a>
+            </li>
         </ul>
     </div>
 </div>

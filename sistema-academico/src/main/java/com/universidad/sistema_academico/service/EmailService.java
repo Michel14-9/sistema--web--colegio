@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.javamail.MimeMessageHelper;
 @Service
 public class EmailService {
 
@@ -272,4 +274,58 @@ public class EmailService {
         };
         return grados[idGrado - 1];
     }
+    /**
+     * Envía correo con enlace para restablecer contraseña
+     */
+    public void enviarCorreoResetPassword(String email, String nombre, String resetLink) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(email);
+            helper.setSubject("I.E. San Carlos - Recuperación de Contraseña");
+
+            String htmlContent = String.format("""
+            <html>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%); padding: 20px; text-align: center;">
+                    <h2 style="color: white;">I.E. San Carlos</h2>
+                </div>
+                <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
+                    <h3>Hola %s,</h3>
+                    <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+                    <p>Para crear una nueva contraseña, haz clic en el siguiente enlace:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="%s" style="background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+                                  color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px;
+                                  font-weight: bold; display: inline-block;">
+                            Restablecer Contraseña
+                        </a>
+                    </div>
+                    <p style="color: #666; font-size: 14px;">Este enlace expirará en 24 horas.</p>
+                    <p style="color: #666; font-size: 14px;">Si no solicitaste este cambio, ignora este correo.</p>
+                    <hr>
+                    <p style="font-size: 12px; color: #999;">
+                        I.E. San Carlos - Sistema de Gestión Académica<br>
+                        Este es un correo automático, por favor no responder.
+                    </p>
+                </div>
+            </body>
+            </html>
+            """, nombre, resetLink);
+
+            helper.setText(htmlContent, true);
+            mailSender.send(mimeMessage);
+            System.out.println("✅ Correo de recuperación enviado a: " + email);
+
+        } catch (MessagingException e) {
+            System.err.println("❌ Error al enviar correo de recuperación: " + e.getMessage());
+        }
+    }
+
+
+
+
+
 }
