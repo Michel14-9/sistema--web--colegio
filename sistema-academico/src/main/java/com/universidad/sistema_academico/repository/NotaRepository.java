@@ -21,7 +21,7 @@ public interface NotaRepository extends JpaRepository<Nota, Long> {
     List<Nota> findByEstudianteAndPeriodoAcademico(@Param("estudianteId") Long estudianteId,
                                                    @Param("periodo") String periodo);
 
-    // ==========  MÉTODOS PARA DOCENTE ==========
+    // ========== MÉTODOS PARA DOCENTE ==========
 
     /**
      * Buscar notas por estudiante, curso y periodo académico

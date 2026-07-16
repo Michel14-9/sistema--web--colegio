@@ -76,7 +76,7 @@
                         <i class="fas fa-chalkboard-user"></i>
                         <h4>Mis Cursos Asignados</h4>
                     </div>
-                    <a href="/docente/mis-cursos" class="btn-view-all">Ver todos <i class="fas fa-arrow-right"></i></a>
+                    <a href="/docente/alumnos" class="btn-view-all">Ver todos <i class="fas fa-arrow-right"></i></a>
                 </div>
                 <div class="card-body-custom">
                     <div th:if="${cursos != null and !cursos.empty}">
@@ -89,7 +89,7 @@
                                     <span class="course-status" th:class="${curso.estado == 'ACTIVO'} ? 'status-active' : 'status-inactive'"
                                           th:text="${curso.estado}">-</span>
                                 </div>
-                                <a th:href="@{/docente/curso/{id}/estudiantes(id=${curso.idCurso})}" class="btn-course">
+                                <a th:href="@{/docente/alumnos(idCurso=${curso.idCurso})}" class="btn-course">
                                     <i class="fas fa-users"></i> Ver Estudiantes
                                 </a>
                             </div>

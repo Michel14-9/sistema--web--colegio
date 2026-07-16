@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I.E. San Carlos - Reportes</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <link th:href="@{/css/reportes.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:replace="~{fragments/admin-navbar :: navbar}" th:with="tituloPagina='Reportes'"></div>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div th:replace="~{fragments/admin-sidebar :: sidebar}" th:with="modulo='reportes'"></div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 col-lg-10 main-content">
+
+            <!-- Header con botones de exportación -->
+            <div class="reportes-header">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h1><i class="fas fa-chart-bar me-3"></i>Panel de Reportes</h1>
+                        <p>Visualiza estadísticas y métricas del sistema educativo</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mt-2 mt-md-0">
+                        <span class="badge bg-light text-dark fs-6 me-2">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            <span id="currentDate"></span>
+                        </span>
+                        <div class="btn-group">
+                            <button class="btn btn-success btn-sm" onclick="exportarExcel('estudiantes')">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="exportarPDF('estudiantes')">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="report-stats-grid">
+                <div class="report-stat-card">
+                    <div class="stat-icon stat-icon-blue"><i class="fas fa-user-graduate fa-2x"></i></div>
+                    <div class="stat-number" th:text="${totalEstudiantes}">0</div>
+                    <div class="stat-label">Total Estudiantes</div>
+                </div>
+                <div class="report-stat-card">
+                    <div class="stat-icon stat-icon-green"><i class="fas fa-chalkboard-user fa-2x"></i></div>
+                    <div class="stat-number" th:text="${totalDocentes}">0</div>
+                    <div class="stat-label">Total Docentes</div>
+                </div>
+                <div class="report-stat-card">
+                    <div class="stat-icon stat-icon-orange"><i class="fas fa-book fa-2x"></i></div>
+                    <div class="stat-number" th:text="${totalCursos}">0</div>
+                    <div class="stat-label">Total Cursos</div>
+                </div>
+                <div class="report-stat-card">
+                    <div class="stat-icon stat-icon-purple"><i class="fas fa-clipboard-list fa-2x"></i></div>
+                    <div class="stat-number" th:text="${totalMatriculas}">0</div>
+                    <div class="stat-label">Total Matrículas</div>
+                </div>
+                <div class="report-stat-card">
+                    <div class="stat-icon stat-icon-teal"><i class="fas fa-check-circle fa-2x"></i></div>
+                    <div class="stat-number" th:text="${activas}">0</div>
+                    <div class="stat-label">Matrículas Activas</div>
+                </div>
+                <div class="report-stat-card">
+                    <div class="stat-icon stat-icon-red"><i class="fas fa-clock fa-2x"></i></div>
+                    <div class="stat-number" th:text="${pendientes}">0</div>
+                    <div class="stat-label">Matrículas Pendientes</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs report-tabs mb-4" id="reportTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="estudiantes-tab" data-bs-toggle="tab" data-bs-target="#estudiantes" type="button">
+                        <i class="fas fa-users"></i> Estudiantes
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="matriculas-tab" data-bs-toggle="tab" data-bs-target="#matriculas" type="button">
+                        <i class="fas fa-clipboard-check"></i> Matrículas
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="cursos-tab" data-bs-toggle="tab" data-bs-target="#cursos" type="button">
+                        <i class="fas fa-book"></i> Cursos
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="asistencia-tab" data-bs-toggle="tab" data-bs-target="#asistencia" type="button">
+                        <i class="fas fa-clipboard"></i> Asistencia
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="notas-tab" data-bs-toggle="tab" data-bs-target="#notas" type="button">
+                        <i class="fas fa-star"></i> Notas
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="docentes-tab" data-bs-toggle="tab" data-bs-target="#docentes" type="button">
+                        <i class="fas fa-chalkboard-user"></i> Docentes
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+
+                <!-- ESTUDIANTES -->
+                <div class="tab-pane fade show active" id="estudiantes">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="chart-container">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5><i class="fas fa-users me-2 text-primary"></i>Estudiantes por Grado</h5>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-success me-1" onclick="exportarExcel('estudiantes')">
+                                            <i class="fas fa-file-excel"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="exportarPDF('estudiantes')">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <canvas id="chartEstudiantesGrado"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MATRÍCULAS -->
+                <div class="tab-pane fade" id="matriculas">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-clipboard-check me-2 text-success"></i>Matrículas por Estado</h5>
+                                <canvas id="chartMatriculasEstado"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-chart-line me-2 text-info"></i>Matrículas por Año</h5>
+                                <canvas id="chartMatriculasAnio"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-graduation-cap me-2 text-warning"></i>Matrículas por Grado</h5>
+                                <canvas id="chartMatriculasGrado"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-clock me-2 text-primary"></i>Matrículas por Turno</h5>
+                                <canvas id="chartMatriculasTurno"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-venus-mars me-2 text-danger"></i>Estudiantes por Género</h5>
+                                <canvas id="chartEstudiantesGenero"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CURSOS -->
+                <div class="tab-pane fade" id="cursos">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-book me-2 text-primary"></i>Cursos por Grado</h5>
+                                <canvas id="chartCursosGrado"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-toggle-on me-2 text-success"></i>Cursos por Estado</h5>
+                                <canvas id="chartCursosEstado"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DOCENTES -->
+                <div class="tab-pane fade" id="docentes">
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="chart-container">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5><i class="fas fa-chalkboard-user me-2 text-success"></i>Docentes por Especialidad</h5>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-success me-1" onclick="exportarExcel('docentes')">
+                                            <i class="fas fa-file-excel"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="exportarPDF('docentes')">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <canvas id="chartDocentesEspecialidad"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ASISTENCIA -->
+                <div class="tab-pane fade" id="asistencia">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Seleccionar Curso</label>
+                            <select class="form-select" id="selectCursoAsistencia">
+                                <option value="">Seleccionar curso...</option>
+                                <option th:each="curso : ${cursos}" th:value="${curso.idCurso}" th:text="${curso.nombreCurso}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary" id="btnCargarAsistencia">
+                                <i class="fas fa-search"></i> Cargar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-clipboard me-2 text-primary"></i>Asistencia del Curso</h5>
+                                <canvas id="chartAsistencia"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOTAS -->
+                <div class="tab-pane fade" id="notas">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Seleccionar Curso</label>
+                            <select class="form-select" id="selectCursoNotas">
+                                <option value="">Seleccionar curso...</option>
+                                <option th:each="curso : ${cursos}" th:value="${curso.idCurso}" th:text="${curso.nombreCurso}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary" id="btnCargarNotas">
+                                <i class="fas fa-search"></i> Cargar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="chart-container">
+                                <h5><i class="fas fa-star me-2 text-warning"></i>Rendimiento de Notas</h5>
+                                <canvas id="chartNotas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/reportes.js}"></script>
+</body>
+</html>

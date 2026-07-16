@@ -90,4 +90,34 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
                                      @Param("estado") String estado,
                                      @Param("grado") String grado,
                                      Pageable pageable);
+    /**
+     * Contar estudiantes por grado
+     */
+    @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.idGrado = :idGrado")
+    long countByIdGrado(@Param("idGrado") Integer idGrado);
+
+    /**
+     * Contar estudiantes por estado
+     */
+    long countByEstado(String estado);
+
+    /**
+     * Buscar estudiantes por estado
+     */
+    List<Estudiante> findByEstado(String estado);
+    /**
+     * Contar estudiantes por género
+     */
+    @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.genero = :genero")
+    long countByGenero(@Param("genero") String genero);
+
+    /**
+     * Contar estudiantes por grado y género
+     */
+    @Query("SELECT COUNT(e) FROM Estudiante e WHERE e.idGrado = :idGrado AND e.genero = :genero")
+    long countByGradoAndGenero(@Param("idGrado") Integer idGrado, @Param("genero") String genero);
+
+
+
+
 }

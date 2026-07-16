@@ -75,4 +75,11 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
     long countByCursoIdAndFechaAndEstado(@Param("cursoId") Long cursoId,
                                          @Param("fecha") LocalDate fecha,
                                          @Param("estado") String estado);
+
+    /**
+     * Buscar todas las asistencias de un curso
+     */
+    List<Asistencia> findByCursoIdCurso(Long cursoId);
+
+
 }

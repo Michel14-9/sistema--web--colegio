@@ -93,4 +93,36 @@ public interface CursoRepository extends JpaRepository<Curso, Long> {
     boolean existsByDocenteAndHorarioAndIdCursoNot(@Param("idDocente") Long idDocente,
                                                    @Param("horario") String horario,
                                                    @Param("idCurso") Long idCurso);
+
+    // ========== MÉTODOS PARA REPORTES Y ESTADÍSTICAS ==========
+
+    /**
+     * Contar cursos por estado
+     */
+    long countByEstado(String estado);
+
+    /**
+     * Contar cursos por docente
+     */
+    long countByIdDocente(Long idDocente);
+
+    /**
+     * Contar cursos activos por docente
+     */
+    @Query("SELECT COUNT(c) FROM Curso c WHERE c.idDocente = :idDocente AND c.estado = 'ACTIVO'")
+    long countActivosByIdDocente(@Param("idDocente") Long idDocente);
+
+    /**
+     * Obtener todos los cursos activos
+     */
+    List<Curso> findByEstado(String estado);
+
+
+    /**
+     * Contar cursos por grado
+     */
+    @Query("SELECT COUNT(c) FROM Curso c WHERE c.idGrado = :idGrado")
+    long countByIdGrado(@Param("idGrado") Integer idGrado);
+
+
 }

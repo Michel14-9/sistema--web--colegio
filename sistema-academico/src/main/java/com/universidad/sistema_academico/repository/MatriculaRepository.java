@@ -108,4 +108,41 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
                                     @Param("turno") String turno,
                                     @Param("estado") String estado,
                                     Pageable pageable);
+
+    // ========== MÉTODOS PARA REPORTES ==========
+
+    /**
+     * Contar matrículas por grado (todas las que estén ACTIVAS)
+     */
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.idGrado = :idGrado AND m.estado = 'ACTIVA'")
+    long countByIdGrado(@Param("idGrado") Integer idGrado);
+
+    /**
+     * Contar matrículas por año académico
+     */
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.anioAcademico = :anioAcademico")
+    long countByAnioAcademico(@Param("anioAcademico") String anioAcademico);
+
+    /**
+     * Contar matrículas por estado
+     */
+    long countByEstado(String estado);
+
+    /**
+     * Obtener todas las matrículas activas por grado y turno
+     */
+    @Query("SELECT m FROM Matricula m WHERE m.idGrado = :idGrado AND m.turno = :turno AND m.estado = 'ACTIVA'")
+    List<Matricula> findActivasByGradoAndTurno(@Param("idGrado") Integer idGrado, @Param("turno") String turno);
+
+    /**
+     * Obtener todas las matrículas activas por grado
+     */
+    @Query("SELECT m FROM Matricula m WHERE m.idGrado = :idGrado AND m.estado = 'ACTIVA'")
+    List<Matricula> findActivasByGrado(@Param("idGrado") Integer idGrado);
+
+    /**
+     * Contar matrículas por turno
+     */
+    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.turno = :turno")
+    long countByTurno(@Param("turno") String turno);
 }

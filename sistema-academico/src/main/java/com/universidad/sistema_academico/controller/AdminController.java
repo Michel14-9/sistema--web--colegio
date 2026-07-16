@@ -1,22 +1,46 @@
 package com.universidad.sistema_academico.controller;
 
 import com.universidad.sistema_academico.model.*;
-import com.universidad.sistema_academico.repository.ActividadRepository;
-import com.universidad.sistema_academico.repository.CursoRepository;
-import com.universidad.sistema_academico.repository.DocenteRepository;
-import com.universidad.sistema_academico.repository.EstudianteRepository;
-import com.universidad.sistema_academico.repository.MatriculaRepository;
+import com.universidad.sistema_academico.repository.*;
 import com.universidad.sistema_academico.service.SolicitudMatriculaService;
 import com.universidad.sistema_academico.service.UsuarioService;
+
 import jakarta.annotation.PostConstruct;
+
+// ==================== EXCEL (Apache POI) ====================
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Cell;
+
+
+// ==================== PDF (iText 7) ====================
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfPCell;
+
+// ==================== SPRING ====================
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import java.text.Normalizer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,30 +48,35 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+// ==================== SERVICIOS ====================
 import com.universidad.sistema_academico.service.EmailService;
-import java.util.Random;
+
+// ==================== JAVA ====================
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.Normalizer;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
-
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-
+    @Autowired
+    private NotaRepository notaRepository;
     @Autowired
     private UsuarioService usuarioService;
     @Autowired
     private EmailService emailService;
     @Autowired
     private EstudianteRepository estudianteRepository;
-
+    @Autowired
+    private AsistenciaRepository asistenciaRepository;
     @Autowired
     private DocenteRepository docenteRepository;
 
@@ -1373,4 +1402,647 @@ public class AdminController {
         }
         return "redirect:/admin/estudiantes";
     }
-}
+
+    // ==================== REPORTES AVANZADOS ====================
+
+    @GetMapping("/reportes")
+    public String reportes(Model model) {
+        // Estadísticas generales
+        long totalEstudiantes = estudianteRepository.count();
+        long totalDocentes = docenteRepository.count();
+        long totalCursos = cursoRepository.count();
+        long totalMatriculas = matriculaRepository.count();
+
+        // Matrículas por estado
+        long pendientes = matriculaRepository.findByEstado("PENDIENTE").size();
+        long activas = matriculaRepository.findByEstado("ACTIVA").size();
+        long inactivas = matriculaRepository.findByEstado("INACTIVO").size();
+
+        // Matrículas por grado (1-11)
+        Map<Integer, Long> matriculasPorGrado = new LinkedHashMap<>();
+        for (int i = 1; i <= 11; i++) {
+            long count = matriculaRepository.countByIdGrado(i);
+            matriculasPorGrado.put(i, count);
+        }
+
+        // Cursos por estado
+        long cursosActivos = cursoRepository.countByEstado("ACTIVO");
+        long cursosInactivos = cursoRepository.countByEstado("INACTIVO");
+
+        // Docentes por especialidad
+        Map<String, Long> docentesPorEspecialidad = new LinkedHashMap<>();
+        List<String> especialidades = getEspecialidadesList();
+        for (String esp : especialidades) {
+            long count = docenteRepository.countByEspecialidad(esp);
+            docentesPorEspecialidad.put(esp, count);
+        }
+
+        // Estudiantes por género
+        long masculinos = estudianteRepository.countByGenero("M");
+        long femeninos = estudianteRepository.countByGenero("F");
+
+        // Matrículas por turno
+        long manana = matriculaRepository.countByTurno("MAÑANA");
+        long tarde = matriculaRepository.countByTurno("TARDE");
+
+        List<Curso> todosCursos = cursoRepository.findAll();
+        model.addAttribute("cursos", todosCursos);
+
+        model.addAttribute("totalEstudiantes", totalEstudiantes);
+        model.addAttribute("totalDocentes", totalDocentes);
+        model.addAttribute("totalCursos", totalCursos);
+        model.addAttribute("totalMatriculas", totalMatriculas);
+        model.addAttribute("pendientes", pendientes);
+        model.addAttribute("activas", activas);
+        model.addAttribute("inactivas", inactivas);
+        model.addAttribute("matriculasPorGrado", matriculasPorGrado);
+        model.addAttribute("cursosActivos", cursosActivos);
+        model.addAttribute("cursosInactivos", cursosInactivos);
+        model.addAttribute("docentesPorEspecialidad", docentesPorEspecialidad);
+        model.addAttribute("masculinos", masculinos);
+        model.addAttribute("femeninos", femeninos);
+        model.addAttribute("manana", manana);
+        model.addAttribute("tarde", tarde);
+        model.addAttribute("modulo", "reportes");
+
+        return "admin/reportes";
+    }
+
+// ==================== ENDPOINTS PARA GRÁFICOS ====================
+
+    @GetMapping("/reportes/estudiantes-por-grado")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteEstudiantesPorGrado() {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        for (int i = 1; i <= 11; i++) {
+            String nombreGrado = obtenerNombreGrado(i);
+            long count = estudianteRepository.countByIdGrado(i);
+            data.put(nombreGrado, count);
+        }
+
+        response.put("labels", data.keySet());
+        response.put("values", data.values());
+        response.put("total", data.values().stream().mapToLong(Long::longValue).sum());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/reportes/matriculas-por-anio")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteMatriculasPorAnio() {
+        Map<String, Object> response = new HashMap<>();
+        Map<Integer, Long> data = new LinkedHashMap<>();
+
+        int anioActual = java.time.Year.now().getValue();
+        for (int i = anioActual - 4; i <= anioActual; i++) {
+            long count = matriculaRepository.countByAnioAcademico(String.valueOf(i));
+            data.put(i, count);
+        }
+
+        response.put("labels", data.keySet());
+        response.put("values", data.values());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/reportes/matriculas-por-grado")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteMatriculasPorGrado() {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        for (int i = 1; i <= 11; i++) {
+            String nombreGrado = obtenerNombreGrado(i);
+            long count = matriculaRepository.countByIdGrado(i);
+            data.put(nombreGrado, count);
+        }
+
+        response.put("labels", data.keySet());
+        response.put("values", data.values());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/reportes/cursos-por-grado")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteCursosPorGrado() {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        for (int i = 1; i <= 11; i++) {
+            String nombreGrado = obtenerNombreGrado(i);
+            long count = cursoRepository.countByIdGrado(i);
+            data.put(nombreGrado, count);
+        }
+
+        response.put("labels", data.keySet());
+        response.put("values", data.values());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/reportes/docentes-por-especialidad")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteDocentesPorEspecialidad() {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        List<String> especialidades = getEspecialidadesList();
+        for (String esp : especialidades) {
+            long count = docenteRepository.countByEspecialidad(esp);
+            data.put(esp, count);
+        }
+
+        response.put("labels", data.keySet());
+        response.put("values", data.values());
+        response.put("total", data.values().stream().mapToLong(Long::longValue).sum());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/reportes/estudiantes-por-genero")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteEstudiantesPorGenero() {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        data.put("Masculino", estudianteRepository.countByGenero("M"));
+        data.put("Femenino", estudianteRepository.countByGenero("F"));
+
+        response.put("data", data);
+        response.put("total", data.values().stream().mapToLong(Long::longValue).sum());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/reportes/matriculas-por-turno")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteMatriculasPorTurno() {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        data.put("Mañana", matriculaRepository.countByTurno("MAÑANA"));
+        data.put("Tarde", matriculaRepository.countByTurno("TARDE"));
+
+        response.put("data", data);
+
+        return ResponseEntity.ok(response);
+    }
+
+// ==================== REPORTE DE ASISTENCIA ====================
+
+    @GetMapping("/reportes/asistencia-curso/{idCurso}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteAsistenciaCurso(@PathVariable Long idCurso) {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        List<Asistencia> asistencias = asistenciaRepository.findByCursoIdCurso(idCurso);
+
+        long presente = asistencias.stream().filter(a -> "PRESENTE".equals(a.getEstado())).count();
+        long ausente = asistencias.stream().filter(a -> "AUSENTE".equals(a.getEstado())).count();
+        long tardanza = asistencias.stream().filter(a -> "TARDANZA".equals(a.getEstado())).count();
+        long justificado = asistencias.stream().filter(a -> "JUSTIFICADO".equals(a.getEstado())).count();
+
+        data.put("Presente", presente);
+        data.put("Ausente", ausente);
+        data.put("Tardanza", tardanza);
+        data.put("Justificado", justificado);
+
+        response.put("data", data);
+        response.put("total", asistencias.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+// ==================== REPORTE DE NOTAS ====================
+
+    @GetMapping("/reportes/notas-curso/{idCurso}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> reporteNotasCurso(@PathVariable Long idCurso) {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Long> data = new LinkedHashMap<>();
+
+        String periodoActual = String.valueOf(java.time.Year.now().getValue());
+
+        List<Nota> notas = notaRepository.findByCursoAndPeriodoAcademico(idCurso, periodoActual);
+
+        long aprobados = notas.stream().filter(n -> n.getNota().doubleValue() >= 11).count();
+        long recuperacion = notas.stream().filter(n -> n.getNota().doubleValue() >= 7 && n.getNota().doubleValue() < 11).count();
+        long desaprobados = notas.stream().filter(n -> n.getNota().doubleValue() < 7).count();
+
+        data.put("Aprobados", aprobados);
+        data.put("Recuperación", recuperacion);
+        data.put("Desaprobados", desaprobados);
+
+        response.put("data", data);
+        response.put("total", notas.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+// ==================== EXPORTAR A EXCEL ====================
+
+    @GetMapping("/reportes/exportar-excel/{tipo}")
+    @ResponseBody
+    public ResponseEntity<byte[]> exportarExcel(@PathVariable String tipo) {
+        try {
+            // Crear libro de trabajo
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.createSheet("Reporte " + tipo);
+
+            // Crear estilos
+            CellStyle headerStyle = workbook.createCellStyle();
+            XSSFFont headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeight(12);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+
+            int rowNum = 0;
+
+            switch (tipo) {
+                case "estudiantes":
+                    rowNum = exportarEstudiantesExcel(sheet, headerStyle, dataStyle);
+                    break;
+                case "docentes":
+                    rowNum = exportarDocentesExcel(sheet, headerStyle, dataStyle);
+                    break;
+                case "cursos":
+                    rowNum = exportarCursosExcel(sheet, headerStyle, dataStyle);
+                    break;
+                case "matriculas":
+                    rowNum = exportarMatriculasExcel(sheet, headerStyle, dataStyle);
+                    break;
+                default:
+                    rowNum = exportarEstudiantesExcel(sheet, headerStyle, dataStyle);
+            }
+
+            // Autoajustar columnas
+            for (int i = 0; i < 10; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Crear respuesta
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "reporte_" + tipo + ".xlsx");
+
+            return new ResponseEntity<>(outputStream.toByteArray(), headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    private int exportarEstudiantesExcel(XSSFSheet sheet, CellStyle headerStyle, CellStyle dataStyle) {
+        int rowNum = 0;
+
+        // Título
+        Row titleRow = sheet.createRow(rowNum++);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("REPORTE DE ESTUDIANTES");
+        titleCell.setCellStyle(headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 5));
+
+        // Encabezados
+        Row headerRow = sheet.createRow(rowNum++);
+        String[] headers = {"ID", "Código", "DNI", "Nombres", "Apellidos", "Grado"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        // Datos
+        List<Estudiante> estudiantes = estudianteRepository.findAll();
+        for (Estudiante e : estudiantes) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(e.getIdEstudiante());
+            row.createCell(1).setCellValue(e.getCodigoEstudiante());
+            row.createCell(2).setCellValue(e.getDni());
+            row.createCell(3).setCellValue(e.getNombres());
+            row.createCell(4).setCellValue(e.getApellidoPaterno() + " " + e.getApellidoMaterno());
+            row.createCell(5).setCellValue(obtenerNombreGrado(e.getIdGrado()));
+
+            for (int i = 0; i < 6; i++) {
+                row.getCell(i).setCellStyle(dataStyle);
+            }
+        }
+
+        return rowNum;
+    }
+
+    private int exportarDocentesExcel(XSSFSheet sheet, CellStyle headerStyle, CellStyle dataStyle) {
+        int rowNum = 0;
+
+        Row titleRow = sheet.createRow(rowNum++);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("REPORTE DE DOCENTES");
+        titleCell.setCellStyle(headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
+
+        Row headerRow = sheet.createRow(rowNum++);
+        String[] headers = {"ID", "Código", "DNI", "Nombres", "Apellidos", "Email", "Especialidad"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        List<Docente> docentes = docenteRepository.findAll();
+        for (Docente d : docentes) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(d.getIdDocente());
+            row.createCell(1).setCellValue(d.getCodigoDocente());
+            row.createCell(2).setCellValue(d.getDni());
+            row.createCell(3).setCellValue(d.getNombres());
+            row.createCell(4).setCellValue(d.getApellidoPaterno() + " " + d.getApellidoMaterno());
+            row.createCell(5).setCellValue(d.getEmail());
+            row.createCell(6).setCellValue(d.getEspecialidad());
+
+            for (int i = 0; i < 7; i++) {
+                row.getCell(i).setCellStyle(dataStyle);
+            }
+        }
+
+        return rowNum;
+    }
+
+    private int exportarCursosExcel(XSSFSheet sheet, CellStyle headerStyle, CellStyle dataStyle) {
+        int rowNum = 0;
+
+        Row titleRow = sheet.createRow(rowNum++);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("REPORTE DE CURSOS");
+        titleCell.setCellStyle(headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));
+
+        Row headerRow = sheet.createRow(rowNum++);
+        String[] headers = {"ID", "Código", "Nombre", "Grado", "Sección", "Turno", "Área", "Docente"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        List<Curso> cursos = cursoRepository.findAllWithDocente();
+        for (Curso c : cursos) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(c.getIdCurso());
+            row.createCell(1).setCellValue(c.getCodigoCurso());
+            row.createCell(2).setCellValue(c.getNombreCurso());
+            row.createCell(3).setCellValue(obtenerNombreGrado(c.getIdGrado()));
+            row.createCell(4).setCellValue(c.getSeccion());
+            row.createCell(5).setCellValue(c.getTurno());
+            row.createCell(6).setCellValue(c.getArea());
+            row.createCell(7).setCellValue(c.getDocente() != null ?
+                    c.getDocente().getNombres() + " " + c.getDocente().getApellidoPaterno() : "Sin asignar");
+
+            for (int i = 0; i < 8; i++) {
+                row.getCell(i).setCellStyle(dataStyle);
+            }
+        }
+
+        return rowNum;
+    }
+
+    private int exportarMatriculasExcel(XSSFSheet sheet, CellStyle headerStyle, CellStyle dataStyle) {
+        int rowNum = 0;
+
+        Row titleRow = sheet.createRow(rowNum++);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("REPORTE DE MATRÍCULAS");
+        titleCell.setCellStyle(headerStyle);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
+
+        Row headerRow = sheet.createRow(rowNum++);
+        String[] headers = {"ID", "Código", "Estudiante", "Grado", "Sección", "Turno", "Estado"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+
+        List<Matricula> matriculas = matriculaRepository.findAll();
+        for (Matricula m : matriculas) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(m.getIdMatricula());
+            row.createCell(1).setCellValue(m.getCodigoMatricula());
+            row.createCell(2).setCellValue(m.getEstudiante() != null ?
+                    m.getEstudiante().getNombres() + " " + m.getEstudiante().getApellidoPaterno() : "N/A");
+            row.createCell(3).setCellValue(obtenerNombreGrado(m.getIdGrado()));
+            row.createCell(4).setCellValue(m.getSeccion());
+            row.createCell(5).setCellValue(m.getTurno());
+            row.createCell(6).setCellValue(m.getEstado());
+
+            for (int i = 0; i < 7; i++) {
+                row.getCell(i).setCellStyle(dataStyle);
+            }
+        }
+
+        return rowNum;
+    }
+
+// ==================== EXPORTAR A PDF (iText) ====================
+
+    @GetMapping("/reportes/exportar-pdf/{tipo}")
+    @ResponseBody
+    public ResponseEntity<byte[]> exportarPDF(@PathVariable String tipo) {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            Document document = new Document();
+            PdfWriter.getInstance(document, outputStream);
+            document.open();
+
+            // Agregar título
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
+            Paragraph title = new Paragraph("I.E. San Carlos - Reporte " + tipo, titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+            document.add(new Paragraph(" "));
+
+            // Agregar fecha
+            Font dateFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+            Paragraph date = new Paragraph("Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")), dateFont);
+            date.setAlignment(Element.ALIGN_RIGHT);
+            document.add(date);
+            document.add(new Paragraph(" "));
+
+            // Tabla según tipo
+            PdfPTable table;
+            switch (tipo) {
+                case "estudiantes":
+                    table = crearTablaEstudiantesPDF();
+                    break;
+                case "docentes":
+                    table = crearTablaDocentesPDF();
+                    break;
+                case "cursos":
+                    table = crearTablaCursosPDF();
+                    break;
+                case "matriculas":
+                    table = crearTablaMatriculasPDF();
+                    break;
+                default:
+                    table = crearTablaEstudiantesPDF();
+            }
+
+            document.add(table);
+            document.close();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "reporte_" + tipo + ".pdf");
+
+            return new ResponseEntity<>(outputStream.toByteArray(), headers, HttpStatus.OK);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    private PdfPTable crearTablaEstudiantesPDF() {
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10f);
+
+        // Encabezados
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
+        String[] headers = {"ID", "Código", "DNI", "Nombres", "Apellidos", "Grado"};
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+            cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(cell);
+        }
+
+        // Datos
+        Font dataFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+        List<Estudiante> estudiantes = estudianteRepository.findAll();
+        for (Estudiante e : estudiantes) {
+            table.addCell(new PdfPCell(new Phrase(String.valueOf(e.getIdEstudiante() != null ? e.getIdEstudiante() : ""), dataFont)));
+            table.addCell(new PdfPCell(new Phrase(e.getCodigoEstudiante() != null ? e.getCodigoEstudiante() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(e.getDni() != null ? e.getDni() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(e.getNombres() != null ? e.getNombres() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(
+                    (e.getApellidoPaterno() != null ? e.getApellidoPaterno() : "") + " " +
+                            (e.getApellidoMaterno() != null ? e.getApellidoMaterno() : ""),
+                    dataFont)));
+            table.addCell(new PdfPCell(new Phrase(obtenerNombreGrado(e.getIdGrado()), dataFont)));
+        }
+
+        return table;
+    }
+
+    private PdfPTable crearTablaDocentesPDF() {
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10f);
+
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
+        String[] headers = {"ID", "Código", "DNI", "Nombres", "Apellidos", "Especialidad"};
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+            cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(cell);
+        }
+
+        Font dataFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+        List<Docente> docentes = docenteRepository.findAll();
+        for (Docente d : docentes) {
+            table.addCell(new PdfPCell(new Phrase(String.valueOf(d.getIdDocente() != null ? d.getIdDocente() : ""), dataFont)));
+            table.addCell(new PdfPCell(new Phrase(d.getCodigoDocente() != null ? d.getCodigoDocente() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(d.getDni() != null ? d.getDni() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(d.getNombres() != null ? d.getNombres() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(
+                    (d.getApellidoPaterno() != null ? d.getApellidoPaterno() : "") + " " +
+                            (d.getApellidoMaterno() != null ? d.getApellidoMaterno() : ""),
+                    dataFont)));
+            table.addCell(new PdfPCell(new Phrase(d.getEspecialidad() != null ? d.getEspecialidad() : "", dataFont)));
+        }
+
+        return table;
+    }
+
+    private PdfPTable crearTablaCursosPDF() {
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10f);
+
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
+        String[] headers = {"ID", "Nombre", "Grado", "Sección", "Turno", "Área"};
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+            cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(cell);
+        }
+
+        Font dataFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+        List<Curso> cursos = cursoRepository.findAllWithDocente();
+        for (Curso c : cursos) {
+            table.addCell(new PdfPCell(new Phrase(String.valueOf(c.getIdCurso() != null ? c.getIdCurso() : ""), dataFont)));
+            table.addCell(new PdfPCell(new Phrase(c.getNombreCurso() != null ? c.getNombreCurso() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(obtenerNombreGrado(c.getIdGrado()), dataFont)));
+            table.addCell(new PdfPCell(new Phrase(c.getSeccion() != null ? c.getSeccion() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(c.getTurno() != null ? c.getTurno() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(c.getArea() != null ? c.getArea() : "", dataFont)));
+        }
+
+        return table;
+    }
+
+    private PdfPTable crearTablaMatriculasPDF() {
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10f);
+
+        Font headerFont = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD);
+        String[] headers = {"ID", "Código", "Estudiante", "Grado", "Sección", "Estado"};
+        for (String h : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
+            cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(cell);
+        }
+
+        Font dataFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+        List<Matricula> matriculas = matriculaRepository.findAll();
+        for (Matricula m : matriculas) {
+            table.addCell(new PdfPCell(new Phrase(String.valueOf(m.getIdMatricula() != null ? m.getIdMatricula() : ""), dataFont)));
+            table.addCell(new PdfPCell(new Phrase(m.getCodigoMatricula() != null ? m.getCodigoMatricula() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(
+                    m.getEstudiante() != null ?
+                            (m.getEstudiante().getNombres() != null ? m.getEstudiante().getNombres() : "") + " " +
+                                    (m.getEstudiante().getApellidoPaterno() != null ? m.getEstudiante().getApellidoPaterno() : "")
+                            : "N/A",
+                    dataFont)));
+            table.addCell(new PdfPCell(new Phrase(obtenerNombreGrado(m.getIdGrado()), dataFont)));
+            table.addCell(new PdfPCell(new Phrase(m.getSeccion() != null ? m.getSeccion() : "", dataFont)));
+            table.addCell(new PdfPCell(new Phrase(m.getEstado() != null ? m.getEstado() : "", dataFont)));
+        }
+
+        return table;
+    }
+    }
