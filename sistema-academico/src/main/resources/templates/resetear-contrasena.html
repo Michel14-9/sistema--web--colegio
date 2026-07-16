@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I.E. San Carlos - Restablecer Contraseña</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/login.css}" rel="stylesheet">
+</head>
+<body>
+
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-lg-5 col-md-7 col-11">
+
+                <!-- Logo -->
+                <div class="text-center mb-4">
+                    <div class="login-logo">
+                        <img th:src="@{/img/logo.png}" alt="Logo I.E. San Carlos">
+                    </div>
+                    <h1 class="login-brand">I.E. San Carlos</h1>
+                    <p class="login-brand-sub">Restablecer Contraseña</p>
+                </div>
+
+                <!-- Tarjeta -->
+                <div class="card login-card">
+                    <div class="card-body">
+                        <h3 class="login-title">Nueva Contraseña</h3>
+                        <p class="login-subtitle" th:if="${email}">
+                            Creando nueva contraseña para: <strong th:text="${email}"></strong>
+                        </p>
+
+                        <!-- Mensajes -->
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i> <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i> <span th:text="${success}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <!-- Formulario -->
+                        <form th:action="@{/resetear-contrasena}" method="post">
+                            <input type="hidden" name="token" th:value="${token}">
+
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-icon">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" name="password" id="password"
+                                           placeholder="Nueva contraseña" required minlength="6">
+                                </div>
+                                <small class="text-muted">La contraseña debe tener al menos 6 caracteres.</small>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="input-group">
+                                    <span class="input-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </span>
+                                    <input type="password" class="form-control" name="confirmarPassword" id="confirmarPassword"
+                                           placeholder="Confirmar contraseña" required minlength="6">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-ingresar w-100">
+                                <i class="fas fa-save"></i> Restablecer Contraseña
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-3">
+                            <a th:href="@{/login}" class="back-home">
+                                <i class="fas fa-arrow-left"></i> Volver al inicio de sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

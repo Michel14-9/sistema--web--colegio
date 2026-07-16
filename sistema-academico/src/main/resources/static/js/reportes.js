@@ -77,9 +77,7 @@ fetch('/admin/reportes/estudiantes-por-grado')
 
 // ==================== 2. MATRÍCULAS POR ESTADO ====================
 (function() {
-    const pendientes = parseInt(document.querySelector('[th\\:text="${pendientes}"]')?.textContent || '0');
-    const activas = parseInt(document.querySelector('[th\\:text="${activas}"]')?.textContent || '0');
-    const inactivas = parseInt(document.querySelector('[th\\:text="${inactivas}"]')?.textContent || '0');
+    const { pendientes, activas, inactivas } = REPORTE_DATA;
 
     const ctx = document.getElementById('chartMatriculasEstado');
     if (ctx) {
@@ -97,10 +95,7 @@ fetch('/admin/reportes/estudiantes-por-grado')
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { padding: 15 }
-                    }
+                    legend: { position: 'bottom', labels: { padding: 15 } }
                 }
             }
         });
@@ -223,8 +218,7 @@ fetch('/admin/reportes/cursos-por-grado')
 
 // ==================== 6. CURSOS POR ESTADO ====================
 (function() {
-    const activos = parseInt(document.querySelector('[th\\:text="${cursosActivos}"]')?.textContent || '0');
-    const inactivos = parseInt(document.querySelector('[th\\:text="${cursosInactivos}"]')?.textContent || '0');
+    const { cursosActivos: activos, cursosInactivos: inactivos } = REPORTE_DATA;
 
     const ctx = document.getElementById('chartCursosEstado');
     if (ctx) {
@@ -242,10 +236,7 @@ fetch('/admin/reportes/cursos-por-grado')
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { padding: 15 }
-                    }
+                    legend: { position: 'bottom', labels: { padding: 15 } }
                 }
             }
         });

@@ -274,7 +274,15 @@
         </div>
     </div>
 </div>
-
+<script th:inline="javascript">
+    const REPORTE_DATA = {
+        pendientes: /*[[${pendientes}]]*/ 0,
+        activas: /*[[${activas}]]*/ 0,
+        inactivas: /*[[${inactivas}]]*/ 0,
+        cursosActivos: /*[[${cursosActivos}]]*/ 0,
+        cursosInactivos: /*[[${cursosInactivos}]]*/ 0
+    };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/reportes.js}"></script>
 </body>

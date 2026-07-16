@@ -82,4 +82,8 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
     List<Asistencia> findByCursoIdCurso(Long cursoId);
 
 
+
+
+
+
 }

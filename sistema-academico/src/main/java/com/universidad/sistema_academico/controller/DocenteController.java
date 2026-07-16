@@ -5,6 +5,7 @@ import com.universidad.sistema_academico.dto.NotaDTO;
 import com.universidad.sistema_academico.model.*;
 import com.universidad.sistema_academico.repository.*;
 import com.universidad.sistema_academico.service.DocenteService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,9 +19,26 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
+
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Controller
 @RequestMapping("/docente")
@@ -830,4 +848,645 @@ public class DocenteController {
         error.put("error", mensaje);
         return error;
     }
+    // ==================== REPORTES PARA DOCENTE (DIRECTO EN CONTROLADOR) ====================
+
+    @GetMapping("/docentes-reportes")
+    public String reportes(Authentication authentication, Model model) {
+        try {
+            Docente docente = getDocenteAutenticado(authentication);
+            List<Curso> cursos = cursoRepository.findByIdDocente(docente.getIdDocente());
+
+            model.addAttribute("docente", docente);
+            model.addAttribute("cursos", cursos != null ? cursos : List.of());
+            model.addAttribute("modulo", "reportes");
+            model.addAttribute("tituloPagina", "Reportes");
+
+            return "docente/docentes-reportes";
+
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
+    }
+
+// ==================== REPORTE DE NOTAS EN PDF ====================
+
+    @GetMapping("/reportes/notas/pdf")
+    public void generarReporteNotasPDF(@RequestParam Long idCurso,
+                                       @RequestParam(required = false) Integer bimestre,
+                                       HttpServletResponse response,
+                                       Authentication authentication) throws Exception {
+        try {
+            Docente docente = getDocenteAutenticado(authentication);
+            Curso curso = cursoRepository.findById(idCurso)
+                    .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+
+            if (!curso.getIdDocente().equals(docente.getIdDocente())) {
+                throw new RuntimeException("No tiene permisos para este curso");
+            }
+
+            List<Estudiante> estudiantes = estudianteRepository.findByGradoYAnio(
+                    curso.getIdGrado(),
+                    Year.now().getValue()
+            );
+
+            // Configurar respuesta
+            response.setContentType("application/pdf");
+            String filename = "Reporte_Notas_" + curso.getNombreCurso();
+            if (bimestre != null && bimestre > 0) {
+                filename += "_B" + bimestre;
+            }
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=" + filename + ".pdf");
+
+            // Generar PDF
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            // Títulos
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
+            Font subtitleFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+            Font headerFont = new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD);
+            Font dataFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+
+            Paragraph schoolName = new Paragraph("I.E. SAN CARLOS", new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD));
+            schoolName.setAlignment(Element.ALIGN_CENTER);
+            document.add(schoolName);
+
+            Paragraph title = new Paragraph("REPORTE DE NOTAS", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Curso: " + curso.getNombreCurso(), subtitleFont));
+            document.add(new Paragraph("Profesor: " + curso.getDocente().getNombres() + " " +
+                    curso.getDocente().getApellidoPaterno(), subtitleFont));
+            document.add(new Paragraph("Periodo: " + Year.now().getValue(), subtitleFont));
+            if (bimestre != null && bimestre > 0) {
+                document.add(new Paragraph("Bimestre: " + bimestre, subtitleFont));
+            }
+            document.add(new Paragraph("Fecha: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), subtitleFont));
+            document.add(new Paragraph(" "));
+
+            // Tabla
+            int columnas = bimestre != null && bimestre > 0 ? 5 : 8;
+            PdfPTable table = new PdfPTable(columnas);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+
+            String[] headers;
+            if (bimestre != null && bimestre > 0) {
+                headers = new String[]{"#", "Código", "Estudiante", "Nota B" + bimestre, "Estado"};
+            } else {
+                headers = new String[]{"#", "Código", "Estudiante", "B1", "B2", "B3", "B4", "Promedio"};
+            }
+
+            for (String header : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(header, headerFont));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setBackgroundColor(new BaseColor(200, 200, 200));
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            // Datos
+            int count = 1;
+            String periodoAcademico = String.valueOf(Year.now().getValue());
+
+            for (Estudiante estudiante : estudiantes) {
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(count++), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(estudiante.getCodigoEstudiante() != null ? estudiante.getCodigoEstudiante() : "", dataFont)));
+                table.addCell(new PdfPCell(new Phrase(estudiante.getNombres() + " " + estudiante.getApellidoPaterno(), dataFont)));
+
+                if (bimestre != null && bimestre > 0) {
+                    List<Nota> notas = notaRepository.findByEstudianteAndCursoAndBimestre(
+                            estudiante.getIdEstudiante(), idCurso, bimestre, periodoAcademico);
+
+                    if (!notas.isEmpty()) {
+                        double nota = notas.get(0).getNota().doubleValue();
+                        table.addCell(new PdfPCell(new Phrase(String.format("%.1f", nota), dataFont)));
+                        String estado = nota >= 11 ? "APROBADO" : "DESAPROBADO";
+                        PdfPCell estadoCell = new PdfPCell(new Phrase(estado, dataFont));
+                        estadoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        if (nota >= 11) {
+                            estadoCell.setBackgroundColor(new BaseColor(144, 238, 144));
+                        } else {
+                            estadoCell.setBackgroundColor(new BaseColor(255, 182, 193));
+                        }
+                        table.addCell(estadoCell);
+                    } else {
+                        table.addCell(new PdfPCell(new Phrase("-", dataFont)));
+                        table.addCell(new PdfPCell(new Phrase("SIN NOTA", dataFont)));
+                    }
+                } else {
+                    Double[] bimestres = new Double[4];
+                    for (int b = 1; b <= 4; b++) {
+                        List<Nota> notas = notaRepository.findByEstudianteAndCursoAndBimestre(
+                                estudiante.getIdEstudiante(), idCurso, b, periodoAcademico);
+                        if (!notas.isEmpty()) {
+                            bimestres[b-1] = notas.get(0).getNota().doubleValue();
+                        }
+                    }
+
+                    double sum = 0;
+                    int countNotas = 0;
+                    for (Double nota : bimestres) {
+                        table.addCell(new PdfPCell(new Phrase(nota != null ? String.format("%.1f", nota) : "-", dataFont)));
+                        if (nota != null) {
+                            sum += nota;
+                            countNotas++;
+                        }
+                    }
+
+                    double promedio = countNotas > 0 ? sum / countNotas : 0;
+                    PdfPCell promedioCell = new PdfPCell(new Phrase(countNotas > 0 ? String.format("%.1f", promedio) : "-", dataFont));
+                    promedioCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    if (countNotas > 0 && promedio >= 11) {
+                        promedioCell.setBackgroundColor(new BaseColor(144, 238, 144));
+                    } else if (countNotas > 0 && promedio < 11) {
+                        promedioCell.setBackgroundColor(new BaseColor(255, 182, 193));
+                    }
+                    table.addCell(promedioCell);
+                }
+            }
+
+            document.add(table);
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Firma del Docente: ___________________________", subtitleFont));
+            document.add(new Paragraph("Fecha: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), subtitleFont));
+
+            document.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Error al generar reporte: " + e.getMessage());
+        }
+    }
+
+// ==================== REPORTE DE ASISTENCIA EN PDF ====================
+
+    @GetMapping("/reportes/asistencia/pdf")
+    public void generarReporteAsistenciaPDF(@RequestParam Long idCurso,
+                                            @RequestParam(required = false) String fechaInicio,
+                                            @RequestParam(required = false) String fechaFin,
+                                            HttpServletResponse response,
+                                            Authentication authentication) throws Exception {
+        try {
+            Docente docente = getDocenteAutenticado(authentication);
+            Curso curso = cursoRepository.findById(idCurso)
+                    .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+
+            if (!curso.getIdDocente().equals(docente.getIdDocente())) {
+                throw new RuntimeException("No tiene permisos para este curso");
+            }
+
+            LocalDate inicio = fechaInicio != null ? LocalDate.parse(fechaInicio) : LocalDate.now().minusMonths(1);
+            LocalDate fin = fechaFin != null ? LocalDate.parse(fechaFin) : LocalDate.now();
+
+            List<Estudiante> estudiantes = estudianteRepository.findByGradoYAnio(
+                    curso.getIdGrado(),
+                    Year.now().getValue()
+            );
+
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=Reporte_Asistencia_" + curso.getNombreCurso() + ".pdf");
+
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
+            Font subtitleFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+            Font headerFont = new Font(Font.FontFamily.HELVETICA, 11, Font.BOLD);
+            Font dataFont = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL);
+
+            Paragraph schoolName = new Paragraph("I.E. SAN CARLOS", new Font(Font.FontFamily.HELVETICA, 20, Font.BOLD));
+            schoolName.setAlignment(Element.ALIGN_CENTER);
+            document.add(schoolName);
+
+            Paragraph title = new Paragraph("REPORTE DE ASISTENCIA", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Curso: " + curso.getNombreCurso(), subtitleFont));
+            document.add(new Paragraph("Profesor: " + curso.getDocente().getNombres() + " " +
+                    curso.getDocente().getApellidoPaterno(), subtitleFont));
+            document.add(new Paragraph("Periodo: " + inicio.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) +
+                    " al " + fin.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), subtitleFont));
+            document.add(new Paragraph(" "));
+
+            PdfPTable table = new PdfPTable(7);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+
+            String[] headers = {"#", "Código", "Estudiante", "Presente", "Falta", "Tardanza", "% Asistencia"};
+            for (String header : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(header, headerFont));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setBackgroundColor(new BaseColor(200, 200, 200));
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            int count = 1;
+            for (Estudiante estudiante : estudiantes) {
+                // ✅ USANDO MÉTODO EXISTENTE: findByEstudianteIdEstudianteAndFechaBetween
+                List<Asistencia> asistencias = asistenciaRepository
+                        .findByEstudianteIdEstudianteAndFechaBetween(
+                                estudiante.getIdEstudiante(), inicio, fin);
+
+                // Filtrar por curso en memoria (o usar el método existente)
+                asistencias = asistencias.stream()
+                        .filter(a -> a.getCurso() != null && a.getCurso().getIdCurso().equals(idCurso))
+                        .collect(Collectors.toList());
+
+                long presentes = asistencias.stream().filter(a -> "PRESENTE".equals(a.getEstado())).count();
+                long faltas = asistencias.stream().filter(a -> "FALTA".equals(a.getEstado())).count();
+                long tardanzas = asistencias.stream().filter(a -> "TARDANZA".equals(a.getEstado())).count();
+
+                long total = presentes + faltas + tardanzas;
+                double porcentaje = total > 0 ? (presentes * 100.0) / total : 0;
+
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(count++), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(estudiante.getCodigoEstudiante() != null ? estudiante.getCodigoEstudiante() : "", dataFont)));
+                table.addCell(new PdfPCell(new Phrase(estudiante.getNombres() + " " + estudiante.getApellidoPaterno(), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(presentes), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(faltas), dataFont)));
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(tardanzas), dataFont)));
+
+                PdfPCell porcentajeCell = new PdfPCell(new Phrase(String.format("%.1f%%", porcentaje), dataFont));
+                porcentajeCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                if (porcentaje >= 80) {
+                    porcentajeCell.setBackgroundColor(new BaseColor(144, 238, 144));
+                } else if (porcentaje >= 60) {
+                    porcentajeCell.setBackgroundColor(new BaseColor(255, 255, 153));
+                } else {
+                    porcentajeCell.setBackgroundColor(new BaseColor(255, 182, 193));
+                }
+                table.addCell(porcentajeCell);
+            }
+
+            document.add(table);
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Firma del Docente: ___________________________", subtitleFont));
+            document.add(new Paragraph("Fecha: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), subtitleFont));
+
+            document.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Error al generar reporte: " + e.getMessage());
+        }
+    }
+
+// ==================== REPORTE DE RENDIMIENTO EN EXCEL ====================
+
+    @GetMapping("/reportes/rendimiento/excel")
+    public void generarReporteRendimientoExcel(@RequestParam Long idCurso,
+                                               HttpServletResponse response,
+                                               Authentication authentication) throws Exception {
+        try {
+            Docente docente = getDocenteAutenticado(authentication);
+            Curso curso = cursoRepository.findById(idCurso)
+                    .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+
+            if (!curso.getIdDocente().equals(docente.getIdDocente())) {
+                throw new RuntimeException("No tiene permisos para este curso");
+            }
+
+            List<Estudiante> estudiantes = estudianteRepository.findByGradoYAnio(
+                    curso.getIdGrado(),
+                    Year.now().getValue()
+            );
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=Reporte_Rendimiento_" + curso.getNombreCurso() + ".xlsx");
+
+            // Crear Excel
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.createSheet("Rendimiento");
+
+            // Estilos
+            CellStyle headerStyle = workbook.createCellStyle();
+            XSSFFont headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerFont.setFontHeight(12);
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+
+            CellStyle aprobadoStyle = workbook.createCellStyle();
+            aprobadoStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+            aprobadoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            aprobadoStyle.setBorderBottom(BorderStyle.THIN);
+            aprobadoStyle.setBorderTop(BorderStyle.THIN);
+            aprobadoStyle.setBorderLeft(BorderStyle.THIN);
+            aprobadoStyle.setBorderRight(BorderStyle.THIN);
+
+            CellStyle desaprobadoStyle = workbook.createCellStyle();
+            desaprobadoStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
+            desaprobadoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            desaprobadoStyle.setBorderBottom(BorderStyle.THIN);
+            desaprobadoStyle.setBorderTop(BorderStyle.THIN);
+            desaprobadoStyle.setBorderLeft(BorderStyle.THIN);
+            desaprobadoStyle.setBorderRight(BorderStyle.THIN);
+
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setBorderBottom(BorderStyle.THIN);
+            dataStyle.setBorderTop(BorderStyle.THIN);
+            dataStyle.setBorderLeft(BorderStyle.THIN);
+            dataStyle.setBorderRight(BorderStyle.THIN);
+
+            // Título
+            Row titleRow = sheet.createRow(0);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("I.E. SAN CARLOS - REPORTE DE RENDIMIENTO");
+            titleCell.setCellStyle(headerStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 8));
+
+            Row cursoRow = sheet.createRow(1);
+            cursoRow.createCell(0).setCellValue("Curso: " + curso.getNombreCurso());
+            cursoRow.createCell(3).setCellValue("Profesor: " + curso.getDocente().getNombres() + " " + curso.getDocente().getApellidoPaterno());
+
+            // Headers
+            Row headerRow = sheet.createRow(3);
+            String[] headers = {"#", "Código", "Estudiante", "B1", "B2", "B3", "B4", "Promedio", "Estado"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Datos
+            int rowNum = 4;
+            int count = 1;
+            String periodoAcademico = String.valueOf(Year.now().getValue());
+
+            for (Estudiante estudiante : estudiantes) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(count++);
+                row.createCell(1).setCellValue(estudiante.getCodigoEstudiante() != null ? estudiante.getCodigoEstudiante() : "");
+                row.createCell(2).setCellValue(estudiante.getNombres() + " " + estudiante.getApellidoPaterno());
+
+                Double[] bimestres = new Double[4];
+                for (int b = 1; b <= 4; b++) {
+                    List<Nota> notas = notaRepository.findByEstudianteAndCursoAndBimestre(
+                            estudiante.getIdEstudiante(), idCurso, b, periodoAcademico);
+                    if (!notas.isEmpty()) {
+                        bimestres[b-1] = notas.get(0).getNota().doubleValue();
+                        Cell cell = row.createCell(b + 2);
+                        cell.setCellValue(bimestres[b-1]);
+                        cell.setCellStyle(dataStyle);
+                    } else {
+                        Cell cell = row.createCell(b + 2);
+                        cell.setCellValue("-");
+                        cell.setCellStyle(dataStyle);
+                    }
+                }
+
+                // Calcular promedio
+                double sum = 0;
+                int countNotas = 0;
+                for (Double nota : bimestres) {
+                    if (nota != null) {
+                        sum += nota;
+                        countNotas++;
+                    }
+                }
+
+                double promedio = countNotas > 0 ? sum / countNotas : 0;
+                Cell promedioCell = row.createCell(7);
+                promedioCell.setCellValue(countNotas > 0 ? promedio : 0);
+                promedioCell.setCellStyle(dataStyle);
+
+                // Estado
+                Cell estadoCell = row.createCell(8);
+                if (countNotas > 0) {
+                    if (promedio >= 11) {
+                        estadoCell.setCellValue("APROBADO");
+                        estadoCell.setCellStyle(aprobadoStyle);
+                    } else {
+                        estadoCell.setCellValue("DESAPROBADO");
+                        estadoCell.setCellStyle(desaprobadoStyle);
+                    }
+                } else {
+                    estadoCell.setCellValue("SIN NOTAS");
+                    estadoCell.setCellStyle(dataStyle);
+                }
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < 9; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(response.getOutputStream());
+            workbook.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Error al generar reporte: " + e.getMessage());
+        }
+    }
+
+// ==================== BOLETÍN INDIVIDUAL EN PDF ====================
+
+    @GetMapping("/reportes/boletin/{idEstudiante}")
+    public void generarBoletinIndividual(@PathVariable Long idEstudiante,
+                                         @RequestParam Long idCurso,
+                                         HttpServletResponse response,
+                                         Authentication authentication) throws Exception {
+        try {
+            Docente docente = getDocenteAutenticado(authentication);
+            Curso curso = cursoRepository.findById(idCurso)
+                    .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+
+            if (!curso.getIdDocente().equals(docente.getIdDocente())) {
+                throw new RuntimeException("No tiene permisos para este curso");
+            }
+
+            Estudiante estudiante = estudianteRepository.findById(idEstudiante)
+                    .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=Boletin_" + estudiante.getNombres() + "_" +
+                            estudiante.getApellidoPaterno() + ".pdf");
+
+            Document document = new Document();
+            PdfWriter.getInstance(document, response.getOutputStream());
+            document.open();
+
+            Font titleFont = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD);
+            Font subtitleFont = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL);
+            Font sectionFont = new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD);
+            Font dataFont = new Font(Font.FontFamily.HELVETICA, 11, Font.NORMAL);
+
+            Paragraph schoolName = new Paragraph("I.E. SAN CARLOS", new Font(Font.FontFamily.HELVETICA, 22, Font.BOLD));
+            schoolName.setAlignment(Element.ALIGN_CENTER);
+            document.add(schoolName);
+
+            Paragraph title = new Paragraph("BOLETÍN DE NOTAS - " + Year.now().getValue(), titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            document.add(title);
+
+            document.add(new Paragraph(" "));
+
+            // Datos del estudiante
+            document.add(new Paragraph("DATOS DEL ESTUDIANTE", sectionFont));
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Nombre: " + estudiante.getNombres() + " " +
+                    estudiante.getApellidoPaterno() + " " +
+                    estudiante.getApellidoMaterno(), dataFont));
+            document.add(new Paragraph("Código: " + (estudiante.getCodigoEstudiante() != null ? estudiante.getCodigoEstudiante() : ""), dataFont));
+            document.add(new Paragraph("DNI: " + estudiante.getDni(), dataFont));
+            document.add(new Paragraph("Grado: " + obtenerNombreGrado(estudiante.getIdGrado()), dataFont));
+            document.add(new Paragraph(" "));
+
+            // Datos del curso
+            document.add(new Paragraph("DATOS DEL CURSO", sectionFont));
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Curso: " + curso.getNombreCurso(), dataFont));
+            document.add(new Paragraph("Profesor: " + curso.getDocente().getNombres() + " " +
+                    curso.getDocente().getApellidoPaterno(), dataFont));
+            document.add(new Paragraph(" "));
+
+            // Tabla de notas
+            PdfPTable table = new PdfPTable(6);
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+
+            String[] headers = {"Criterio", "B1", "B2", "B3", "B4", "Promedio"};
+            for (String header : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(header, new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD)));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setBackgroundColor(new BaseColor(200, 200, 200));
+                cell.setPadding(5);
+                table.addCell(cell);
+            }
+
+            String periodoAcademico = String.valueOf(Year.now().getValue());
+            Double[] bimestres = new Double[4];
+            for (int b = 1; b <= 4; b++) {
+                List<Nota> notas = notaRepository.findByEstudianteAndCursoAndBimestre(
+                        estudiante.getIdEstudiante(), idCurso, b, periodoAcademico);
+                if (!notas.isEmpty()) {
+                    bimestres[b-1] = notas.get(0).getNota().doubleValue();
+                }
+            }
+
+            table.addCell(new PdfPCell(new Phrase("Notas", dataFont)));
+            double sum = 0;
+            int countNotas = 0;
+            for (Double nota : bimestres) {
+                PdfPCell cell = new PdfPCell(new Phrase(nota != null ? String.format("%.1f", nota) : "-", dataFont));
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(cell);
+                if (nota != null) {
+                    sum += nota;
+                    countNotas++;
+                }
+            }
+            double promedio = countNotas > 0 ? sum / countNotas : 0;
+            PdfPCell promedioCell = new PdfPCell(new Phrase(countNotas > 0 ? String.format("%.1f", promedio) : "-", dataFont));
+            promedioCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            if (countNotas > 0 && promedio >= 11) {
+                promedioCell.setBackgroundColor(new BaseColor(144, 238, 144));
+            } else if (countNotas > 0 && promedio < 11) {
+                promedioCell.setBackgroundColor(new BaseColor(255, 182, 193));
+            }
+            table.addCell(promedioCell);
+
+            String estado = countNotas > 0 ? (promedio >= 11 ? "APROBADO" : "DESAPROBADO") : "SIN NOTAS";
+            table.addCell(new PdfPCell(new Phrase("Estado", dataFont)));
+            PdfPCell estadoCell = new PdfPCell(new Phrase(estado, dataFont));
+            estadoCell.setColspan(5);
+            estadoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            if (countNotas > 0 && promedio >= 11) {
+                estadoCell.setBackgroundColor(new BaseColor(144, 238, 144));
+            } else if (countNotas > 0 && promedio < 11) {
+                estadoCell.setBackgroundColor(new BaseColor(255, 182, 193));
+            }
+            table.addCell(estadoCell);
+
+            document.add(table);
+            document.add(new Paragraph(" "));
+
+            // Observaciones
+            document.add(new Paragraph("OBSERVACIONES:", sectionFont));
+            document.add(new Paragraph(" "));
+            if (countNotas > 0) {
+                if (promedio >= 14) {
+                    document.add(new Paragraph("• Excelente rendimiento académico. ¡Felicitaciones!", dataFont));
+                } else if (promedio >= 11) {
+                    document.add(new Paragraph("• Buen rendimiento académico. Continúa esforzándote.", dataFont));
+                } else if (promedio >= 7) {
+                    document.add(new Paragraph("• Se recomienda reforzar los temas para mejorar el rendimiento.", dataFont));
+                } else {
+                    document.add(new Paragraph("• Se requiere apoyo adicional y refuerzo académico.", dataFont));
+                }
+            } else {
+                document.add(new Paragraph("• Aún no se han registrado notas para este periodo.", dataFont));
+            }
+
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph("Firma del Docente: ___________________________", dataFont));
+            document.add(new Paragraph("Fecha: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), dataFont));
+
+            document.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Error al generar reporte: " + e.getMessage());
+        }
+    }
+
+// ==================== SELECCIONAR ESTUDIANTE PARA BOLETÍN ====================
+
+    @GetMapping("/reportes/boletin/seleccionar")
+    public String seleccionarEstudianteBoletin(@RequestParam Long idCurso,
+                                               Authentication authentication,
+                                               Model model) {
+        try {
+            Docente docente = getDocenteAutenticado(authentication);
+            Curso curso = cursoRepository.findById(idCurso)
+                    .orElseThrow(() -> new RuntimeException("Curso no encontrado"));
+
+            if (!curso.getIdDocente().equals(docente.getIdDocente())) {
+                throw new RuntimeException("No tiene permisos para este curso");
+            }
+
+            List<Estudiante> estudiantes = estudianteRepository.findByGradoYAnio(
+                    curso.getIdGrado(),
+                    Year.now().getValue()
+            );
+
+            model.addAttribute("docente", docente);
+            model.addAttribute("curso", curso);
+            model.addAttribute("estudiantes", estudiantes);
+            model.addAttribute("modulo", "reportes");
+            model.addAttribute("tituloPagina", "Seleccionar Estudiante");
+
+            return "docente/seleccionar-estudiante";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "error";
+        }
+    }
+
+
+
 }

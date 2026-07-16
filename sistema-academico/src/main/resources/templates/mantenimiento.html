@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema en Mantenimiento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .maintenance-container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 50px;
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.6s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .maintenance-icon {
+            width: 130px;
+            height: 130px;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 55px;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .maintenance-icon i { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
+        .maintenance-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 12px;
+        }
+        .maintenance-subtitle {
+            font-size: 18px;
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        .maintenance-description {
+            font-size: 14px;
+            color: #7f8c8d;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+        .maintenance-progress {
+            background: #f0f2f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .maintenance-progress .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 8px;
+            border-radius: 4px;
+            animation: progress 3s ease-in-out infinite;
+        }
+        @keyframes progress {
+            0% { width: 10%; }
+            50% { width: 70%; }
+            100% { width: 10%; }
+        }
+        .maintenance-features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .maintenance-feature {
+            background: #f8f9fa;
+            padding: 15px 10px;
+            border-radius: 10px;
+        }
+        .maintenance-feature i {
+            font-size: 24px;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .maintenance-feature span {
+            display: block;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .maintenance-footer {
+            font-size: 12px;
+            color: #adb5bd;
+            margin-top: 20px;
+        }
+        .maintenance-footer i {
+            color: #e74c3c;
+        }
+        .maintenance-contact {
+            background: #f0f2f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #6c757d;
+        }
+        .maintenance-contact a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .maintenance-contact a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 576px) {
+            .maintenance-container { padding: 40px 25px; }
+            .maintenance-title { font-size: 26px; }
+            .maintenance-subtitle { font-size: 16px; }
+            .maintenance-icon { width: 100px; height: 100px; font-size: 42px; }
+            .maintenance-features { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="maintenance-container">
+    <!-- Ícono -->
+    <div class="maintenance-icon">
+        <i class="fas fa-tools"></i>
+    </div>
+
+    <!-- Título -->
+    <h1 class="maintenance-title">Sistema en Mantenimiento</h1>
+    <p class="maintenance-subtitle">Estamos mejorando tu experiencia</p>
+
+    <!-- Descripción -->
+    <p class="maintenance-description">
+        El sistema se encuentra actualmente en mantenimiento programado.
+        Estamos realizando mejoras y actualizaciones para ofrecerte un mejor servicio.
+        Por favor, intenta nuevamente más tarde.
+    </p>
+
+    <!-- Barra de progreso animada -->
+    <div class="maintenance-progress">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6c757d; margin-bottom: 8px;">
+            <span><i class="fas fa-spinner fa-spin"></i> Progreso</span>
+            <span>~ 30 min</span>
+        </div>
+        <div class="progress-bar"></div>
+    </div>
+
+    <!-- Características -->
+    <div class="maintenance-features">
+        <div class="maintenance-feature">
+            <i class="fas fa-database"></i>
+            <span>Actualización de Base de Datos</span>
+        </div>
+        <div class="maintenance-feature">
+            <i class="fas fa-code"></i>
+            <span>Mejoras en el Sistema</span>
+        </div>
+        <div class="maintenance-feature">
+            <i class="fas fa-shield-alt"></i>
+            <span>Seguridad y Rendimiento</span>
+        </div>
+    </div>
+
+    <!-- Contacto -->
+    <div class="maintenance-contact">
+        <i class="fas fa-envelope me-2"></i>
+        Para más información, contacta con el administrador:
+        <a href="mailto:soporte@iesancarlos.edu.pe">soporte@iesancarlos.edu.pe</a>
+    </div>
+
+    <!-- Footer -->
+    <div class="maintenance-footer">
+        <i class="fas fa-heart"></i> I.E. San Carlos - <span id="currentYear"></span>
+    </div>
+</div>
+
+<script>
+    // Año actual
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    // Verificar si el sistema sigue en mantenimiento cada 30 segundos
+    setInterval(function() {
+        fetch('/api/verificar-mantenimiento')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.modoMantenimiento) {
+                    window.location.href = '/';
+                }
+            })
+            .catch(() => {});
+    }, 30000);
+</script>
+
+</body>
+</html>
