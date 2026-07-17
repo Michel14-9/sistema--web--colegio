@@ -31,11 +31,8 @@ USER appuser
 
 EXPOSE 8090
 
-# Variables de entorno - LA API KEY SE PASA DESDE FUERA
-ENV SPRING_DATASOURCE_URL=jdbc:postgresql://chatbot-db:5432/chatbot_colegio
-ENV SPRING_DATASOURCE_USERNAME=postgres
-ENV SPRING_DATASOURCE_PASSWORD=admin
-ENV SPRING_PROFILES_ACTIVE=docker
+# Todas las variables de entorno se pasan desde docker-compose.yml o .env
 # GROQ_API_KEY se pasa desde docker-compose.yml o variable de entorno
+# NO hardcodear credenciales aquí
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

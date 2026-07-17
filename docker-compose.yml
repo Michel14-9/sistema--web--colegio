@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Base de datos para el chatbot
   chatbot-db:
@@ -11,10 +13,11 @@ services:
       - "5433:5432"
     volumes:
       - chatbot-db-data:/var/lib/postgresql/data
+      - ./backups:/backups
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,20 +35,21 @@ services:
       - "5434:5432"
     volumes:
       - academico-db-data:/var/lib/postgresql/data
+      - ./backups:/backups
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
   # Servicio del chatbot
-  chatbot-colegio:
+  chatbot:
     build:
       context: ./chatbot-colegio
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: chatbot-service
     ports:
       - "8090:8090"
@@ -63,15 +67,12 @@ services:
     restart: unless-stopped
     volumes:
       - chatbot-uploads:/app/uploads
-      - ./chatbot-colegio:/app
-      - ~/.m2:/root/.m2
-    command: ./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
 
   # Servicio del sistema académico
-  sistema-academico:
+  academico:
     build:
       context: ./sistema-academico
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: academico-service
     ports:
       - "8080:8080"
@@ -82,24 +83,24 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME}
       - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD}
-      - CHATBOT_URL=http://chatbot-service:8090/api/chat
-      - SPRING_DEVTOOLS_RESTART_ENABLED=true
-      - SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
+      - CHATBOT_URL=http://chatbot:8090/api/chat
     depends_on:
       academico-db:
         condition: service_healthy
+      chatbot:
+        condition: service_started
     networks:
       - app-network
     restart: unless-stopped
     volumes:
-      - ./sistema-academico:/app
-      - ~/.m2:/root/.m2
-    command: ./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
+      - academico-uploads:/app/uploads
+      - ./sistema-academico/config.properties:/app/config.properties
 
 volumes:
   chatbot-db-data:
   academico-db-data:
   chatbot-uploads:
+  academico-uploads:
 
 networks:
   app-network:

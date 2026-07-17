@@ -29,16 +29,16 @@ COPY --from=build /app/target/*.jar app.jar
 # Crear directorio para uploads
 RUN mkdir -p /app/uploads/vouchers && chown -R appuser:appgroup /app/uploads
 
-# Cambiar a usuario no-root
+# ===== PERMITIR PUERTO 80 =====
+USER root
+RUN chown -R appuser:appgroup /app
+RUN setcap 'cap_net_bind_service=+ep' /opt/java/openjdk/bin/java || true
 USER appuser
 
+# EXPOSE 80 (cambia 8080 por 80)
 EXPOSE 8080
 
-# Variables de entorno (sin credenciales hardcodeadas)
-ENV SPRING_DATASOURCE_URL=jdbc:postgresql://academico-db:5432/sistema_academico
-ENV SPRING_DATASOURCE_USERNAME=postgres
-ENV SPRING_DATASOURCE_PASSWORD=admin
-ENV SPRING_PROFILES_ACTIVE=docker
-# SPRING_MAIL_USERNAME y SPRING_MAIL_PASSWORD se pasan desde docker-compose.yml
+# Todas las variables de entorno se pasan desde docker-compose.yml o .env
+# NO hardcodear credenciales aquí
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
